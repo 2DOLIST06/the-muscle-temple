@@ -12,7 +12,7 @@ export function NewsletterCta() {
           placeholder="Votre email"
           className="w-full rounded-lg border border-blue-300 bg-white/95 px-4 py-3 text-slate-900"
         />
-        <button className="rounded-lg bg-slate-900 px-5 py-3 text-sm font-semibold text-white">S'inscrire</button>
+        <button className="rounded-lg bg-slate-900 px-5 py-3 text-sm font-semibold text-white">S&apos;inscrire</button>
       </form>
     </section>
   );
