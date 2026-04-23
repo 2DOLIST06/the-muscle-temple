@@ -233,6 +233,7 @@ export function PostEditorForm({ initialPost }: PostEditorFormProps) {
               className="text-sm text-slate-300"
             />
             {post.coverImage ? (
+              // eslint-disable-next-line @next/next/no-img-element
               <img src={post.coverImage} alt="Aperçu couverture" className="mt-2 h-36 w-full rounded-lg object-cover" />
             ) : null}
           </div>
