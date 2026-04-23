@@ -7,6 +7,7 @@ export const buildMetadata = (input: SeoInput): Metadata => {
   const image = input.image ?? siteConfig.defaultOgImage;
 
   return {
+    metadataBase: new URL(siteConfig.baseUrl),
     title: input.title,
     description: input.description,
     keywords: input.keywords,

@@ -108,3 +108,38 @@ Les pages se mettent à jour automatiquement via la couche `contentRepository`.
 ## Déploiement Vercel
 
 Le projet est prêt à être déployé tel quel sur Vercel (build Next.js standard, App Router, routes statiques/dynamiques).
+
+---
+
+## Espace admin sécurisé
+
+Routes admin disponibles :
+
+- `/admin/login`
+- `/admin`
+- `/admin/posts`
+- `/admin/posts/new`
+- `/admin/posts/[slug]/edit`
+
+### Sécurisation de l’accès
+
+L’accès admin est protégé par un cookie `httpOnly` + middleware.
+Vous devez définir les variables d’environnement suivantes :
+
+```bash
+ADMIN_EMAIL=vous@example.com
+ADMIN_PASSWORD=votre-mot-de-passe-fort
+ADMIN_ACCESS_TOKEN=une-cle-longue-aleatoire-et-secrete
+```
+
+### Fonctionnalités admin incluses
+
+- Connexion sécurisée (email/mot de passe)
+- Dashboard admin
+- Liste des articles
+- Création / édition d’article
+- Upload image (base64 pour preview)
+- Gestion publication (draft/published)
+- Champs SEO complets : title, description, canonical, OG image, noindex
+
+> Note: cette version admin est orientée front-first. Les créations/modifications sont stockées côté navigateur (localStorage) en attendant le backend/CMS.
