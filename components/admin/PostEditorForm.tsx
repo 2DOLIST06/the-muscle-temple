@@ -1,25 +1,28 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { authors } from '@/data/authors';
-import { categories } from '@/data/categories';
 import type { AdminPostDraft } from '@/types/admin';
-import { upsertStoredPost } from '@/components/admin/post-storage';
 
 interface PostEditorFormProps {
   initialPost?: AdminPostDraft;
 }
 
+interface ContentOption {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 const createEmptyPost = (): AdminPostDraft => ({
-  id: crypto.randomUUID(),
+  id: '',
   slug: '',
   title: '',
   excerpt: '',
   description: '',
   coverImage: '',
-  categorySlug: categories[0]?.slug ?? '',
-  authorSlug: authors[0]?.slug ?? '',
+  categorySlug: '',
+  authorSlug: '',
   readingMinutes: 6,
   tags: [],
   status: 'draft',
@@ -43,10 +46,43 @@ const slugify = (value: string) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)+/g, '');
 
+const postToMarkdown = (post: AdminPostDraft) =>
+  post.sections
+    .map((section) => `## ${section.heading || 'Section'}\n\n${section.content}`)
+    .join('\n\n')
+    .trim();
+
 export function PostEditorForm({ initialPost }: PostEditorFormProps) {
   const router = useRouter();
   const [post, setPost] = useState<AdminPostDraft>(initialPost ?? createEmptyPost());
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [authors, setAuthors] = useState<ContentOption[]>([]);
+  const [categories, setCategories] = useState<ContentOption[]>([]);
+
+  useEffect(() => {
+    async function loadOptions() {
+      const response = await fetch('/api/admin/content/options', { cache: 'no-store' });
+      if (!response.ok) return;
+
+      const payload = (await response.json()) as {
+        authors: Array<{ id: string; name: string; slug: string }>;
+        categories: Array<{ id: string; name: string; slug: string }>;
+      };
+
+      setAuthors(payload.authors ?? []);
+      setCategories(payload.categories ?? []);
+
+      setPost((current) => {
+        const next = { ...current };
+        if (!next.authorSlug && payload.authors?.[0]) next.authorSlug = payload.authors[0].slug;
+        if (!next.categorySlug && payload.categories?.[0]) next.categorySlug = payload.categories[0].slug;
+        return next;
+      });
+    }
+
+    void loadOptions();
+  }, []);
 
   const seoTitle = post.seo.seoTitle || post.title;
   const seoDescription = post.seo.seoDescription || post.description;
@@ -60,31 +96,66 @@ export function PostEditorForm({ initialPost }: PostEditorFormProps) {
     [seoDescription, seoTitle, post.seo.canonicalUrl, post.slug]
   );
 
-  const handleUploadImage = (file?: File) => {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => setPost((prev) => ({ ...prev, coverImage: String(reader.result ?? '') }));
-    reader.readAsDataURL(file);
-  };
-
   const save = async (status: 'draft' | 'published') => {
     setSaving(true);
-    const payload: AdminPostDraft = {
-      ...post,
-      status,
-      slug: post.slug || slugify(post.title),
-      tags: post.tags,
-      updatedAt: new Date().toISOString(),
+    setError(null);
+
+    const author = authors.find((item) => item.slug === post.authorSlug);
+    const category = categories.find((item) => item.slug === post.categorySlug);
+
+    if (!author || !category) {
+      setError('Auteur/catégorie introuvable côté API. Recharge la page et réessaie.');
+      setSaving(false);
+      return;
+    }
+
+    const normalizedSlug = post.slug || slugify(post.title);
+    const isPublished = status === 'published';
+    const contentMarkdown = postToMarkdown(post);
+
+    const payload = {
+      title: post.title,
+      slug: normalizedSlug,
+      excerpt: post.excerpt,
+      contentMarkdown,
+      contentJson: {
+        sections: post.sections
+      },
+      status: isPublished ? 'PUBLISHED' : 'DRAFT',
+      publishedAt: isPublished ? new Date(post.publishedAt).toISOString() : null,
+      readingTimeMinutes: post.readingMinutes,
+      authorId: author.id,
+      categoryId: category.id,
+      coverImageId: null,
+      tagIds: [],
+      relatedPostIds: [],
       seo: {
-        ...post.seo,
-        seoTitle: post.seo.seoTitle || post.title,
-        seoDescription: post.seo.seoDescription || post.description
+        title: post.seo.seoTitle || post.title,
+        description: post.seo.seoDescription || post.description,
+        canonicalUrl: post.seo.canonicalUrl,
+        noIndex: post.seo.noIndex
       }
     };
 
-    upsertStoredPost(payload);
+    const endpoint = post.id ? `/api/admin/posts/${post.id}` : '/api/admin/posts';
+    const method = post.id ? 'PUT' : 'POST';
+
+    const response = await fetch(endpoint, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const body = (await response.json().catch(() => ({}))) as { message?: string; error?: string };
+      setError(body.message ?? body.error ?? 'Erreur API pendant la sauvegarde.');
+      setSaving(false);
+      return;
+    }
+
     setSaving(false);
     router.push('/admin/posts');
+    router.refresh();
   };
 
   return (
@@ -178,7 +249,7 @@ export function PostEditorForm({ initialPost }: PostEditorFormProps) {
             >
               {categories.map((category) => (
                 <option key={category.id} value={category.slug}>
-                  {category.title}
+                  {category.name}
                 </option>
               ))}
             </select>
@@ -201,41 +272,11 @@ export function PostEditorForm({ initialPost }: PostEditorFormProps) {
               onChange={(e) => setPost((p) => ({ ...p, readingMinutes: Number(e.target.value) || 1 }))}
             />
             <input
-              className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2"
-              placeholder="Tags séparés par des virgules"
-              value={post.tags.join(', ')}
-              onChange={(e) =>
-                setPost((p) => ({
-                  ...p,
-                  tags: e.target.value
-                    .split(',')
-                    .map((tag) => tag.trim())
-                    .filter(Boolean)
-                }))
-              }
-            />
-            <input
               type="date"
               className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2"
               value={post.publishedAt}
               onChange={(e) => setPost((p) => ({ ...p, publishedAt: e.target.value }))}
             />
-            <input
-              className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2"
-              placeholder="URL image de couverture"
-              value={post.coverImage}
-              onChange={(e) => setPost((p) => ({ ...p, coverImage: e.target.value }))}
-            />
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => handleUploadImage(e.target.files?.[0])}
-              className="text-sm text-slate-300"
-            />
-            {post.coverImage ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={post.coverImage} alt="Aperçu couverture" className="mt-2 h-36 w-full rounded-lg object-cover" />
-            ) : null}
           </div>
         </section>
 
@@ -261,12 +302,6 @@ export function PostEditorForm({ initialPost }: PostEditorFormProps) {
               value={post.seo.canonicalUrl}
               onChange={(e) => setPost((p) => ({ ...p, seo: { ...p.seo, canonicalUrl: e.target.value } }))}
             />
-            <input
-              className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2"
-              placeholder="OG image URL"
-              value={post.seo.ogImage}
-              onChange={(e) => setPost((p) => ({ ...p, seo: { ...p.seo, ogImage: e.target.value } }))}
-            />
             <label className="flex items-center gap-2 text-sm text-slate-300">
               <input
                 type="checkbox"
@@ -284,6 +319,8 @@ export function PostEditorForm({ initialPost }: PostEditorFormProps) {
             <p className="mt-1 text-xs text-slate-300">{preview.description || 'Description SEO'}</p>
           </div>
         </section>
+
+        {error ? <p className="rounded-lg border border-red-700 bg-red-950/40 p-3 text-sm text-red-200">{error}</p> : null}
 
         <div className="grid grid-cols-2 gap-3">
           <button
