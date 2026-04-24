@@ -3,6 +3,8 @@ import { buildApiUrl } from '@/lib/api/env';
 
 export const ADMIN_COOKIE_NAME = 'mt_admin_session';
 
+const looksLikeJwt = (token: string) => token.split('.').length === 3;
+
 async function isBackendTokenValid(token: string) {
   const response = await fetch(buildApiUrl('/admin-api/me'), {
     headers: { Authorization: `Bearer ${token}` },
@@ -19,8 +21,12 @@ export async function isAdminAuthenticated() {
 
   if (!token) return false;
 
-  if (expectedStaticToken) {
-    return token === expectedStaticToken;
+  if (expectedStaticToken && token === expectedStaticToken) {
+    return true;
+  }
+
+  if (!looksLikeJwt(token)) {
+    return false;
   }
 
   return isBackendTokenValid(token);

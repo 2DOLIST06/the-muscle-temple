@@ -82,6 +82,22 @@ export default function AdminPostsListPage() {
     setMigrating(true);
     setError(null);
 
+    const optionsResponse = await fetch('/api/admin/content/options', { cache: 'no-store' });
+    const optionsPayload = (await optionsResponse.json().catch(() => ({}))) as {
+      authors?: Array<{ id: string }>;
+      categories?: Array<{ id: string }>;
+      error?: string;
+    };
+
+    const fallbackAuthorId = optionsPayload.authors?.[0]?.id;
+    const fallbackCategoryId = optionsPayload.categories?.[0]?.id;
+
+    if (!fallbackAuthorId || !fallbackCategoryId) {
+      setError(optionsPayload.error ?? 'Impossible de migrer: auteur/catégorie API manquants.');
+      setMigrating(false);
+      return;
+    }
+
     for (const post of localPosts) {
       const payload = {
         title: post.title,
@@ -92,6 +108,8 @@ export default function AdminPostsListPage() {
         status: post.status === 'published' ? 'PUBLISHED' : 'DRAFT',
         publishedAt: post.status === 'published' ? new Date(post.publishedAt).toISOString() : null,
         readingTimeMinutes: post.readingMinutes,
+        authorId: fallbackAuthorId,
+        categoryId: fallbackCategoryId,
         seo: {
           title: post.seo.seoTitle || post.title,
           description: post.seo.seoDescription || post.description,
