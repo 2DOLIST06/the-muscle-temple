@@ -30,10 +30,6 @@ export async function POST(request: Request) {
   const staticPassword = process.env.ADMIN_PASSWORD;
   const staticToken = process.env.ADMIN_ACCESS_TOKEN;
 
-  if (staticEmail && staticPassword && staticToken && body.email === staticEmail && body.password === staticPassword) {
-    return withSessionCookie(staticToken);
-  }
-
   const upstream = await fetch(buildApiUrl('/admin-api/auth/login'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -49,9 +45,13 @@ export async function POST(request: Request) {
 
   const token = payload.data?.token ?? payload.token;
 
-  if (!upstream.ok || !token) {
-    return NextResponse.json({ error: payload.message ?? payload.error ?? 'Identifiants invalides.' }, { status: 401 });
+  if (upstream.ok && token) {
+    return withSessionCookie(token);
   }
 
-  return withSessionCookie(token);
+  if (staticEmail && staticPassword && staticToken && body.email === staticEmail && body.password === staticPassword) {
+    return withSessionCookie(staticToken);
+  }
+
+  return NextResponse.json({ error: payload.message ?? payload.error ?? 'Identifiants invalides.' }, { status: 401 });
 }
