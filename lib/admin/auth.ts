@@ -4,7 +4,6 @@ import { buildApiUrl } from '@/lib/api/env';
 export const ADMIN_COOKIE_NAME = 'mt_admin_session';
 
 const looksLikeJwt = (token: string) => token.split('.').length === 3;
-const STATIC_ADMIN_LOGIN_ENABLED = process.env.ENABLE_STATIC_ADMIN_LOGIN === 'true';
 
 async function isBackendTokenValid(token: string) {
   const response = await fetch(buildApiUrl('/admin-api/me'), {
@@ -22,7 +21,7 @@ export async function isAdminAuthenticated() {
 
   if (!token) return false;
 
-  if (STATIC_ADMIN_LOGIN_ENABLED && expectedStaticToken && token === expectedStaticToken) {
+  if (expectedStaticToken && token === expectedStaticToken) {
     return true;
   }
 

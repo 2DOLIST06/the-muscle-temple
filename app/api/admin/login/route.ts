@@ -3,7 +3,6 @@ import { ADMIN_COOKIE_NAME } from '@/lib/admin/auth';
 import { buildApiUrl } from '@/lib/api/env';
 
 const SESSION_MAX_AGE = 60 * 60 * 12;
-const STATIC_ADMIN_LOGIN_ENABLED = process.env.ENABLE_STATIC_ADMIN_LOGIN === 'true';
 
 const withSessionCookie = (token: string) => {
   const response = NextResponse.json({ ok: true });
@@ -50,14 +49,7 @@ export async function POST(request: Request) {
     return withSessionCookie(token);
   }
 
-  if (
-    STATIC_ADMIN_LOGIN_ENABLED &&
-    staticEmail &&
-    staticPassword &&
-    staticToken &&
-    body.email === staticEmail &&
-    body.password === staticPassword
-  ) {
+  if (staticEmail && staticPassword && staticToken && body.email === staticEmail && body.password === staticPassword) {
     return withSessionCookie(staticToken);
   }
 
