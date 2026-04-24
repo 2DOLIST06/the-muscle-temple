@@ -63,7 +63,13 @@ export function PostEditorForm({ initialPost }: PostEditorFormProps) {
   useEffect(() => {
     async function loadOptions() {
       const response = await fetch('/api/admin/content/options', { cache: 'no-store' });
-      if (!response.ok) return;
+      if (!response.ok) {
+        if (response.status === 401) {
+          setError('Session expirée. Reconnexion nécessaire.');
+          router.push('/admin/login');
+        }
+        return;
+      }
 
       const payload = (await response.json()) as {
         authors: Array<{ id: string; name: string; slug: string }>;
@@ -82,7 +88,7 @@ export function PostEditorForm({ initialPost }: PostEditorFormProps) {
     }
 
     void loadOptions();
-  }, []);
+  }, [router]);
 
   const seoTitle = post.seo.seoTitle || post.title;
   const seoDescription = post.seo.seoDescription || post.description;
@@ -147,6 +153,13 @@ export function PostEditorForm({ initialPost }: PostEditorFormProps) {
     });
 
     if (!response.ok) {
+      if (response.status === 401) {
+        setError('Session expirée. Reconnexion nécessaire.');
+        router.push('/admin/login');
+        setSaving(false);
+        return;
+      }
+
       const body = (await response.json().catch(() => ({}))) as { message?: string; error?: string };
       setError(body.message ?? body.error ?? 'Erreur API pendant la sauvegarde.');
       setSaving(false);

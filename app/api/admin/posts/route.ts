@@ -4,6 +4,7 @@ import { ADMIN_COOKIE_NAME } from '@/lib/admin/auth';
 import { buildApiUrl } from '@/lib/api/env';
 
 const unauthorized = () => NextResponse.json({ error: 'Session admin requise.' }, { status: 401 });
+const expiredSession = () => NextResponse.json({ error: 'Session expirée. Merci de vous reconnecter.' }, { status: 401 });
 
 async function getAdminToken() {
   const cookieStore = await cookies();
@@ -20,6 +21,11 @@ export async function GET() {
   });
 
   const payload = await upstream.json().catch(() => ({}));
+
+  if (upstream.status === 401) {
+    return expiredSession();
+  }
+
   return NextResponse.json(payload, { status: upstream.status });
 }
 
@@ -39,5 +45,10 @@ export async function POST(request: Request) {
   });
 
   const payload = await upstream.json().catch(() => ({}));
+
+  if (upstream.status === 401) {
+    return expiredSession();
+  }
+
   return NextResponse.json(payload, { status: upstream.status });
 }

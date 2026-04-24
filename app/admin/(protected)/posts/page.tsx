@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { clearStoredPosts, getStoredPosts } from '@/components/admin/post-storage';
 import type { AdminPostDraft } from '@/types/admin';
 
@@ -39,6 +40,7 @@ const toLocalDraft = (post: ApiPost): AdminPostDraft => ({
 });
 
 export default function AdminPostsListPage() {
+  const router = useRouter();
   const [apiPosts, setApiPosts] = useState<ApiPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -57,7 +59,12 @@ export default function AdminPostsListPage() {
       };
 
       if (!response.ok) {
-        setError(payload.message ?? payload.error ?? 'Erreur de chargement des articles API.');
+        if (response.status === 401) {
+          setError('Session expirée. Reconnexion nécessaire.');
+          router.push('/admin/login');
+        } else {
+          setError(payload.message ?? payload.error ?? 'Erreur de chargement des articles API.');
+        }
         setLoading(false);
         return;
       }
@@ -67,7 +74,7 @@ export default function AdminPostsListPage() {
     }
 
     void loadPosts();
-  }, []);
+  }, [router]);
 
   const migrateLocalPosts = async () => {
     if (!localPosts.length) return;
@@ -100,7 +107,12 @@ export default function AdminPostsListPage() {
       });
 
       if (!response.ok) {
-        setError(`Migration interrompue sur l'article "${post.title}".`);
+        if (response.status === 401) {
+          setError('Session expirée pendant la migration. Merci de te reconnecter.');
+          router.push('/admin/login');
+        } else {
+          setError(`Migration interrompue sur l'article "${post.title}".`);
+        }
         setMigrating(false);
         return;
       }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { PostEditorForm } from '@/components/admin/PostEditorForm';
 import type { AdminPostDraft } from '@/types/admin';
 
@@ -55,12 +55,18 @@ const apiToDraft = (post: ApiPost): AdminPostDraft => ({
 
 export default function AdminEditPostPage() {
   const params = useParams<{ slug: string }>();
+  const router = useRouter();
   const [post, setPost] = useState<AdminPostDraft | undefined>();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadPost() {
       const response = await fetch('/api/admin/posts', { cache: 'no-store' });
+      if (response.status === 401) {
+        router.push('/admin/login');
+        return;
+      }
+
       const payload = (await response.json().catch(() => ({}))) as { data?: ApiPost[] };
       const current = payload.data?.find((item) => item.slug === params.slug);
       setPost(current ? apiToDraft(current) : undefined);
@@ -68,7 +74,7 @@ export default function AdminEditPostPage() {
     }
 
     void loadPost();
-  }, [params.slug]);
+  }, [params.slug, router]);
 
   return (
     <section>
