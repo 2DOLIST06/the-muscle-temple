@@ -124,11 +124,17 @@ Routes admin disponibles :
 ### Sécurisation de l’accès
 
 L’accès admin est protégé par un cookie `httpOnly` + middleware.
-Vous devez définir les variables d’environnement suivantes :
+Le login est relayé vers l’API backend (`/admin-api/auth/login`).
+
+Variables recommandées :
 
 ```bash
-ADMIN_EMAIL=vous@example.com
-ADMIN_PASSWORD=votre-mot-de-passe-fort
+NEXT_PUBLIC_API_URL=https://the-muscle-temple-api-1.onrender.com
+```
+
+Option legacy (si vous voulez verrouiller un token statique côté front) :
+
+```bash
 ADMIN_ACCESS_TOKEN=une-cle-longue-aleatoire-et-secrete
 ```
 

@@ -14,9 +14,11 @@ export function middleware(request: NextRequest) {
   }
 
   const token = request.cookies.get(ADMIN_COOKIE_NAME)?.value;
-  const expected = process.env.ADMIN_ACCESS_TOKEN;
+  const expectedStaticToken = process.env.ADMIN_ACCESS_TOKEN;
 
-  if (!token || !expected || token !== expected) {
+  const authenticated = expectedStaticToken ? token === expectedStaticToken : Boolean(token);
+
+  if (!authenticated) {
     const loginUrl = new URL('/admin/login', request.url);
     loginUrl.searchParams.set('next', pathname);
     return NextResponse.redirect(loginUrl);

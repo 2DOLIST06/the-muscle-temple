@@ -1,31 +1,38 @@
 import { NextResponse } from 'next/server';
-import { ADMIN_COOKIE_NAME, getAdminAuthConfig } from '@/lib/admin/auth';
+import { ADMIN_COOKIE_NAME } from '@/lib/admin/auth';
+import { buildApiUrl } from '@/lib/api/env';
 
 export async function POST(request: Request) {
-  const body = await request.json();
-  const { email, password } = body as { email?: string; password?: string };
-  const auth = getAdminAuthConfig();
+  const body = (await request.json()) as { email?: string; password?: string };
 
-  if (!auth.email || !auth.password || !auth.accessToken) {
-    return NextResponse.json(
-      { error: 'Configuration admin incomplète. Définis ADMIN_EMAIL, ADMIN_PASSWORD et ADMIN_ACCESS_TOKEN.' },
-      { status: 500 }
-    );
+  if (!body.email || !body.password) {
+    return NextResponse.json({ error: 'Email et mot de passe requis.' }, { status: 400 });
   }
 
-  if (email !== auth.email || password !== auth.password) {
-    return NextResponse.json({ error: 'Identifiants invalides.' }, { status: 401 });
+  const upstream = await fetch(buildApiUrl('/admin-api/auth/login'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: body.email, password: body.password })
+  });
+
+  const payload = (await upstream.json().catch(() => ({}))) as {
+    data?: { token?: string };
+    message?: string;
+  };
+
+  if (!upstream.ok || !payload.data?.token) {
+    return NextResponse.json({ error: payload.message ?? 'Identifiants invalides.' }, { status: 401 });
   }
 
   const response = NextResponse.json({ ok: true });
   response.cookies.set({
     name: ADMIN_COOKIE_NAME,
-    value: auth.accessToken,
+    value: payload.data.token,
     httpOnly: true,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
     path: '/',
-    maxAge: 60 * 60 * 8
+    maxAge: 60 * 60 * 12
   });
 
   return response;
