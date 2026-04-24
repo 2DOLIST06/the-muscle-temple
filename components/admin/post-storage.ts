@@ -14,12 +14,7 @@ export const getStoredPosts = (): AdminPostDraft[] => {
   }
 };
 
-export const upsertStoredPost = (post: AdminPostDraft) => {
-  const existing = getStoredPosts();
-  const index = existing.findIndex((item) => item.slug === post.slug || item.id === post.id);
-  if (index >= 0) existing[index] = post;
-  else existing.unshift(post);
-  localStorage.setItem(KEY, JSON.stringify(existing));
+export const clearStoredPosts = () => {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(KEY);
 };
-
-export const getStoredPostBySlug = (slug: string) => getStoredPosts().find((item) => item.slug === slug);
