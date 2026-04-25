@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { clearAdminClientSession } from '@/lib/admin/client-session';
 
 const links = [
   { label: 'Dashboard', href: '/admin' },
@@ -14,8 +15,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   const handleLogout = async () => {
+    clearAdminClientSession();
     await fetch('/api/admin/logout', { method: 'POST' });
     router.push('/admin/login');
+    router.refresh();
   };
 
   return (

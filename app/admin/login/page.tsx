@@ -18,13 +18,16 @@ export default function AdminLoginPage() {
     const response = await fetch('/api/admin/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email: email.trim().toLowerCase(), password })
     });
 
-    const result = (await response.json()) as { error?: string };
+    const result = (await response.json().catch(() => ({}))) as {
+      message?: string;
+      error?: string;
+    };
 
     if (!response.ok) {
-      setError(result.error ?? 'Connexion impossible');
+      setError(result.message ?? result.error ?? 'Connexion impossible');
       setLoading(false);
       return;
     }
