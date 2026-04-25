@@ -48,8 +48,16 @@ export async function POST(request: Request) {
 
   const token = payload.data?.token ?? payload.token;
 
-  if (!upstream.ok || !token) {
-    return NextResponse.json({ message: payload.message ?? 'Invalid credentials' }, { status: 401 });
+  if (!upstream.ok) {
+    const status = upstream.status === 400 || upstream.status === 401 ? upstream.status : 502;
+    return NextResponse.json(
+      { message: payload.message ?? payload.error ?? `Authentication failed (${upstream.status}).` },
+      { status }
+    );
+  }
+
+  if (!token) {
+    return NextResponse.json({ message: 'Réponse backend invalide: token manquant.' }, { status: 502 });
   }
 
   return withSessionCookie(token);
