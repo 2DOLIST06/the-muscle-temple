@@ -23,5 +23,6 @@ export interface AdminPostDraft {
   publishedAt: string;
   updatedAt: string;
   sections: Array<{ heading: string; content: string }>;
+  faqs: Array<{ question: string; answer: string }>;
   seo: AdminSeoFields;
 }

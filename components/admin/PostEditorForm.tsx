@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { AdminPostDraft } from '@/types/admin';
 
@@ -29,6 +29,7 @@ const createEmptyPost = (): AdminPostDraft => ({
   publishedAt: new Date().toISOString().slice(0, 10),
   updatedAt: new Date().toISOString(),
   sections: [{ heading: 'Introduction', content: '' }],
+  faqs: [],
   seo: {
     seoTitle: '',
     seoDescription: '',
@@ -52,6 +53,135 @@ const postToMarkdown = (post: AdminPostDraft) =>
     .join('\n\n')
     .trim();
 
+const buildFaqJsonLd = (faqs: AdminPostDraft['faqs']) => ({
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs
+    .filter((faq) => faq.question.trim() && faq.answer.trim())
+    .map((faq) => ({
+      '@type': 'Question',
+      name: faq.question.trim(),
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: faq.answer.trim()
+      }
+    }))
+});
+
+function RichTextEditor({ value, onChange }: { value: string; onChange: (next: string) => void }) {
+  const editorRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!editorRef.current) return;
+    if (editorRef.current.innerHTML !== value) {
+      editorRef.current.innerHTML = value;
+    }
+  }, [value]);
+
+  const applyCommand = (command: string, commandValue?: string) => {
+    editorRef.current?.focus();
+    document.execCommand(command, false, commandValue);
+    onChange(editorRef.current?.innerHTML ?? '');
+  };
+
+  return (
+    <div className="mt-3 rounded-lg border border-slate-700 bg-slate-950">
+      <div className="flex flex-wrap gap-2 border-b border-slate-700 p-2 text-xs">
+        <select
+          className="rounded border border-slate-700 bg-slate-900 px-2 py-1"
+          defaultValue="P"
+          onChange={(e) => applyCommand('formatBlock', e.target.value)}
+        >
+          <option value="P">Paragraphe</option>
+          <option value="H1">H1</option>
+          <option value="H2">H2</option>
+          <option value="H3">H3</option>
+          <option value="H4">H4</option>
+          <option value="H5">H5</option>
+          <option value="H6">H6</option>
+        </select>
+        <select
+          className="rounded border border-slate-700 bg-slate-900 px-2 py-1"
+          defaultValue="Arial"
+          onChange={(e) => applyCommand('fontName', e.target.value)}
+        >
+          <option value="Arial">Arial</option>
+          <option value="Georgia">Georgia</option>
+          <option value="Tahoma">Tahoma</option>
+          <option value="Times New Roman">Times New Roman</option>
+          <option value="Verdana">Verdana</option>
+        </select>
+        <select
+          className="rounded border border-slate-700 bg-slate-900 px-2 py-1"
+          defaultValue="3"
+          onChange={(e) => applyCommand('fontSize', e.target.value)}
+        >
+          <option value="1">Très petit</option>
+          <option value="2">Petit</option>
+          <option value="3">Normal</option>
+          <option value="4">Grand</option>
+          <option value="5">Très grand</option>
+          <option value="6">XL</option>
+          <option value="7">XXL</option>
+        </select>
+        <button type="button" className="rounded border border-slate-700 px-2 py-1" onClick={() => applyCommand('bold')}>
+          Gras
+        </button>
+        <button type="button" className="rounded border border-slate-700 px-2 py-1" onClick={() => applyCommand('italic')}>
+          Italique
+        </button>
+        <button type="button" className="rounded border border-slate-700 px-2 py-1" onClick={() => applyCommand('underline')}>
+          Souligné
+        </button>
+        <button
+          type="button"
+          className="rounded border border-slate-700 px-2 py-1"
+          onClick={() => applyCommand('insertUnorderedList')}
+        >
+          Liste
+        </button>
+        <button
+          type="button"
+          className="rounded border border-slate-700 px-2 py-1"
+          onClick={() => applyCommand('insertOrderedList')}
+        >
+          Liste num.
+        </button>
+        <button type="button" className="rounded border border-slate-700 px-2 py-1" onClick={() => applyCommand('formatBlock', 'BLOCKQUOTE')}>
+          Citation
+        </button>
+        <button
+          type="button"
+          className="rounded border border-slate-700 px-2 py-1"
+          onClick={() => {
+            const url = window.prompt('URL du lien');
+            if (url) applyCommand('createLink', url);
+          }}
+        >
+          Lien
+        </button>
+        <button
+          type="button"
+          className="rounded border border-slate-700 px-2 py-1"
+          onClick={() => {
+            const url = window.prompt('URL de l\'image');
+            if (url) applyCommand('insertImage', url);
+          }}
+        >
+          Image
+        </button>
+      </div>
+      <div
+        ref={editorRef}
+        contentEditable
+        suppressContentEditableWarning
+        className="min-h-56 p-3 text-sm leading-7 outline-none"
+        onInput={(e) => onChange((e.target as HTMLDivElement).innerHTML)}
+      />
+    </div>
+  );
+}
+
 export function PostEditorForm({ initialPost }: PostEditorFormProps) {
   const router = useRouter();
   const [post, setPost] = useState<AdminPostDraft>(initialPost ?? createEmptyPost());
@@ -64,10 +194,8 @@ export function PostEditorForm({ initialPost }: PostEditorFormProps) {
     async function loadOptions() {
       const response = await fetch('/api/admin/content/options', { cache: 'no-store' });
       if (!response.ok) {
-        if (response.status === 401) {
-          setError('Session expirée. Reconnexion nécessaire.');
-          router.push('/admin/login');
-        }
+        const body = (await response.json().catch(() => ({}))) as { error?: string };
+        setError(body.error ?? 'Impossible de charger auteurs/catégories.');
         return;
       }
 
@@ -88,10 +216,11 @@ export function PostEditorForm({ initialPost }: PostEditorFormProps) {
     }
 
     void loadOptions();
-  }, [router]);
+  }, []);
 
   const seoTitle = post.seo.seoTitle || post.title;
   const seoDescription = post.seo.seoDescription || post.description;
+  const faqJsonLdPreview = useMemo(() => JSON.stringify(buildFaqJsonLd(post.faqs), null, 2), [post.faqs]);
 
   const preview = useMemo(
     () => ({
@@ -125,7 +254,9 @@ export function PostEditorForm({ initialPost }: PostEditorFormProps) {
       excerpt: post.excerpt,
       contentMarkdown,
       contentJson: {
-        sections: post.sections
+        sections: post.sections,
+        faqs: post.faqs,
+        faqJsonLd: buildFaqJsonLd(post.faqs)
       },
       status: isPublished ? 'PUBLISHED' : 'DRAFT',
       publishedAt: isPublished ? new Date(post.publishedAt).toISOString() : null,
@@ -153,13 +284,6 @@ export function PostEditorForm({ initialPost }: PostEditorFormProps) {
     });
 
     if (!response.ok) {
-      if (response.status === 401) {
-        setError('Session expirée. Reconnexion nécessaire.');
-        router.push('/admin/login');
-        setSaving(false);
-        return;
-      }
-
       const body = (await response.json().catch(() => ({}))) as { message?: string; error?: string };
       setError(body.message ?? body.error ?? 'Erreur API pendant la sauvegarde.');
       setSaving(false);
@@ -207,7 +331,7 @@ export function PostEditorForm({ initialPost }: PostEditorFormProps) {
         </section>
 
         <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-          <h2 className="text-xl font-semibold">Éditeur complet (sections)</h2>
+          <h2 className="text-xl font-semibold">Éditeur enrichi (HTML)</h2>
           <div className="mt-5 space-y-4">
             {post.sections.map((section, index) => (
               <div key={`${index}-${section.heading}`} className="rounded-xl border border-slate-700 p-4">
@@ -224,17 +348,12 @@ export function PostEditorForm({ initialPost }: PostEditorFormProps) {
                     }))
                   }
                 />
-                <textarea
-                  className="mt-3 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2"
-                  rows={6}
-                  placeholder="Contenu de la section"
+                <RichTextEditor
                   value={section.content}
-                  onChange={(e) =>
+                  onChange={(next) =>
                     setPost((p) => ({
                       ...p,
-                      sections: p.sections.map((item, idx) =>
-                        idx === index ? { ...item, content: e.target.value } : item
-                      )
+                      sections: p.sections.map((item, idx) => (idx === index ? { ...item, content: next } : item))
                     }))
                   }
                 />
@@ -247,6 +366,55 @@ export function PostEditorForm({ initialPost }: PostEditorFormProps) {
             >
               Ajouter une section
             </button>
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-xl font-semibold">Module FAQ</h2>
+            <button
+              type="button"
+              className="rounded-lg border border-slate-700 px-3 py-2 text-sm"
+              onClick={() => setPost((p) => ({ ...p, faqs: [...p.faqs, { question: '', answer: '' }] }))}
+            >
+              Ajouter une question
+            </button>
+          </div>
+
+          <div className="mt-5 space-y-3">
+            {post.faqs.length === 0 ? <p className="text-sm text-slate-400">Aucune question pour le moment.</p> : null}
+            {post.faqs.map((faq, index) => (
+              <div key={`${faq.question}-${index}`} className="rounded-xl border border-slate-700 p-4">
+                <input
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2"
+                  placeholder="Question"
+                  value={faq.question}
+                  onChange={(e) =>
+                    setPost((p) => ({
+                      ...p,
+                      faqs: p.faqs.map((item, idx) => (idx === index ? { ...item, question: e.target.value } : item))
+                    }))
+                  }
+                />
+                <textarea
+                  className="mt-3 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2"
+                  rows={4}
+                  placeholder="Réponse"
+                  value={faq.answer}
+                  onChange={(e) =>
+                    setPost((p) => ({
+                      ...p,
+                      faqs: p.faqs.map((item, idx) => (idx === index ? { ...item, answer: e.target.value } : item))
+                    }))
+                  }
+                />
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-5 rounded-lg border border-slate-700 bg-slate-950 p-4">
+            <p className="text-xs uppercase text-slate-400">JSON-LD FAQ généré</p>
+            <pre className="mt-3 overflow-x-auto text-xs text-slate-300">{faqJsonLdPreview}</pre>
           </div>
         </section>
       </div>
