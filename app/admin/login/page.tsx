@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { buildPublicApiUrl } from '@/lib/api/env';
+import { setAdminClientSession } from '@/lib/admin/client-session';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -15,19 +17,28 @@ export default function AdminLoginPage() {
     setLoading(true);
     setError('');
 
-    const response = await fetch('/api/admin/login', {
+    const response = await fetch(buildPublicApiUrl('/admin-api/auth/login'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email: email.trim().toLowerCase(), password })
     });
 
-    const result = (await response.json()) as { error?: string };
+    const result = (await response.json().catch(() => ({}))) as {
+      data?: { token?: string };
+      token?: string;
+      message?: string;
+      error?: string;
+    };
 
-    if (!response.ok) {
-      setError(result.error ?? 'Connexion impossible');
+    const token = result.data?.token ?? result.token;
+
+    if (!response.ok || !token) {
+      setError(result.message ?? result.error ?? 'Connexion impossible');
       setLoading(false);
       return;
     }
+
+    setAdminClientSession(token);
 
     router.push('/admin');
     router.refresh();
