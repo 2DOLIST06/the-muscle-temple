@@ -19,6 +19,7 @@ export interface AdminPostDraft {
   authorSlug: string;
   readingMinutes: number;
   tags: string[];
+  relatedPostSlugs: string[];
   status: AdminPostStatus;
   publishedAt: string;
   updatedAt: string;

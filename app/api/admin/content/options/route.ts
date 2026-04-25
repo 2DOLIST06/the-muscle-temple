@@ -13,7 +13,7 @@ export async function GET() {
     return NextResponse.json({ error: 'Session admin requise.' }, { status: 401 });
   }
 
-  const [authorsRes, categoriesRes] = await Promise.all([
+  const [authorsRes, categoriesRes, tagsRes, mediaRes, postsRes] = await Promise.all([
     fetch(buildApiUrl('/admin-api/authors'), {
       headers: { Authorization: `Bearer ${token}` },
       cache: 'no-store'
@@ -21,18 +21,36 @@ export async function GET() {
     fetch(buildApiUrl('/admin-api/categories'), {
       headers: { Authorization: `Bearer ${token}` },
       cache: 'no-store'
+    }),
+    fetch(buildApiUrl('/admin-api/tags'), {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store'
+    }),
+    fetch(buildApiUrl('/admin-api/media'), {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store'
+    }),
+    fetch(buildApiUrl('/admin-api/posts'), {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store'
     })
   ]);
 
-  if (authorsRes.status === 401 || categoriesRes.status === 401) {
+  if ([authorsRes, categoriesRes, tagsRes, mediaRes, postsRes].some((response) => response.status === 401)) {
     return NextResponse.json({ error: 'Session expirée. Merci de vous reconnecter.' }, { status: 401 });
   }
 
   const authorsPayload = (await authorsRes.json().catch(() => ({}))) as { data?: unknown[] };
   const categoriesPayload = (await categoriesRes.json().catch(() => ({}))) as { data?: unknown[] };
+  const tagsPayload = (await tagsRes.json().catch(() => ({}))) as { data?: unknown[] };
+  const mediaPayload = (await mediaRes.json().catch(() => ({}))) as { data?: unknown[] };
+  const postsPayload = (await postsRes.json().catch(() => ({}))) as { data?: unknown[] };
 
   return NextResponse.json({
     authors: authorsPayload.data ?? [],
-    categories: categoriesPayload.data ?? []
+    categories: categoriesPayload.data ?? [],
+    tags: tagsPayload.data ?? [],
+    media: mediaPayload.data ?? [],
+    posts: postsPayload.data ?? []
   });
 }

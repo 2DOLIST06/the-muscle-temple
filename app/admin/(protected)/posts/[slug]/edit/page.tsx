@@ -22,8 +22,12 @@ interface ApiPost {
     title?: string;
     description?: string;
     canonicalUrl?: string;
+    openGraphImage?: { url?: string };
     noIndex?: boolean;
   };
+  coverImage?: { url?: string };
+  tags?: Array<{ slug?: string; name?: string }>;
+  relatedPosts?: Array<{ slug?: string }>;
   category?: { slug: string };
   author?: { slug: string };
 }
@@ -34,11 +38,11 @@ const apiToDraft = (post: ApiPost): AdminPostDraft => ({
   title: post.title,
   excerpt: post.excerpt ?? '',
   description: post.seo?.description ?? '',
-  coverImage: '',
   categorySlug: post.category?.slug ?? '',
   authorSlug: post.author?.slug ?? '',
   readingMinutes: post.readingTimeMinutes ?? 6,
-  tags: [],
+  tags: post.tags?.map((tag) => tag.slug ?? tag.name ?? '').filter(Boolean) ?? [],
+  relatedPostSlugs: post.relatedPosts?.map((related) => related.slug ?? '').filter(Boolean) ?? [],
   status: post.status === 'PUBLISHED' ? 'published' : 'draft',
   publishedAt: (post.publishedAt ?? post.updatedAt).slice(0, 10),
   updatedAt: post.updatedAt,
@@ -56,9 +60,10 @@ const apiToDraft = (post: ApiPost): AdminPostDraft => ({
     seoTitle: post.seo?.title ?? '',
     seoDescription: post.seo?.description ?? '',
     canonicalUrl: post.seo?.canonicalUrl ?? '',
-    ogImage: '',
+    ogImage: post.seo?.openGraphImage?.url ?? '',
     noIndex: post.seo?.noIndex ?? false
-  }
+  },
+  coverImage: post.coverImage?.url ?? ''
 });
 
 export default function AdminEditPostPage() {
