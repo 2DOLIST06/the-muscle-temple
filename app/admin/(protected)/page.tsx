@@ -3,7 +3,7 @@ import Link from 'next/link';
 export default function AdminDashboardPage() {
   return (
     <section>
-      <p className="text-xs uppercase tracking-wider text-brand-500">Espace administrateur sécurisé</p>
+      <p className="text-xs uppercase tracking-wider text-brand-500">Espace administrateur</p>
       <h1 className="mt-2 text-3xl font-bold">Dashboard</h1>
       <p className="mt-3 max-w-3xl text-slate-300">
         Depuis cet espace, vous pouvez créer et gérer vos articles, préparer les métadonnées SEO, téléverser une image
