@@ -10,26 +10,22 @@ export const metadata: Metadata = buildMetadata({
   path: '/articles'
 });
 
-export default async function ArticlesPage() {
-  const [posts, authors, categories] = await Promise.all([
-    contentRepository.getAllPosts(),
-    contentRepository.getAllAuthors(),
-    contentRepository.getAllCategories()
-  ]);
+export default function ArticlesPage() {
+  const posts = contentRepository.getAllPosts();
 
   return (
     <Container>
       <section className="py-12">
         <h1 className="text-3xl font-bold tracking-tight text-slate-900">Tous les articles</h1>
-        <p className="mt-2 text-slate-600">Articles chargés depuis l’API publique.</p>
+        <p className="mt-2 text-slate-600">Base prête pour brancher une pagination et des filtres connectés à une API.</p>
 
         <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {posts.map((post) => (
             <PostCard
               key={post.id}
               post={post}
-              author={authors.find((author) => author.slug === post.authorSlug)}
-              category={categories.find((category) => category.slug === post.categorySlug)}
+              author={contentRepository.getAuthorBySlug(post.authorSlug)}
+              category={contentRepository.getCategoryBySlug(post.categorySlug)}
             />
           ))}
         </div>

@@ -7,13 +7,12 @@ import { contentRepository } from '@/lib/content/repository';
 import { buildMetadata } from '@/lib/seo/metadata';
 
 export async function generateStaticParams() {
-  const authors = await contentRepository.getAllAuthors();
-  return authors.map((author) => ({ slug: author.slug }));
+  return contentRepository.getAllAuthors().map((author) => ({ slug: author.slug }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const author = await contentRepository.getAuthorBySlug(slug);
+  const author = contentRepository.getAuthorBySlug(slug);
 
   if (!author) {
     return buildMetadata({
@@ -33,14 +32,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function AuthorPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const author = await contentRepository.getAuthorBySlug(slug);
+  const author = contentRepository.getAuthorBySlug(slug);
 
   if (!author) notFound();
 
-  const [posts, categories] = await Promise.all([
-    contentRepository.getPostsByAuthor(slug),
-    contentRepository.getAllCategories()
-  ]);
+  const posts = contentRepository.getPostsByAuthor(slug);
 
   return (
     <Container>
@@ -61,7 +57,7 @@ export default async function AuthorPage({ params }: { params: Promise<{ slug: s
               key={post.id}
               post={post}
               author={author}
-              category={categories.find((category) => category.slug === post.categorySlug)}
+              category={contentRepository.getCategoryBySlug(post.categorySlug)}
             />
           ))}
         </div>
