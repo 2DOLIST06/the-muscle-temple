@@ -2,21 +2,18 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { ADMIN_COOKIE_NAME } from '@/lib/admin/auth';
 import { buildApiUrl } from '@/lib/api/env';
-import { resolveUpstreamAdminToken } from '@/lib/admin/upstream-token';
 
 const unauthorized = () => NextResponse.json({ error: 'Session admin requise.' }, { status: 401 });
 const expiredSession = () => NextResponse.json({ error: 'Session expirée. Merci de vous reconnecter.' }, { status: 401 });
 
-async function getUpstreamToken() {
+async function getAdminToken() {
   const cookieStore = await cookies();
-  const sessionToken = cookieStore.get(ADMIN_COOKIE_NAME)?.value;
-  if (!sessionToken) return null;
-  return resolveUpstreamAdminToken(sessionToken);
+  return cookieStore.get(ADMIN_COOKIE_NAME)?.value;
 }
 
 export async function GET() {
-  const token = await getUpstreamToken();
-  if (!token) return expiredSession();
+  const token = await getAdminToken();
+  if (!token) return unauthorized();
 
   const upstream = await fetch(buildApiUrl('/admin-api/posts'), {
     headers: { Authorization: `Bearer ${token}` },
@@ -33,7 +30,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const token = await getUpstreamToken();
+  const token = await getAdminToken();
   if (!token) return unauthorized();
 
   const body = await request.json().catch(() => ({}));

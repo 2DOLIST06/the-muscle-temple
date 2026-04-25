@@ -16,11 +16,7 @@ export function middleware(request: NextRequest) {
   }
 
   const token = request.cookies.get(ADMIN_COOKIE_NAME)?.value;
-  const expectedStaticToken = process.env.ADMIN_ACCESS_TOKEN;
-
-  const staticAuthenticated = expectedStaticToken ? token === expectedStaticToken : false;
-  const jwtAuthenticated = token ? looksLikeJwt(token) : false;
-  const authenticated = staticAuthenticated || jwtAuthenticated;
+  const authenticated = token ? looksLikeJwt(token) : false;
 
   if (!authenticated) {
     const loginUrl = new URL('/admin/login', request.url);

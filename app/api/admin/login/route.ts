@@ -45,13 +45,9 @@ export async function POST(request: Request) {
 
   const token = payload.data?.token ?? payload.token;
 
-  if (upstream.ok && token) {
-    return withSessionCookie(token);
+  if (!upstream.ok || !token) {
+    return NextResponse.json({ error: payload.message ?? payload.error ?? 'Identifiants invalides.' }, { status: 401 });
   }
 
-  if (staticEmail && staticPassword && staticToken && body.email === staticEmail && body.password === staticPassword) {
-    return withSessionCookie(staticToken);
-  }
-
-  return NextResponse.json({ error: payload.message ?? payload.error ?? 'Identifiants invalides.' }, { status: 401 });
+  return withSessionCookie(token);
 }
