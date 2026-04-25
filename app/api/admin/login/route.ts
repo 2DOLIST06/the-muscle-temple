@@ -28,6 +28,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Email et mot de passe requis.' }, { status: 400 });
   }
 
+  const staticEmail = process.env.ADMIN_EMAIL;
+  const staticPassword = process.env.ADMIN_PASSWORD;
+  const staticToken = process.env.ADMIN_ACCESS_TOKEN;
+
   const upstream = await fetch(buildApiUrl('/admin-api/auth/login'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
