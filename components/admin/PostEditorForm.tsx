@@ -11,7 +11,7 @@ interface PostEditorFormProps {
 interface ContentOption {
   id: string;
   name: string;
-  slug: string;
+  slug?: string;
 }
 
 const createEmptyPost = (): AdminPostDraft => ({
@@ -189,6 +189,8 @@ export function PostEditorForm({ initialPost }: PostEditorFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [authors, setAuthors] = useState<ContentOption[]>([]);
   const [categories, setCategories] = useState<ContentOption[]>([]);
+  const [selectedAuthorId, setSelectedAuthorId] = useState('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState('');
 
   useEffect(() => {
     async function loadOptions() {
@@ -204,13 +206,26 @@ export function PostEditorForm({ initialPost }: PostEditorFormProps) {
         categories: Array<{ id: string; name: string; slug: string }>;
       };
 
-      setAuthors(payload.authors ?? []);
-      setCategories(payload.categories ?? []);
+      const normalizedAuthors = (payload.authors ?? []).map((author) => ({
+        id: author.id,
+        name: author.name ?? 'Auteur',
+        slug: author.slug ?? ''
+      }));
+      const normalizedCategories = (payload.categories ?? []).map((category) => ({
+        id: category.id,
+        name: category.name ?? 'Catégorie',
+        slug: category.slug ?? ''
+      }));
+
+      setAuthors(normalizedAuthors);
+      setCategories(normalizedCategories);
+      setSelectedAuthorId((current) => current || normalizedAuthors[0]?.id || '');
+      setSelectedCategoryId((current) => current || normalizedCategories[0]?.id || '');
 
       setPost((current) => {
         const next = { ...current };
-        if (!next.authorSlug && payload.authors?.[0]) next.authorSlug = payload.authors[0].slug;
-        if (!next.categorySlug && payload.categories?.[0]) next.categorySlug = payload.categories[0].slug;
+        if (!next.authorSlug && normalizedAuthors[0]?.slug) next.authorSlug = normalizedAuthors[0].slug;
+        if (!next.categorySlug && normalizedCategories[0]?.slug) next.categorySlug = normalizedCategories[0].slug;
         return next;
       });
     }
@@ -235,8 +250,10 @@ export function PostEditorForm({ initialPost }: PostEditorFormProps) {
     setSaving(true);
     setError(null);
 
-    const author = authors.find((item) => item.slug === post.authorSlug);
-    const category = categories.find((item) => item.slug === post.categorySlug);
+    const authorById = authors.find((item) => item.id === selectedAuthorId);
+    const categoryById = categories.find((item) => item.id === selectedCategoryId);
+    const author = authorById ?? authors.find((item) => item.slug === post.authorSlug) ?? authors[0];
+    const category = categoryById ?? categories.find((item) => item.slug === post.categorySlug) ?? categories[0];
 
     if (!author || !category) {
       setError('Auteur/catégorie introuvable côté API. Recharge la page et réessaie.');
@@ -425,22 +442,22 @@ export function PostEditorForm({ initialPost }: PostEditorFormProps) {
           <div className="mt-4 grid gap-3">
             <select
               className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2"
-              value={post.categorySlug}
-              onChange={(e) => setPost((p) => ({ ...p, categorySlug: e.target.value }))}
+              value={selectedCategoryId}
+              onChange={(e) => setSelectedCategoryId(e.target.value)}
             >
               {categories.map((category) => (
-                <option key={category.id} value={category.slug}>
+                <option key={category.id} value={category.id}>
                   {category.name}
                 </option>
               ))}
             </select>
             <select
               className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2"
-              value={post.authorSlug}
-              onChange={(e) => setPost((p) => ({ ...p, authorSlug: e.target.value }))}
+              value={selectedAuthorId}
+              onChange={(e) => setSelectedAuthorId(e.target.value)}
             >
               {authors.map((author) => (
-                <option key={author.id} value={author.slug}>
+                <option key={author.id} value={author.id}>
                   {author.name}
                 </option>
               ))}

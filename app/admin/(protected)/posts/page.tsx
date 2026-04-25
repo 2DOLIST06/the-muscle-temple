@@ -42,7 +42,6 @@ export default function AdminPostsListPage() {
   const [apiPosts, setApiPosts] = useState<ApiPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [requiresLogin, setRequiresLogin] = useState(false);
 
   useEffect(() => {
     async function loadPosts() {
@@ -55,7 +54,6 @@ export default function AdminPostsListPage() {
       };
 
       if (!response.ok) {
-        setRequiresLogin(response.status === 401);
         setError(payload.message ?? payload.error ?? 'API indisponible pour le moment.');
         setLoading(false);
         return;
@@ -79,14 +77,6 @@ export default function AdminPostsListPage() {
       </div>
 
       {error ? <p className="mt-4 rounded-lg border border-red-700 bg-red-950/40 p-3 text-sm text-red-200">{error}</p> : null}
-      {requiresLogin ? (
-        <p className="mt-3 text-sm text-slate-300">
-          <Link href="/admin/login" className="text-brand-400 hover:text-brand-300">
-            Se connecter en admin
-          </Link>{' '}
-          pour accéder aux articles stockés en base.
-        </p>
-      ) : null}
 
       <div className="mt-6 overflow-hidden rounded-2xl border border-slate-800">
         <table className="w-full text-left text-sm">
