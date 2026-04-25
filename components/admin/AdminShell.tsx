@@ -1,8 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { clearAdminClientSession } from '@/lib/admin/client-session';
+import { usePathname } from 'next/navigation';
 
 const links = [
   { label: 'Dashboard', href: '/admin' },
@@ -12,14 +11,6 @@ const links = [
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
-
-  const handleLogout = async () => {
-    clearAdminClientSession();
-    await fetch('/api/admin/logout', { method: 'POST' });
-    router.push('/admin');
-    router.refresh();
-  };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
@@ -37,12 +28,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               </Link>
             ))}
           </nav>
-          <button
-            onClick={handleLogout}
-            className="mt-8 rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-          >
-            Se déconnecter
-          </button>
         </aside>
         <main className="p-6 md:p-10">{children}</main>
       </div>

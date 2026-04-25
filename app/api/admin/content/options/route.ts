@@ -1,16 +1,16 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { ADMIN_COOKIE_NAME } from '@/lib/admin/auth';
 import { buildApiUrl } from '@/lib/api/env';
 import { resolveUpstreamAdminToken } from '@/lib/admin/upstream-token';
 
 export async function GET() {
-  const cookieStore = await cookies();
-  const sessionToken = cookieStore.get(ADMIN_COOKIE_NAME)?.value ?? process.env.ADMIN_ACCESS_TOKEN ?? '';
-  const token = sessionToken ? await resolveUpstreamAdminToken(sessionToken) : null;
+  const staticToken = process.env.ADMIN_ACCESS_TOKEN ?? '';
+  const token = staticToken ? await resolveUpstreamAdminToken(staticToken) : null;
 
   if (!token) {
-    return NextResponse.json({ error: 'Session admin requise.' }, { status: 401 });
+    return NextResponse.json(
+      { error: 'ADMIN_ACCESS_TOKEN manquant. Configurez ce token côté serveur pour activer les routes admin.' },
+      { status: 503 }
+    );
   }
 
   const [authorsRes, categoriesRes, tagsRes, mediaRes, postsRes] = await Promise.all([
@@ -35,10 +35,6 @@ export async function GET() {
       cache: 'no-store'
     })
   ]);
-
-  if ([authorsRes, categoriesRes, tagsRes, mediaRes, postsRes].some((response) => response.status === 401)) {
-    return NextResponse.json({ error: 'Session expirée. Merci de vous reconnecter.' }, { status: 401 });
-  }
 
   const authorsPayload = (await authorsRes.json().catch(() => ({}))) as { data?: unknown[] };
   const categoriesPayload = (await categoriesRes.json().catch(() => ({}))) as { data?: unknown[] };

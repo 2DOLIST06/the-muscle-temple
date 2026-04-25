@@ -1,14 +1,8 @@
 import { NextResponse } from 'next/server';
-import { ADMIN_COOKIE_NAME } from '@/lib/admin/auth';
 
 export async function POST() {
-  const response = NextResponse.json({ ok: true });
-  response.cookies.set({
-    name: ADMIN_COOKIE_NAME,
-    value: '',
-    maxAge: 0,
-    path: '/'
+  return NextResponse.json({
+    ok: true,
+    message: 'Authentification admin désactivée : aucune session à fermer.'
   });
-
-  return response;
 }

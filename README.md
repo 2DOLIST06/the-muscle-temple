@@ -111,20 +111,20 @@ Le projet est prêt à être déployé tel quel sur Vercel (build Next.js standa
 
 ---
 
-## Espace admin sécurisé
+## Espace admin (sans authentification front)
 
 Routes admin disponibles :
 
-- `/admin/login`
 - `/admin`
 - `/admin/posts`
 - `/admin/posts/new`
 - `/admin/posts/[slug]/edit`
 
-### Sécurisation de l’accès
+Route de compatibilité :
 
-L’accès admin est protégé par un cookie `httpOnly` + middleware.
-Le login est relayé vers l’API backend (`/admin-api/auth/login`).
+- `/admin/login` redirige automatiquement vers `/admin/posts`.
+
+### Authentification
 
 Variables recommandées :
 
@@ -132,7 +132,7 @@ Variables recommandées :
 NEXT_PUBLIC_API_URL=https://the-muscle-temple-api-1.onrender.com
 ```
 
-Option legacy (si vous voulez verrouiller un token statique côté front) :
+Token serveur requis pour les routes API admin (pas de login utilisateur côté front) :
 
 ```bash
 ADMIN_ACCESS_TOKEN=une-cle-longue-aleatoire-et-secrete
@@ -140,7 +140,6 @@ ADMIN_ACCESS_TOKEN=une-cle-longue-aleatoire-et-secrete
 
 ### Fonctionnalités admin incluses
 
-- Connexion sécurisée (email/mot de passe)
 - Dashboard admin
 - Liste des articles
 - Création / édition d’article

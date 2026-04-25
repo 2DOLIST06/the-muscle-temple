@@ -6,10 +6,13 @@ import { SectionHeading } from '@/components/blog/SectionHeading';
 import { Container } from '@/components/ui/Container';
 import { contentRepository } from '@/lib/content/repository';
 
-export default function HomePage() {
-  const featuredPosts = contentRepository.getFeaturedPosts(3);
-  const categories = contentRepository.getAllCategories();
-  const recentPosts = contentRepository.getRecentPosts(4);
+export default async function HomePage() {
+  const [featuredPosts, categories, recentPosts, authors] = await Promise.all([
+    contentRepository.getFeaturedPosts(3),
+    contentRepository.getAllCategories(),
+    contentRepository.getRecentPosts(4),
+    contentRepository.getAllAuthors()
+  ]);
   const latestPost = recentPosts[0];
 
   return (
@@ -40,8 +43,8 @@ export default function HomePage() {
               <PostCard
                 key={post.id}
                 post={post}
-                author={contentRepository.getAuthorBySlug(post.authorSlug)}
-                category={contentRepository.getCategoryBySlug(post.categorySlug)}
+                author={authors.find((author) => author.slug === post.authorSlug)}
+                category={categories.find((category) => category.slug === post.categorySlug)}
               />
             ))}
           </div>
@@ -66,8 +69,8 @@ export default function HomePage() {
             <div className="mt-6">
               <PostCard
                 post={latestPost}
-                author={contentRepository.getAuthorBySlug(latestPost.authorSlug)}
-                category={contentRepository.getCategoryBySlug(latestPost.categorySlug)}
+                author={authors.find((author) => author.slug === latestPost.authorSlug)}
+                category={categories.find((category) => category.slug === latestPost.categorySlug)}
               />
             </div>
           </Container>

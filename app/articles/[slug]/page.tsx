@@ -12,12 +12,13 @@ import { buildMetadata } from '@/lib/seo/metadata';
 import { blogPostingJsonLd, breadcrumbJsonLd } from '@/lib/seo/jsonld';
 
 export async function generateStaticParams() {
-  return contentRepository.getAllPosts().map((post) => ({ slug: post.slug }));
+  const posts = await contentRepository.getAllPosts();
+  return posts.map((post) => ({ slug: post.slug }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const post = contentRepository.getPostBySlug(slug);
+  const post = await contentRepository.getPostBySlug(slug);
 
   if (!post) {
     return buildMetadata({
@@ -42,15 +43,17 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function ArticlePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const post = contentRepository.getPostBySlug(slug);
+  const post = await contentRepository.getPostBySlug(slug);
 
   if (!post) {
     notFound();
   }
 
-  const author = contentRepository.getAuthorBySlug(post.authorSlug);
-  const category = contentRepository.getCategoryBySlug(post.categorySlug);
-  const relatedPosts = contentRepository.getRelatedPosts(post, 3);
+  const [author, category, relatedPosts] = await Promise.all([
+    contentRepository.getAuthorBySlug(post.authorSlug),
+    contentRepository.getCategoryBySlug(post.categorySlug),
+    contentRepository.getRelatedPosts(post, 3)
+  ]);
 
   const postJsonLd = blogPostingJsonLd({
     title: post.title,
