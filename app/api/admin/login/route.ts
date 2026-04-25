@@ -44,7 +44,6 @@ export async function POST(request: Request) {
     data?: { token?: string };
     token?: string;
     message?: string;
-    error?: string;
   };
 
   const token = payload.data?.token ?? payload.token;
