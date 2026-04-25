@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { clearStoredPosts, getStoredPosts } from '@/components/admin/post-storage';
 import type { AdminPostDraft } from '@/types/admin';
 
 interface ApiPost {
@@ -43,10 +42,6 @@ export default function AdminPostsListPage() {
   const [apiPosts, setApiPosts] = useState<ApiPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [migrating, setMigrating] = useState(false);
-  const [showMigrationNotice, setShowMigrationNotice] = useState(true);
-
-  const localPosts = useMemo(() => getStoredPosts(), []);
 
   useEffect(() => {
     async function loadPosts() {
@@ -59,7 +54,7 @@ export default function AdminPostsListPage() {
       };
 
       if (!response.ok) {
-        setError(payload.message ?? payload.error ?? 'API indisponible pour le moment. Affichage des articles locaux.');
+        setError(payload.message ?? payload.error ?? 'API indisponible pour le moment.');
         setLoading(false);
         return;
       }
@@ -70,68 +65,7 @@ export default function AdminPostsListPage() {
 
     void loadPosts();
   }, []);
-
-  const migrateLocalPosts = async () => {
-    if (!localPosts.length) return;
-
-    setMigrating(true);
-    setError(null);
-
-    const optionsResponse = await fetch('/api/admin/content/options', { cache: 'no-store' });
-    const optionsPayload = (await optionsResponse.json().catch(() => ({}))) as {
-      authors?: Array<{ id: string }>;
-      categories?: Array<{ id: string }>;
-      error?: string;
-    };
-
-    const fallbackAuthorId = optionsPayload.authors?.[0]?.id;
-    const fallbackCategoryId = optionsPayload.categories?.[0]?.id;
-
-    if (!fallbackAuthorId || !fallbackCategoryId) {
-      setError(optionsPayload.error ?? 'Impossible de migrer: auteur/catégorie API manquants.');
-      setMigrating(false);
-      return;
-    }
-
-    for (const post of localPosts) {
-      const payload = {
-        title: post.title,
-        slug: post.slug,
-        excerpt: post.excerpt,
-        contentMarkdown: post.sections.map((section) => `${section.heading}\n\n${section.content}`).join('\n\n'),
-        contentJson: { sections: post.sections, faqs: post.faqs },
-        status: post.status === 'published' ? 'PUBLISHED' : 'DRAFT',
-        publishedAt: post.status === 'published' ? new Date(post.publishedAt).toISOString() : null,
-        readingTimeMinutes: post.readingMinutes,
-        authorId: fallbackAuthorId,
-        categoryId: fallbackCategoryId,
-        seo: {
-          title: post.seo.seoTitle || post.title,
-          description: post.seo.seoDescription || post.description,
-          canonicalUrl: post.seo.canonicalUrl,
-          noIndex: post.seo.noIndex
-        }
-      };
-
-      const response = await fetch('/api/admin/posts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        setError(`Migration interrompue sur l'article "${post.title}".`);
-        setMigrating(false);
-        return;
-      }
-    }
-
-    clearStoredPosts();
-    setMigrating(false);
-    window.location.reload();
-  };
-
-  const allPosts = useMemo(() => (apiPosts.length > 0 ? apiPosts.map(toLocalDraft) : localPosts), [apiPosts, localPosts]);
+  const allPosts = useMemo(() => apiPosts.map(toLocalDraft), [apiPosts]);
 
   return (
     <section>
@@ -141,27 +75,6 @@ export default function AdminPostsListPage() {
           Nouvel article
         </Link>
       </div>
-
-      {showMigrationNotice && localPosts.length > 0 ? (
-        <div className="mt-4 rounded-xl border border-amber-700 bg-amber-950/40 p-4 text-sm text-amber-200">
-          <p>{localPosts.length} article(s) en localStorage. Migration API recommandée mais non obligatoire.</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button
-              onClick={migrateLocalPosts}
-              disabled={migrating}
-              className="rounded-lg border border-amber-500 px-3 py-2 font-semibold"
-            >
-              {migrating ? 'Migration en cours…' : 'Migrer vers la base'}
-            </button>
-            <button
-              onClick={() => setShowMigrationNotice(false)}
-              className="rounded-lg border border-amber-500/70 px-3 py-2"
-            >
-              Continuer sans migrer
-            </button>
-          </div>
-        </div>
-      ) : null}
 
       {error ? <p className="mt-4 rounded-lg border border-red-700 bg-red-950/40 p-3 text-sm text-red-200">{error}</p> : null}
 
