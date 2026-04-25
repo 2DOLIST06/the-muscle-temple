@@ -1,7 +1,8 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { extractApiMessage } from '@/lib/admin/api-contract';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -9,6 +10,14 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sessionMessage, setSessionMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('reason') === 'session-expired') {
+      setSessionMessage(params.get('message') ?? 'Session expirée, reconnectez-vous.');
+    }
+  }, []);
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -21,10 +30,10 @@ export default function AdminLoginPage() {
       body: JSON.stringify({ email, password })
     });
 
-    const payload = (await response.json().catch(() => ({}))) as { message?: string };
+    const payload = (await response.json().catch(() => ({}))) as unknown;
 
     if (!response.ok) {
-      setError(payload.message ?? 'Connexion impossible.');
+      setError(extractApiMessage(payload, 'Connexion impossible.'));
       setLoading(false);
       return;
     }
@@ -37,6 +46,11 @@ export default function AdminLoginPage() {
     <section className="mx-auto mt-10 w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-6">
       <h1 className="text-2xl font-bold">Connexion admin</h1>
       <p className="mt-2 text-sm text-slate-300">Connectez-vous pour gérer les articles en base.</p>
+      {sessionMessage ? (
+        <p className="mt-4 rounded-lg border border-amber-700 bg-amber-950/30 p-3 text-sm text-amber-200">
+          {sessionMessage}
+        </p>
+      ) : null}
 
       <form className="mt-6 space-y-4" onSubmit={onSubmit}>
         <label className="block text-sm">

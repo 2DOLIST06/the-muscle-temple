@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
-import { ADMIN_COOKIE_NAME } from '@/lib/admin/auth';
+import { ADMIN_COOKIE_NAME, ADMIN_SESSION_MAX_AGE } from '@/lib/admin/auth';
 import { buildApiUrl } from '@/lib/api/env';
-
-const SESSION_MAX_AGE = 60 * 60 * 12;
+import { extractApiMessage, extractToken } from '@/lib/admin/api-contract';
 
 const withSessionCookie = (token: string) => {
   const response = NextResponse.json({ ok: true });
@@ -13,14 +12,14 @@ const withSessionCookie = (token: string) => {
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
     path: '/',
-    maxAge: SESSION_MAX_AGE
+    maxAge: ADMIN_SESSION_MAX_AGE
   });
 
   return response;
 };
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as { email?: string; password?: string };
+  const body = (await request.json().catch(() => ({}))) as { email?: string; password?: string };
 
   const normalizedEmail = body.email?.trim().toLowerCase();
   const password = body.password ?? '';
@@ -40,17 +39,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: 'Service d’authentification indisponible. Réessayez plus tard.' }, { status: 503 });
   }
 
-  const payload = (await upstream.json().catch(() => ({}))) as {
-    data?: { token?: string };
-    token?: string;
-    message?: string;
-  };
-
-  const token = payload.data?.token ?? payload.token;
+  const payload = (await upstream.json().catch(() => ({}))) as unknown;
+  const token = extractToken(payload);
 
   if (!upstream.ok) {
     const status = upstream.status === 400 || upstream.status === 401 ? upstream.status : 502;
-    return NextResponse.json({ message: payload.message ?? `Authentication failed (${upstream.status}).` }, { status });
+    return NextResponse.json({ message: extractApiMessage(payload, `Authentication failed (${upstream.status}).`) }, { status });
   }
 
   if (!token) {

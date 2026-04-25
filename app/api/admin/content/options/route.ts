@@ -10,7 +10,7 @@ export async function GET() {
   const token = sessionToken ? await resolveUpstreamAdminToken(sessionToken) : null;
 
   if (!token) {
-    return NextResponse.json({ error: 'Session admin requise.' }, { status: 401 });
+    return NextResponse.json({ message: 'Session admin requise.' }, { status: 401 });
   }
 
   const [authorsRes, categoriesRes, tagsRes, mediaRes, postsRes] = await Promise.all([
@@ -37,7 +37,7 @@ export async function GET() {
   ]);
 
   if ([authorsRes, categoriesRes, tagsRes, mediaRes, postsRes].some((response) => response.status === 401)) {
-    return NextResponse.json({ error: 'Session expirée. Merci de vous reconnecter.' }, { status: 401 });
+    return NextResponse.json({ message: 'Session expirée. Merci de vous reconnecter.' }, { status: 401 });
   }
 
   const authorsPayload = (await authorsRes.json().catch(() => ({}))) as { data?: unknown[] };

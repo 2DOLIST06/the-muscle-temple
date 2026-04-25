@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { AdminPostDraft } from '@/types/admin';
+import { extractApiMessage } from '@/lib/admin/api-contract';
+import { handleAdminUnauthorized } from '@/lib/admin/client-auth';
 
 interface PostEditorFormProps {
   initialPost?: AdminPostDraft;
@@ -204,9 +206,13 @@ export function PostEditorForm({ initialPost }: PostEditorFormProps) {
   useEffect(() => {
     async function loadOptions() {
       const response = await fetch('/api/admin/content/options', { cache: 'no-store' });
+      if (response.status === 401) {
+        await handleAdminUnauthorized(router, 'Session expirée, reconnectez-vous.');
+        return;
+      }
       if (!response.ok) {
-        const body = (await response.json().catch(() => ({}))) as { error?: string };
-        setError(body.error ?? 'Impossible de charger auteurs/catégories.');
+        const body = (await response.json().catch(() => ({}))) as unknown;
+        setError(extractApiMessage(body, 'Impossible de charger auteurs/catégories.'));
         return;
       }
 
@@ -295,7 +301,7 @@ export function PostEditorForm({ initialPost }: PostEditorFormProps) {
     }
 
     void loadOptions();
-  }, [initialPost]);
+  }, [initialPost, router]);
 
   const seoTitle = post.seo.seoTitle || post.title;
   const seoDescription = post.seo.seoDescription || post.description;
@@ -365,9 +371,15 @@ export function PostEditorForm({ initialPost }: PostEditorFormProps) {
       body: JSON.stringify(payload)
     });
 
+    if (response.status === 401) {
+      await handleAdminUnauthorized(router, 'Session expirée, reconnectez-vous.');
+      setSaving(false);
+      return;
+    }
+
     if (!response.ok) {
-      const body = (await response.json().catch(() => ({}))) as { message?: string; error?: string };
-      setError(body.message ?? body.error ?? 'Erreur API pendant la sauvegarde.');
+      const body = (await response.json().catch(() => ({}))) as unknown;
+      setError(extractApiMessage(body, 'Erreur API pendant la sauvegarde.'));
       setSaving(false);
       return;
     }

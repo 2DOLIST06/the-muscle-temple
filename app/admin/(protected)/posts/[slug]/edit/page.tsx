@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { PostEditorForm } from '@/components/admin/PostEditorForm';
 import type { AdminPostDraft } from '@/types/admin';
+import { handleAdminUnauthorized } from '@/lib/admin/client-auth';
 
 interface ApiPost {
   id: string;
@@ -68,6 +69,7 @@ const apiToDraft = (post: ApiPost): AdminPostDraft => ({
 
 export default function AdminEditPostPage() {
   const params = useParams<{ slug: string }>();
+  const router = useRouter();
   const [post, setPost] = useState<AdminPostDraft | undefined>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -75,6 +77,10 @@ export default function AdminEditPostPage() {
   useEffect(() => {
     async function loadPost() {
       const response = await fetch('/api/admin/posts', { cache: 'no-store' });
+      if (response.status === 401) {
+        await handleAdminUnauthorized(router, 'Session expirée, reconnectez-vous.');
+        return;
+      }
       if (!response.ok) {
         setError('Impossible de charger cet article depuis l’API pour le moment.');
         setLoading(false);
@@ -88,7 +94,7 @@ export default function AdminEditPostPage() {
     }
 
     void loadPost();
-  }, [params.slug]);
+  }, [params.slug, router]);
 
   return (
     <section>

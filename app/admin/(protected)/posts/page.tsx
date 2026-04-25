@@ -1,8 +1,11 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import type { AdminPostDraft } from '@/types/admin';
+import { extractApiMessage } from '@/lib/admin/api-contract';
+import { handleAdminUnauthorized } from '@/lib/admin/client-auth';
 
 interface ApiPost {
   id: string;
@@ -40,6 +43,7 @@ const toLocalDraft = (post: ApiPost): AdminPostDraft => ({
 });
 
 export default function AdminPostsListPage() {
+  const router = useRouter();
   const [apiPosts, setApiPosts] = useState<ApiPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,14 +52,15 @@ export default function AdminPostsListPage() {
     async function loadPosts() {
       setLoading(true);
       const response = await fetch('/api/admin/posts', { cache: 'no-store' });
-      const payload = (await response.json().catch(() => ({}))) as {
-        data?: ApiPost[];
-        message?: string;
-        error?: string;
-      };
+      const payload = (await response.json().catch(() => ({}))) as { data?: ApiPost[] };
+
+      if (response.status === 401) {
+        await handleAdminUnauthorized(router, 'Session expirée, reconnectez-vous.');
+        return;
+      }
 
       if (!response.ok) {
-        setError(payload.message ?? payload.error ?? 'API indisponible pour le moment.');
+        setError(extractApiMessage(payload, 'API indisponible pour le moment.'));
         setLoading(false);
         return;
       }
@@ -65,7 +70,7 @@ export default function AdminPostsListPage() {
     }
 
     void loadPosts();
-  }, []);
+  }, [router]);
   const allPosts = useMemo(() => apiPosts.map(toLocalDraft), [apiPosts]);
 
   return (

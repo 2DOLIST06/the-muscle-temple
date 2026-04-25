@@ -10,8 +10,8 @@ export const metadata: Metadata = buildMetadata({
   path: '/categories'
 });
 
-export default function CategoriesPage() {
-  const categories = contentRepository.getAllCategories();
+export default async function CategoriesPage() {
+  const categories = await contentRepository.getAllCategories();
 
   return (
     <Container>
