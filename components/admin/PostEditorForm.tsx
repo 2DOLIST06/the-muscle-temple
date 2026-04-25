@@ -12,6 +12,7 @@ interface ContentOption {
   id: string;
   name: string;
   slug?: string;
+  url?: string;
 }
 
 const createEmptyPost = (): AdminPostDraft => ({
@@ -25,6 +26,7 @@ const createEmptyPost = (): AdminPostDraft => ({
   authorSlug: '',
   readingMinutes: 6,
   tags: [],
+  relatedPostSlugs: [],
   status: 'draft',
   publishedAt: new Date().toISOString().slice(0, 10),
   updatedAt: new Date().toISOString(),
@@ -189,8 +191,15 @@ export function PostEditorForm({ initialPost }: PostEditorFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [authors, setAuthors] = useState<ContentOption[]>([]);
   const [categories, setCategories] = useState<ContentOption[]>([]);
+  const [tags, setTags] = useState<ContentOption[]>([]);
+  const [media, setMedia] = useState<ContentOption[]>([]);
+  const [relatedPosts, setRelatedPosts] = useState<ContentOption[]>([]);
   const [selectedAuthorId, setSelectedAuthorId] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [selectedRelatedPostIds, setSelectedRelatedPostIds] = useState<string[]>([]);
+  const [selectedCoverImageId, setSelectedCoverImageId] = useState('');
+  const [selectedOgImageId, setSelectedOgImageId] = useState('');
 
   useEffect(() => {
     async function loadOptions() {
@@ -204,6 +213,9 @@ export function PostEditorForm({ initialPost }: PostEditorFormProps) {
       const payload = (await response.json()) as {
         authors: Array<{ id: string; name: string; slug: string }>;
         categories: Array<{ id: string; name: string; slug: string }>;
+        tags: Array<{ id: string; name: string; slug: string }>;
+        media: Array<{ id: string; url: string; altText?: string | null }>;
+        posts: Array<{ id: string; slug: string; title: string }>;
       };
 
       const normalizedAuthors = (payload.authors ?? []).map((author) => ({
@@ -216,11 +228,27 @@ export function PostEditorForm({ initialPost }: PostEditorFormProps) {
         name: category.name ?? 'Catégorie',
         slug: category.slug ?? ''
       }));
+      const normalizedTags = (payload.tags ?? []).map((tag) => ({
+        id: tag.id,
+        name: tag.name ?? 'Tag',
+        slug: tag.slug ?? ''
+      }));
+      const normalizedMedia = (payload.media ?? []).map((item) => ({
+        id: item.id,
+        name: item.altText?.trim() || item.url,
+        url: item.url
+      }));
+      const normalizedRelatedPosts = (payload.posts ?? []).map((item) => ({
+        id: item.id,
+        name: item.title ?? item.slug,
+        slug: item.slug
+      }));
 
       setAuthors(normalizedAuthors);
       setCategories(normalizedCategories);
-      setSelectedAuthorId((current) => current || normalizedAuthors[0]?.id || '');
-      setSelectedCategoryId((current) => current || normalizedCategories[0]?.id || '');
+      setTags(normalizedTags);
+      setMedia(normalizedMedia);
+      setRelatedPosts(normalizedRelatedPosts);
 
       setPost((current) => {
         const next = { ...current };
@@ -228,10 +256,46 @@ export function PostEditorForm({ initialPost }: PostEditorFormProps) {
         if (!next.categorySlug && normalizedCategories[0]?.slug) next.categorySlug = normalizedCategories[0].slug;
         return next;
       });
+
+      const initialTagSlugs = initialPost?.tags ?? [];
+      const initialRelatedSlugs = initialPost?.relatedPostSlugs ?? [];
+      const initialCoverImage = initialPost?.coverImage ?? '';
+      const initialOgImage = initialPost?.seo.ogImage ?? '';
+      const initialAuthorSlug = initialPost?.authorSlug ?? '';
+      const initialCategorySlug = initialPost?.categorySlug ?? '';
+
+      setSelectedAuthorId((current) => {
+        if (current) return current;
+        const match = normalizedAuthors.find((author) => author.slug === initialAuthorSlug);
+        return match?.id ?? normalizedAuthors[0]?.id ?? '';
+      });
+      setSelectedCategoryId((current) => {
+        if (current) return current;
+        const match = normalizedCategories.find((category) => category.slug === initialCategorySlug);
+        return match?.id ?? normalizedCategories[0]?.id ?? '';
+      });
+      setSelectedTagIds((current) => {
+        if (current.length > 0) return current;
+        const wanted = new Set(initialTagSlugs);
+        return normalizedTags.filter((tag) => wanted.has(tag.slug || tag.name)).map((tag) => tag.id);
+      });
+      setSelectedRelatedPostIds((current) => {
+        if (current.length > 0) return current;
+        const wanted = new Set(initialRelatedSlugs);
+        return normalizedRelatedPosts.filter((item) => wanted.has(item.slug || '')).map((item) => item.id);
+      });
+      setSelectedCoverImageId((current) => {
+        if (current) return current;
+        return normalizedMedia.find((item) => item.url === initialCoverImage)?.id ?? '';
+      });
+      setSelectedOgImageId((current) => {
+        if (current) return current;
+        return normalizedMedia.find((item) => item.url === initialOgImage)?.id ?? '';
+      });
     }
 
     void loadOptions();
-  }, []);
+  }, [initialPost]);
 
   const seoTitle = post.seo.seoTitle || post.title;
   const seoDescription = post.seo.seoDescription || post.description;
@@ -280,13 +344,14 @@ export function PostEditorForm({ initialPost }: PostEditorFormProps) {
       readingTimeMinutes: post.readingMinutes,
       authorId: author.id,
       categoryId: category.id,
-      coverImageId: null,
-      tagIds: [],
-      relatedPostIds: [],
+      coverImageId: selectedCoverImageId || null,
+      tagIds: selectedTagIds,
+      relatedPostIds: selectedRelatedPostIds.filter((id) => id !== post.id),
       seo: {
         title: post.seo.seoTitle || post.title,
         description: post.seo.seoDescription || post.description,
         canonicalUrl: post.seo.canonicalUrl,
+        openGraphImageId: selectedOgImageId || '',
         noIndex: post.seo.noIndex
       }
     };
@@ -475,6 +540,64 @@ export function PostEditorForm({ initialPost }: PostEditorFormProps) {
               value={post.publishedAt}
               onChange={(e) => setPost((p) => ({ ...p, publishedAt: e.target.value }))}
             />
+            <select
+              className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2"
+              value={selectedCoverImageId}
+              onChange={(e) => {
+                const nextId = e.target.value;
+                setSelectedCoverImageId(nextId);
+                const selectedMedia = media.find((item) => item.id === nextId);
+                setPost((p) => ({ ...p, coverImage: selectedMedia?.url ?? '' }));
+              }}
+            >
+              <option value="">Image de couverture (aucune)</option>
+              {media.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+            <label className="text-xs text-slate-400">{post.coverImage || 'Aucune image de couverture sélectionnée.'}</label>
+            <div className="rounded-lg border border-slate-700 bg-slate-950 p-3">
+              <p className="text-xs uppercase text-slate-400">Tags</p>
+              <div className="mt-2 grid max-h-40 gap-2 overflow-auto">
+                {tags.map((tag) => (
+                  <label key={tag.id} className="flex items-center gap-2 text-sm text-slate-300">
+                    <input
+                      type="checkbox"
+                      checked={selectedTagIds.includes(tag.id)}
+                      onChange={(e) =>
+                        setSelectedTagIds((current) =>
+                          e.target.checked ? [...current, tag.id] : current.filter((id) => id !== tag.id)
+                        )
+                      }
+                    />
+                    {tag.name}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-lg border border-slate-700 bg-slate-950 p-3">
+              <p className="text-xs uppercase text-slate-400">Articles liés</p>
+              <div className="mt-2 grid max-h-40 gap-2 overflow-auto">
+                {relatedPosts
+                  .filter((item) => item.id !== post.id)
+                  .map((item) => (
+                    <label key={item.id} className="flex items-center gap-2 text-sm text-slate-300">
+                      <input
+                        type="checkbox"
+                        checked={selectedRelatedPostIds.includes(item.id)}
+                        onChange={(e) =>
+                          setSelectedRelatedPostIds((current) =>
+                            e.target.checked ? [...current, item.id] : current.filter((id) => id !== item.id)
+                          )
+                        }
+                      />
+                      {item.name}
+                    </label>
+                  ))}
+              </div>
+            </div>
           </div>
         </section>
 
@@ -500,6 +623,24 @@ export function PostEditorForm({ initialPost }: PostEditorFormProps) {
               value={post.seo.canonicalUrl}
               onChange={(e) => setPost((p) => ({ ...p, seo: { ...p.seo, canonicalUrl: e.target.value } }))}
             />
+            <select
+              className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2"
+              value={selectedOgImageId}
+              onChange={(e) => {
+                const nextId = e.target.value;
+                setSelectedOgImageId(nextId);
+                const selectedMedia = media.find((item) => item.id === nextId);
+                setPost((p) => ({ ...p, seo: { ...p.seo, ogImage: selectedMedia?.url ?? '' } }));
+              }}
+            >
+              <option value="">Image Open Graph (aucune)</option>
+              {media.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+            <label className="text-xs text-slate-400">{post.seo.ogImage || 'Aucune image Open Graph sélectionnée.'}</label>
             <label className="flex items-center gap-2 text-sm text-slate-300">
               <input
                 type="checkbox"

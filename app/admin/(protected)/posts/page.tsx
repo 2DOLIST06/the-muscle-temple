@@ -24,6 +24,7 @@ const toLocalDraft = (post: ApiPost): AdminPostDraft => ({
   authorSlug: '',
   readingMinutes: 6,
   tags: [],
+  relatedPostSlugs: [],
   status: post.status === 'PUBLISHED' ? 'published' : 'draft',
   publishedAt: (post.publishedAt ?? post.updatedAt).slice(0, 10),
   updatedAt: post.updatedAt,
