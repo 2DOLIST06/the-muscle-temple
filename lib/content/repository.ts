@@ -146,8 +146,27 @@ async function fetchCollection<T>(path: string): Promise<T[]> {
 
     if (!response.ok) return [];
 
-    const payload = (await response.json().catch(() => ({}))) as { data?: T[] };
-    return payload.data ?? [];
+    const payload = (await response.json().catch(() => ({}))) as {
+      data?: unknown;
+      items?: unknown;
+      posts?: unknown;
+      categories?: unknown;
+      authors?: unknown;
+    };
+
+    const candidates = [payload.data, payload.items, payload.posts, payload.categories, payload.authors];
+    for (const candidate of candidates) {
+      if (Array.isArray(candidate)) return candidate as T[];
+      if (candidate && typeof candidate === 'object') {
+        const nested = candidate as { items?: unknown; posts?: unknown; categories?: unknown; authors?: unknown };
+        const nestedCandidates = [nested.items, nested.posts, nested.categories, nested.authors];
+        for (const nestedCandidate of nestedCandidates) {
+          if (Array.isArray(nestedCandidate)) return nestedCandidate as T[];
+        }
+      }
+    }
+
+    return [];
   } catch {
     return [];
   }
@@ -159,8 +178,24 @@ async function fetchPostBySlug(slug: string): Promise<ApiPost | null> {
       next: { revalidate: 60 }
     });
     if (!response.ok) return null;
-    const payload = (await response.json().catch(() => ({}))) as { data?: ApiPost };
-    return payload.data ?? null;
+    const payload = (await response.json().catch(() => ({}))) as {
+      data?: unknown;
+      post?: unknown;
+    };
+
+    if (payload.data && typeof payload.data === 'object' && !Array.isArray(payload.data)) {
+      const data = payload.data as { post?: unknown };
+      if (data.post && typeof data.post === 'object' && !Array.isArray(data.post)) {
+        return data.post as ApiPost;
+      }
+      return payload.data as ApiPost;
+    }
+
+    if (payload.post && typeof payload.post === 'object' && !Array.isArray(payload.post)) {
+      return payload.post as ApiPost;
+    }
+
+    return null;
   } catch {
     return null;
   }
