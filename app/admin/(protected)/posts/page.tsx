@@ -30,6 +30,7 @@ const toLocalDraft = (post: ApiPost): AdminPostDraft => ({
   publishedAt: (post.publishedAt ?? post.updatedAt).slice(0, 10),
   updatedAt: post.updatedAt,
   sections: [{ heading: 'Introduction', content: '' }],
+  faqs: [],
   seo: {
     seoTitle: '',
     seoDescription: '',
@@ -104,7 +105,7 @@ export default function AdminPostsListPage() {
         slug: post.slug,
         excerpt: post.excerpt,
         contentMarkdown: post.sections.map((section) => `${section.heading}\n\n${section.content}`).join('\n\n'),
-        contentJson: { sections: post.sections },
+        contentJson: { sections: post.sections, faqs: post.faqs },
         status: post.status === 'published' ? 'PUBLISHED' : 'DRAFT',
         publishedAt: post.status === 'published' ? new Date(post.publishedAt).toISOString() : null,
         readingTimeMinutes: post.readingMinutes,

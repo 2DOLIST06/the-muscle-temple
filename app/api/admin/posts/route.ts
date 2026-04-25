@@ -2,13 +2,16 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { ADMIN_COOKIE_NAME } from '@/lib/admin/auth';
 import { buildApiUrl } from '@/lib/api/env';
+import { resolveUpstreamAdminToken } from '@/lib/admin/upstream-token';
 
 const unauthorized = () => NextResponse.json({ error: 'Session admin requise.' }, { status: 401 });
 const expiredSession = () => NextResponse.json({ error: 'Session expirée. Merci de vous reconnecter.' }, { status: 401 });
 
 async function getAdminToken() {
   const cookieStore = await cookies();
-  return cookieStore.get(ADMIN_COOKIE_NAME)?.value;
+  const sessionToken = cookieStore.get(ADMIN_COOKIE_NAME)?.value ?? process.env.ADMIN_ACCESS_TOKEN ?? '';
+  if (!sessionToken) return null;
+  return resolveUpstreamAdminToken(sessionToken);
 }
 
 export async function GET() {
