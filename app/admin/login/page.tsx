@@ -24,9 +24,13 @@ export default function AdminLoginPage() {
     });
 
     const result = (await response.json().catch(() => ({}))) as {
+      data?: { token?: string };
+      token?: string;
       message?: string;
       error?: string;
     };
+
+    const token = result.data?.token ?? result.token;
 
     if (!response.ok) {
       setError(result.message ?? result.error ?? 'Connexion impossible');
@@ -34,7 +38,9 @@ export default function AdminLoginPage() {
       return;
     }
 
-    setAdminClientSession(token);
+    if (token) {
+      setAdminClientSession(token);
+    }
 
     router.push('/admin');
     router.refresh();
