@@ -22,7 +22,9 @@ const withSessionCookie = (token: string) => {
 export async function POST(request: Request) {
   const body = (await request.json()) as { email?: string; password?: string };
 
-  if (!body.email || !body.password) {
+  const normalizedEmail = body.email?.trim().toLowerCase();
+
+  if (!normalizedEmail || !body.password) {
     return NextResponse.json({ error: 'Email et mot de passe requis.' }, { status: 400 });
   }
 
@@ -33,7 +35,7 @@ export async function POST(request: Request) {
   const upstream = await fetch(buildApiUrl('/admin-api/auth/login'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: body.email, password: body.password })
+    body: JSON.stringify({ email: normalizedEmail, password: body.password })
   });
 
   const payload = (await upstream.json().catch(() => ({}))) as {
