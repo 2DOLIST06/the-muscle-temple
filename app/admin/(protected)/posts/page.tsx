@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { clearStoredPosts, getStoredPosts } from '@/components/admin/post-storage';
 import type { AdminPostDraft } from '@/types/admin';
 
@@ -41,11 +40,11 @@ const toLocalDraft = (post: ApiPost): AdminPostDraft => ({
 });
 
 export default function AdminPostsListPage() {
-  const router = useRouter();
   const [apiPosts, setApiPosts] = useState<ApiPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [migrating, setMigrating] = useState(false);
+  const [showMigrationNotice, setShowMigrationNotice] = useState(true);
 
   const localPosts = useMemo(() => getStoredPosts(), []);
 
@@ -60,12 +59,7 @@ export default function AdminPostsListPage() {
       };
 
       if (!response.ok) {
-        if (response.status === 401) {
-          setError('Session expirée. Reconnexion nécessaire.');
-          router.push('/admin/login');
-        } else {
-          setError(payload.message ?? payload.error ?? 'Erreur de chargement des articles API.');
-        }
+        setError(payload.message ?? payload.error ?? 'API indisponible pour le moment. Affichage des articles locaux.');
         setLoading(false);
         return;
       }
@@ -75,7 +69,7 @@ export default function AdminPostsListPage() {
     }
 
     void loadPosts();
-  }, [router]);
+  }, []);
 
   const migrateLocalPosts = async () => {
     if (!localPosts.length) return;
@@ -126,12 +120,7 @@ export default function AdminPostsListPage() {
       });
 
       if (!response.ok) {
-        if (response.status === 401) {
-          setError('Session expirée pendant la migration. Merci de te reconnecter.');
-          router.push('/admin/login');
-        } else {
-          setError(`Migration interrompue sur l'article "${post.title}".`);
-        }
+        setError(`Migration interrompue sur l'article "${post.title}".`);
         setMigrating(false);
         return;
       }
@@ -142,7 +131,7 @@ export default function AdminPostsListPage() {
     window.location.reload();
   };
 
-  const allPosts = useMemo(() => apiPosts.map(toLocalDraft), [apiPosts]);
+  const allPosts = useMemo(() => (apiPosts.length > 0 ? apiPosts.map(toLocalDraft) : localPosts), [apiPosts, localPosts]);
 
   return (
     <section>
@@ -153,16 +142,24 @@ export default function AdminPostsListPage() {
         </Link>
       </div>
 
-      {localPosts.length > 0 ? (
+      {showMigrationNotice && localPosts.length > 0 ? (
         <div className="mt-4 rounded-xl border border-amber-700 bg-amber-950/40 p-4 text-sm text-amber-200">
-          <p>{localPosts.length} article(s) encore en localStorage. Migration recommandée vers l&apos;API.</p>
-          <button
-            onClick={migrateLocalPosts}
-            disabled={migrating}
-            className="mt-3 rounded-lg border border-amber-500 px-3 py-2 font-semibold"
-          >
-            {migrating ? 'Migration en cours…' : 'Migrer vers la base'}
-          </button>
+          <p>{localPosts.length} article(s) en localStorage. Migration API recommandée mais non obligatoire.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              onClick={migrateLocalPosts}
+              disabled={migrating}
+              className="rounded-lg border border-amber-500 px-3 py-2 font-semibold"
+            >
+              {migrating ? 'Migration en cours…' : 'Migrer vers la base'}
+            </button>
+            <button
+              onClick={() => setShowMigrationNotice(false)}
+              className="rounded-lg border border-amber-500/70 px-3 py-2"
+            >
+              Continuer sans migrer
+            </button>
+          </div>
         </div>
       ) : null}
 

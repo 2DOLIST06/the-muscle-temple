@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { PostEditorForm } from '@/components/admin/PostEditorForm';
 import type { AdminPostDraft } from '@/types/admin';
 
@@ -63,15 +63,16 @@ const apiToDraft = (post: ApiPost): AdminPostDraft => ({
 
 export default function AdminEditPostPage() {
   const params = useParams<{ slug: string }>();
-  const router = useRouter();
   const [post, setPost] = useState<AdminPostDraft | undefined>();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadPost() {
       const response = await fetch('/api/admin/posts', { cache: 'no-store' });
-      if (response.status === 401) {
-        router.push('/admin/login');
+      if (!response.ok) {
+        setError('Impossible de charger cet article depuis l’API pour le moment.');
+        setLoading(false);
         return;
       }
 
@@ -82,12 +83,13 @@ export default function AdminEditPostPage() {
     }
 
     void loadPost();
-  }, [params.slug, router]);
+  }, [params.slug]);
 
   return (
     <section>
       <h1 className="text-3xl font-bold">Modifier l&apos;article</h1>
       <p className="mt-2 text-slate-300">Édition complète avec publication et SEO.</p>
+      {error ? <p className="mt-4 rounded-lg border border-red-700 bg-red-950/40 p-3 text-sm text-red-200">{error}</p> : null}
       <div className="mt-8">{loading ? <p>Chargement…</p> : <PostEditorForm initialPost={post} />}</div>
     </section>
   );
