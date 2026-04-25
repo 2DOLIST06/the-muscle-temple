@@ -23,32 +23,33 @@ export async function POST(request: Request) {
   const body = (await request.json()) as { email?: string; password?: string };
 
   const normalizedEmail = body.email?.trim().toLowerCase();
+  const password = body.password ?? '';
 
-  if (!normalizedEmail || !body.password) {
-    return NextResponse.json({ error: 'Email et mot de passe requis.' }, { status: 400 });
+  if (!normalizedEmail || !password) {
+    return NextResponse.json({ message: 'Email et mot de passe requis.' }, { status: 400 });
   }
 
-  const staticEmail = process.env.ADMIN_EMAIL;
-  const staticPassword = process.env.ADMIN_PASSWORD;
-  const staticToken = process.env.ADMIN_ACCESS_TOKEN;
-
-  const upstream = await fetch(buildApiUrl('/admin-api/auth/login'), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: normalizedEmail, password: body.password })
-  });
+  let upstream: Response;
+  try {
+    upstream = await fetch(buildApiUrl('/admin-api/auth/login'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: normalizedEmail, password })
+    });
+  } catch {
+    return NextResponse.json({ message: 'Service d’authentification indisponible. Réessayez plus tard.' }, { status: 503 });
+  }
 
   const payload = (await upstream.json().catch(() => ({}))) as {
     data?: { token?: string };
     token?: string;
     message?: string;
-    error?: string;
   };
 
   const token = payload.data?.token ?? payload.token;
 
   if (!upstream.ok || !token) {
-    return NextResponse.json({ error: payload.message ?? payload.error ?? 'Identifiants invalides.' }, { status: 401 });
+    return NextResponse.json({ message: payload.message ?? 'Invalid credentials' }, { status: 401 });
   }
 
   return withSessionCookie(token);
