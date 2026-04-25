@@ -14,7 +14,10 @@ interface ApiPost {
   publishedAt: string | null;
   updatedAt: string;
   readingTimeMinutes: number;
-  contentJson?: { sections?: Array<{ heading?: string; content?: string }> };
+  contentJson?: {
+    sections?: Array<{ heading?: string; content?: string }>;
+    faqs?: Array<{ question?: string; answer?: string }>;
+  };
   seo?: {
     title?: string;
     description?: string;
@@ -44,6 +47,11 @@ const apiToDraft = (post: ApiPost): AdminPostDraft => ({
       heading: section.heading ?? '',
       content: section.content ?? ''
     })) ?? [{ heading: 'Introduction', content: '' }],
+  faqs:
+    post.contentJson?.faqs?.map((faq) => ({
+      question: faq.question ?? '',
+      answer: faq.answer ?? ''
+    })) ?? [],
   seo: {
     seoTitle: post.seo?.title ?? '',
     seoDescription: post.seo?.description ?? '',
