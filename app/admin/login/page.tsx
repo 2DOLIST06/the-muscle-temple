@@ -24,15 +24,11 @@ export default function AdminLoginPage() {
     });
 
     const result = (await response.json().catch(() => ({}))) as {
-      data?: { token?: string };
-      token?: string;
       message?: string;
       error?: string;
     };
 
-    const token = result.data?.token ?? result.token;
-
-    if (!response.ok || !token) {
+    if (!response.ok) {
       setError(result.message ?? result.error ?? 'Connexion impossible');
       setLoading(false);
       return;
