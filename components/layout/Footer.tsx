@@ -3,7 +3,7 @@ import { Container } from '@/components/ui/Container';
 
 export function Footer() {
   return (
-    <footer className="mt-16 border-t border-slate-200 bg-slate-50 py-10">
+    <footer className="border-t border-slate-200 bg-slate-50 py-10">
       <Container>
         <div className="grid gap-8 md:grid-cols-3">
           <div>
