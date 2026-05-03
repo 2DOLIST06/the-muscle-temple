@@ -1,0 +1,9 @@
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { PostCard } from '@/components/blog/PostCard';
+import { Container } from '@/components/ui/Container';
+import { getCategories, getPostAuthorBySlug, getPublishedPosts } from '@/lib/cms';
+import { buildMetadata } from '@/lib/seo/metadata';
+export const revalidate = 120;
+export const metadata: Metadata = buildMetadata({ title: 'Blog | The Muscle Temple', description: 'Articles de musculation, nutrition et récupération.', path: '/blog' });
+export default async function BlogPage({ searchParams }: { searchParams: Promise<{ page?: string; category?: string; q?: string }> }) { const { page, category, q } = await searchParams; const currentPage = Number(page || '1') || 1; const [result, categories] = await Promise.all([getPublishedPosts({ page: currentPage, limit: 9, category, search: q }), getCategories()]); const authors = await Promise.all(result.posts.map((post) => getPostAuthorBySlug(post.authorSlug))); return <Container><section className="py-12"><h1 className="text-3xl font-bold">Blog</h1><div className="mt-4 flex flex-wrap gap-2">{categories.map((c) => <Link key={c.id} className="rounded border px-3 py-1 text-sm" href={`/blog?category=${c.slug}`}>{c.title}</Link>)}</div><div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">{result.posts.map((post, i) => <PostCard key={post.id} post={post} category={categories.find((c)=>c.slug===post.categorySlug)} author={authors[i]} />)}</div><div className="mt-8 flex gap-3">{currentPage > 1 ? <Link href={`/blog?page=${currentPage - 1}`} className="rounded border px-3 py-1">Précédent</Link> : null}{currentPage < result.totalPages ? <Link href={`/blog?page=${currentPage + 1}`} className="rounded border px-3 py-1">Suivant</Link> : null}</div></section></Container>; }
