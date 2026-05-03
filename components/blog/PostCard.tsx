@@ -13,7 +13,7 @@ interface PostCardProps {
 export function PostCard({ post, category, author }: PostCardProps) {
   return (
     <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <Link href={`/articles/${post.slug}`}>
+      <Link href={`/blog/${post.slug}`}>
         <div className="relative h-52 w-full">
           <Image src={post.coverImage} alt={post.title} fill className="object-cover" />
         </div>
@@ -21,7 +21,7 @@ export function PostCard({ post, category, author }: PostCardProps) {
       <div className="p-5">
         {category ? <Badge>{category.title}</Badge> : null}
         <h3 className="mt-3 text-lg font-semibold text-slate-900">
-          <Link href={`/articles/${post.slug}`}>{post.title}</Link>
+          <Link href={`/blog/${post.slug}`}>{post.title}</Link>
         </h3>
         <p className="mt-2 text-sm text-slate-600">{post.excerpt}</p>
         <div className="mt-4 text-xs text-slate-500">

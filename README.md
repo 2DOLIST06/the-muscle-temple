@@ -148,3 +148,10 @@ ADMIN_ACCESS_TOKEN=une-cle-longue-aleatoire-et-secrete
 - Champs SEO complets : title, description, canonical, OG image, noindex
 
 > Note: cette version admin est orientée front-first. Les créations/modifications sont stockées côté navigateur (localStorage) en attendant le backend/CMS.
+
+## Configuration CMS (blog)
+
+- Variable front: `NEXT_PUBLIC_CMS_API_URL`
+- Exemple local: `NEXT_PUBLIC_CMS_API_URL=http://localhost:3001`
+- Exemple prod: `NEXT_PUBLIC_CMS_API_URL=https://cms.my-domain.com`
+- Changer simplement la valeur par environnement (local, preview, production) sans modifier le code.
