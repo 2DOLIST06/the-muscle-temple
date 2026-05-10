@@ -14,23 +14,34 @@ async function getAdminToken() {
   return resolveUpstreamAdminToken(staticToken);
 }
 
-export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+async function passthrough(request: Request, id: string, method: 'GET' | 'PUT' | 'DELETE') {
   const token = await getAdminToken();
   if (!token) return missingToken();
 
-  const { id } = await params;
-  const body = await request.json().catch(() => ({}));
-
   const upstream = await fetch(buildApiUrl(`/admin-api/posts/${id}`), {
-    method: 'PUT',
+    method,
     headers: {
       Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json'
+      ...(method === 'PUT' ? { 'Content-Type': 'application/json' } : {})
     },
-    body: JSON.stringify(body)
+    body: method === 'PUT' ? JSON.stringify(await request.json().catch(() => ({}))) : undefined
   });
 
   const payload = await upstream.json().catch(() => ({}));
-
   return NextResponse.json(payload, { status: upstream.status });
+}
+
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return passthrough(request, id, 'GET');
+}
+
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return passthrough(request, id, 'PUT');
+}
+
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return passthrough(request, id, 'DELETE');
 }
