@@ -9,6 +9,9 @@ import { Categories } from './payload/collections/Categories'
 import { Media } from './payload/collections/Media'
 
 export default buildConfig({
+  routes: {
+    admin: '/cms',
+  },
   admin: {
     user: Users.slug,
   },
