@@ -11,6 +11,7 @@ import { Media } from './payload/collections/Media'
 export default buildConfig({
   admin: {
     user: Users.slug,
+    route: '/cms',
   },
   editor: lexicalEditor(),
   collections: [
