@@ -3,6 +3,7 @@ import { postgresAdapter } from '@payloadcms/db-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 
 import { Users } from './payload/collections/Users'
+import { Authors } from './payload/collections/Authors'
 import { Posts } from './payload/collections/Posts'
 import { Categories } from './payload/collections/Categories'
 import { Media } from './payload/collections/Media'
@@ -14,6 +15,7 @@ export default buildConfig({
   editor: lexicalEditor(),
   collections: [
     Users,
+    Authors,
     Posts,
     Categories,
     Media,

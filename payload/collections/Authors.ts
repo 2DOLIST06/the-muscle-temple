@@ -1,10 +1,10 @@
 import type { CollectionConfig } from 'payload'
 
-export const Categories: CollectionConfig = {
-  slug: 'categories',
+export const Authors: CollectionConfig = {
+  slug: 'authors',
   labels: {
-    singular: 'Catégorie',
-    plural: 'Catégories',
+    singular: 'Auteur',
+    plural: 'Auteurs',
   },
   admin: {
     useAsTitle: 'name',
@@ -30,18 +30,14 @@ export const Categories: CollectionConfig = {
       index: true,
     },
     {
-      name: 'description',
-      label: 'Description',
-      type: 'textarea',
+      name: 'avatar',
+      label: 'Photo',
+      type: 'upload',
+      relationTo: 'media',
     },
     {
-      name: 'metaTitle',
-      label: 'Meta title',
-      type: 'text',
-    },
-    {
-      name: 'metaDescription',
-      label: 'Meta description',
+      name: 'bio',
+      label: 'Bio',
       type: 'textarea',
     },
   ],
