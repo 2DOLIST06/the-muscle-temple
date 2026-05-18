@@ -8,6 +8,17 @@ import { Posts } from './payload/collections/Posts'
 import { Categories } from './payload/collections/Categories'
 import { Media } from './payload/collections/Media'
 
+const databaseUrl = process.env.DATABASE_URL
+const payloadSecret = process.env.PAYLOAD_SECRET
+
+if (!databaseUrl) {
+  throw new Error('DATABASE_URL is missing')
+}
+
+if (!payloadSecret) {
+  throw new Error('PAYLOAD_SECRET is missing')
+}
+
 export default buildConfig({
   routes: {
     admin: '/cms',
@@ -23,10 +34,13 @@ export default buildConfig({
     Categories,
     Media,
   ],
-  secret: process.env.PAYLOAD_SECRET || '',
+  secret: payloadSecret,
   db: postgresAdapter({
     pool: {
-      connectionString: process.env.DATABASE_URL || '',
+      connectionString: databaseUrl,
+      ssl: {
+        rejectUnauthorized: false,
+      },
     },
   }),
 })
