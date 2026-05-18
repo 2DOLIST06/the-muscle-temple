@@ -74,7 +74,7 @@ export default function AdminEditPostPage() {
 
   useEffect(() => {
     async function loadPost() {
-      const response = await fetch('/api/admin/posts', { cache: 'no-store' });
+      const response = await fetch('/admin-api/posts', { cache: 'no-store' });
       if (!response.ok) {
         setError('Impossible de charger cet article depuis l’API pour le moment.');
         setLoading(false);

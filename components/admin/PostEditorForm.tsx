@@ -65,8 +65,8 @@ export function PostEditorForm({ initialPost }: { initialPost?: object }) {
         status: post.status
       };
 
-      if (post.id) await adminApi.put(`/api/admin/posts/${post.id}`, payload);
-      else await adminApi.post('/api/admin/posts', payload);
+      if (post.id) await adminApi.put(`/admin-api/posts/${post.id}`, payload);
+      else await adminApi.post('/admin-api/posts', payload);
       router.push('/admin/posts');
       router.refresh();
     } catch (e) {
