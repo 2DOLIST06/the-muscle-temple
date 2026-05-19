@@ -14,13 +14,6 @@ export const Posts: CollectionConfig = {
   access: {
     read: () => true,
   },
-  versions: {
-    drafts: {
-      autosave: true,
-      schedulePublish: true,
-    },
-    maxPerDoc: 20,
-  },
   fields: [
     {
       type: 'tabs',
