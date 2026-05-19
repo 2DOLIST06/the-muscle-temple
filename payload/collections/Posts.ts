@@ -1,4 +1,17 @@
 import type { CollectionConfig } from 'payload'
+import {
+  lexicalEditor,
+  HeadingFeature,
+  BoldFeature,
+  ItalicFeature,
+  UnorderedListFeature,
+  OrderedListFeature,
+  LinkFeature,
+  BlockquoteFeature,
+  UploadFeature,
+  FixedToolbarFeature,
+  InlineToolbarFeature,
+} from '@payloadcms/richtext-lexical'
 
 export const Posts: CollectionConfig = {
   slug: 'posts',
@@ -10,6 +23,7 @@ export const Posts: CollectionConfig = {
     useAsTitle: 'title',
     defaultColumns: ['title', 'slug', '_status', 'publishedAt', 'updatedAt'],
     group: 'Contenu',
+    description: 'Créez et organisez vos articles avec une structure éditoriale claire.',
   },
   access: {
     read: () => true,
@@ -26,6 +40,9 @@ export const Posts: CollectionConfig = {
               label: 'Titre H1',
               type: 'text',
               required: true,
+              admin: {
+                description: 'Titre principal de l’article affiché en haut de page.',
+              },
             },
             {
               name: 'slug',
@@ -42,18 +59,56 @@ export const Posts: CollectionConfig = {
               name: 'excerpt',
               label: 'Chapo / résumé court',
               type: 'textarea',
+              admin: {
+                description: 'Résumé court utilisé dans les listes d’articles et aperçus SEO.',
+              },
             },
             {
               name: 'featuredImage',
               label: 'Image principale',
               type: 'upload',
               relationTo: 'media',
+              admin: {
+                description: 'Visuel principal de l’article (bannière / miniature).',
+              },
             },
             {
               name: 'content',
               label: 'Contenu de l’article',
               type: 'richText',
               required: true,
+              editor: lexicalEditor({
+                features: ({ rootFeatures }) => [
+                  ...rootFeatures,
+                  HeadingFeature({ enabledHeadingSizes: ['h2', 'h3', 'h4'] }),
+                  BoldFeature(),
+                  ItalicFeature(),
+                  UnorderedListFeature(),
+                  OrderedListFeature(),
+                  LinkFeature(),
+                  BlockquoteFeature(),
+                  UploadFeature({
+                    collections: {
+                      media: {
+                        fields: [
+                          {
+                            name: 'alt',
+                            type: 'text',
+                            label: 'Texte alternatif',
+                            required: false,
+                          },
+                        ],
+                      },
+                    },
+                  }),
+                  FixedToolbarFeature(),
+                  InlineToolbarFeature(),
+                ],
+              }),
+              admin: {
+                description:
+                  'Éditeur riche Lexical avec intertitres H2/H3/H4, listes, liens, citations et insertion de médias.',
+              },
             },
           ],
         },
@@ -65,17 +120,27 @@ export const Posts: CollectionConfig = {
               label: 'Auteur',
               type: 'relationship',
               relationTo: 'authors',
+              admin: {
+                description: 'Auteur principal de l’article.',
+              },
             },
             {
               name: 'category',
               label: 'Catégorie',
               type: 'relationship',
               relationTo: 'categories',
+              admin: {
+                description: 'Catégorie éditoriale principale.',
+              },
             },
             {
               name: 'tags',
               label: 'Tags',
               type: 'array',
+              labels: {
+                singular: 'Tag',
+                plural: 'Tags',
+              },
               fields: [
                 {
                   name: 'tag',
@@ -86,13 +151,6 @@ export const Posts: CollectionConfig = {
               ],
             },
             {
-              name: 'relatedPosts',
-              label: 'Articles liés',
-              type: 'relationship',
-              relationTo: 'posts',
-              hasMany: true,
-            },
-            {
               name: 'publishedAt',
               label: 'Date de publication',
               type: 'date',
@@ -100,6 +158,7 @@ export const Posts: CollectionConfig = {
                 date: {
                   pickerAppearance: 'dayAndTime',
                 },
+                description: 'Date et heure de publication prévues.',
               },
             },
           ],
@@ -112,7 +171,7 @@ export const Posts: CollectionConfig = {
               label: 'Meta title',
               type: 'text',
               admin: {
-                description: 'Titre SEO affiché dans Google. Laisser vide pour reprendre le titre de l’article.',
+                description: 'Titre SEO affiché dans Google. Laisser vide pour reprendre le Titre H1.',
               },
             },
             {
@@ -122,7 +181,7 @@ export const Posts: CollectionConfig = {
             },
             {
               name: 'canonical',
-              label: 'URL canonique',
+              label: 'Canonical',
               type: 'text',
             },
             {
@@ -131,28 +190,19 @@ export const Posts: CollectionConfig = {
               type: 'select',
               defaultValue: 'index,follow',
               options: [
-                {
-                  label: 'index,follow',
-                  value: 'index,follow',
-                },
-                {
-                  label: 'noindex,follow',
-                  value: 'noindex,follow',
-                },
-                {
-                  label: 'noindex,nofollow',
-                  value: 'noindex,nofollow',
-                },
+                { label: 'index,follow', value: 'index,follow' },
+                { label: 'noindex,follow', value: 'noindex,follow' },
+                { label: 'noindex,nofollow', value: 'noindex,nofollow' },
               ],
             },
             {
               name: 'ogTitle',
-              label: 'Open Graph title',
+              label: 'OG title',
               type: 'text',
             },
             {
               name: 'ogDescription',
-              label: 'Open Graph description',
+              label: 'OG description',
               type: 'textarea',
             },
             {
@@ -170,6 +220,10 @@ export const Posts: CollectionConfig = {
               name: 'faq',
               label: 'FAQ',
               type: 'array',
+              labels: {
+                singular: 'Question FAQ',
+                plural: 'FAQ',
+              },
               fields: [
                 {
                   name: 'question',
