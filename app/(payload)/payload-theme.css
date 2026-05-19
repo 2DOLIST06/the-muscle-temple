@@ -1,40 +1,71 @@
-:root {
-  --theme-bg: #f4f7fb;
-  --theme-card-bg: #ffffff;
-  --theme-card-elevated: #f8fafc;
-  --theme-border-color: #d9e2ec;
+/*
+  Payload v3 relies heavily on CSS variables.
+  We override the design tokens first so every /cms screen and sub-route
+  picks up the new visual language consistently.
+*/
+html[data-theme='light'],
+html {
+  --theme-bg: #eff4fb;
+  --theme-input-bg: #ffffff;
   --theme-text: #0f172a;
-  --theme-text-soft: #475569;
-  --theme-primary: #2563eb;
-  --theme-primary-contrast: #ffffff;
-  --theme-success: #16a34a;
-  --theme-danger: #dc2626;
-  --theme-radius-lg: 18px;
-  --theme-radius-md: 12px;
-  --theme-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+
+  --theme-elevation-0: #ffffff;
+  --theme-elevation-50: #f8fbff;
+  --theme-elevation-100: #edf2fa;
+  --theme-elevation-150: #e2eaf5;
+  --theme-elevation-200: #d2deee;
+  --theme-elevation-250: #c2d2e8;
+  --theme-elevation-300: #a7bfdc;
+  --theme-elevation-350: #8ca8cc;
+  --theme-elevation-400: #6f8cb4;
+  --theme-elevation-450: #5c789f;
+  --theme-elevation-500: #476287;
+  --theme-elevation-550: #3d5577;
+  --theme-elevation-600: #324766;
+  --theme-elevation-650: #293a54;
+  --theme-elevation-700: #223047;
+  --theme-elevation-750: #1b293d;
+  --theme-elevation-800: #142233;
+  --theme-elevation-850: #101b29;
+  --theme-elevation-900: #0b1420;
+  --theme-elevation-950: #070d16;
+  --theme-elevation-1000: #030712;
+
+  --theme-success-100: #dcfce7;
+  --theme-success-250: #86efac;
+  --theme-success-500: #22c55e;
+  --theme-success-600: #16a34a;
+  --theme-success-950: #052e16;
+
+  --theme-error-100: #fee2e2;
+  --theme-error-300: #fca5a5;
+  --theme-error-600: #dc2626;
+  --theme-error-950: #450a0a;
+
+  --style-radius-s: 10px;
+  --style-radius-m: 14px;
+  --style-radius-l: 18px;
 }
 
-/* Backdrop + base typography */
-html,
 body {
-  background: radial-gradient(circle at top, #dbeafe 0%, #f8fafc 40%, #f1f5f9 100%);
+  background: radial-gradient(circle at top, #dbeafe 0%, #f8fafc 45%, #edf2fa 100%);
 }
 
-/* Payload shell */
-#payload,
 .payload {
   color: var(--theme-text);
 }
 
+/* Top bar */
 .payload .app-header {
-  backdrop-filter: blur(14px);
-  background: rgba(255, 255, 255, 0.85);
-  border-bottom: 1px solid var(--theme-border-color);
+  background: rgba(255, 255, 255, 0.84);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--theme-elevation-200);
 }
 
+/* Sidebar navigation */
 .payload .nav,
 .payload .template-default__nav,
-.payload .template-default__nav-wrap {
+.payload [class*='template-default__nav'] {
   background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
   color: #e2e8f0;
 }
@@ -46,125 +77,62 @@ body {
 
 .payload .nav a:hover,
 .payload .template-default__nav a:hover,
-.payload .nav a.active,
-.payload .template-default__nav a.active {
-  background: rgba(59, 130, 246, 0.2);
+.payload .nav .active,
+.payload .template-default__nav .active {
+  background: rgba(59, 130, 246, 0.26);
   color: #fff;
 }
 
-/* Main cards / panels */
-.payload .card,
+/* Content cards/panels */
 .payload .collection-list,
-.payload .document-fields,
-.payload .render-fields,
-.payload .field-type,
-.payload .drawer,
 .payload .table,
-.payload .list-controls,
-.payload .gutter--left,
-.payload .gutter--right {
-  border: 1px solid var(--theme-border-color);
-  border-radius: var(--theme-radius-md);
-  background: var(--theme-card-bg);
-  box-shadow: var(--theme-shadow);
-}
-
-.payload .template-default,
-.payload .template-default__wrap,
+.payload .render-fields,
+.payload .document-fields,
+.payload .drawer__content,
 .payload .doc-controls,
-.payload .dashboard,
-.payload .table-wrap {
-  background: transparent;
-}
-
-.payload h1,
-.payload h2,
-.payload h3 {
-  color: #020617;
-  letter-spacing: -0.02em;
-}
-
-.payload .field-label,
-.payload .pill,
-.payload .cell,
-.payload .eyebrow {
-  color: var(--theme-text-soft);
+.payload .dashboard {
+  border: 1px solid var(--theme-elevation-200);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
 }
 
 .payload input,
 .payload textarea,
-.payload select,
-.payload .rich-text-editor,
-.payload .lexical-editor {
-  border: 1px solid #cbd5e1;
+.payload select {
   border-radius: 10px;
-  background: #fff;
+  border-color: var(--theme-elevation-250);
 }
 
 .payload input:focus,
 .payload textarea:focus,
 .payload select:focus {
-  border-color: var(--theme-primary);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
 }
 
-/* Buttons */
-.payload .btn,
-.payload button,
-.payload [class*='button'] {
+.payload .btn {
   border-radius: 10px;
 }
 
 .payload .btn--style-primary,
-.payload .btn--style-secondary,
 .payload .btn--style-success {
-  border: 0;
-  color: var(--theme-primary-contrast);
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
-}
-
-.payload .btn--style-primary:hover,
-.payload .btn--style-secondary:hover,
-.payload .btn--style-success:hover {
-  filter: brightness(1.05);
-}
-
-.payload .btn--style-pill {
-  background: #e2e8f0;
-  color: #1e293b;
+  --bg-color: linear-gradient(135deg, #2563eb, #1d4ed8);
+  --hover-bg: linear-gradient(135deg, #3b82f6, #2563eb);
+  --color: #fff;
 }
 
 .payload .btn--style-danger {
-  background: linear-gradient(135deg, #ef4444, #b91c1c);
-  color: #fff;
+  --bg-color: linear-gradient(135deg, #ef4444, #b91c1c);
+  --hover-bg: linear-gradient(135deg, #f87171, #dc2626);
+  --color: #fff;
 }
 
-/* Tables */
-.payload table {
-  border-radius: var(--theme-radius-md);
-  overflow: hidden;
-}
-
-.payload thead th {
-  background: #eff6ff;
+.payload table thead th {
+  background: #ebf3ff;
   color: #1e3a8a;
 }
 
-.payload tbody tr:nth-child(even) {
-  background: #f8fafc;
-}
-
-/* Scrollbars for a polished look */
-*::-webkit-scrollbar {
-  height: 10px;
-  width: 10px;
-}
-
-*::-webkit-scrollbar-track {
-  background: #e2e8f0;
-}
-
-*::-webkit-scrollbar-thumb {
-  background: #94a3b8;
-  border-radius: 999px;
+.payload table tbody tr:nth-child(even) {
+  background: #f8fbff;
 }
