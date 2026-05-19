@@ -10,7 +10,7 @@ type Props = {
   children: React.ReactNode
 }
 
-const serverFunction: ServerFunctionClient = async function (args) {
+const serverFunction: ServerFunctionClient = async (args) => {
   'use server'
 
   return handleServerFunctions({
@@ -21,10 +21,9 @@ const serverFunction: ServerFunctionClient = async function (args) {
 }
 
 export default function Layout({ children }: Props) {
-  return RootLayout({
-    children,
-    config: configPromise,
-    importMap,
-    serverFunction,
-  })
+  return (
+    <RootLayout config={configPromise} importMap={importMap} serverFunction={serverFunction}>
+      {children}
+    </RootLayout>
+  )
 }
