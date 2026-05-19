@@ -1,0 +1,78 @@
+/* GLOBAL TOKENS - applied regardless of Payload markup details */
+:root,
+html,
+body,
+[data-theme='light'],
+[data-theme='dark'] {
+  --theme-bg: #0b1020 !important;
+  --theme-input-bg: #111a2e !important;
+  --theme-text: #e6edf8 !important;
+
+  --theme-elevation-0: #0f172a !important;
+  --theme-elevation-50: #111b31 !important;
+  --theme-elevation-100: #15213a !important;
+  --theme-elevation-150: #1a2743 !important;
+  --theme-elevation-200: #203051 !important;
+  --theme-elevation-300: #2f4672 !important;
+  --theme-elevation-400: #45639a !important;
+  --theme-elevation-500: #5a7dbc !important;
+  --theme-elevation-600: #6d94d8 !important;
+  --theme-elevation-700: #8caee7 !important;
+  --theme-elevation-800: #b5ccf3 !important;
+  --theme-elevation-900: #d5e3fb !important;
+  --theme-elevation-1000: #f8fbff !important;
+
+  --style-radius-s: 14px !important;
+  --style-radius-m: 18px !important;
+  --style-radius-l: 24px !important;
+}
+
+html,
+body,
+body .payload,
+body [id*='payload'] {
+  background: radial-gradient(circle at top left, #111b31, #070b16 65%) !important;
+  color: #e6edf8 !important;
+}
+
+/* Super visible proof of application */
+.payload .app-header,
+[class*='app-header'] {
+  background: linear-gradient(90deg, #2563eb, #7c3aed) !important;
+  color: #ffffff !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+.payload .template-default__nav,
+.payload .nav,
+[class*='template-default__nav'] {
+  background: #0a1224 !important;
+  border-right: 1px solid #263b63 !important;
+}
+
+.payload .collection-list,
+.payload .table,
+.payload .render-fields,
+.payload .document-fields,
+.payload .dashboard,
+.payload .doc-controls,
+.payload .drawer__content,
+[class*='collection-list'],
+[class*='document-fields'] {
+  background: #111a2e !important;
+  border: 1px solid #2d446f !important;
+  border-radius: 18px !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45) !important;
+}
+
+.payload input,
+.payload textarea,
+.payload select,
+[class*='field'] input,
+[class*='field'] textarea,
+[class*='field'] select {
+  background: #0d1628 !important;
+  color: #e6edf8 !important;
+  border: 1px solid #35548a !important;
+  border-radius: 12px !important;
+}
