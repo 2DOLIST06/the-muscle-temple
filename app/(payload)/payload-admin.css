@@ -1,0 +1,71 @@
+/* Forceful overrides so changes are instantly visible on every /cms route */
+html,
+html[data-theme='light'],
+body,
+body .payload {
+  background: #eef3fb !important;
+  color: #0f172a !important;
+}
+
+html[data-theme='light'] {
+  --theme-bg: #eef3fb !important;
+  --theme-input-bg: #ffffff !important;
+  --theme-text: #0f172a !important;
+
+  --theme-elevation-0: #ffffff !important;
+  --theme-elevation-50: #f7faff !important;
+  --theme-elevation-100: #eaf1fb !important;
+  --theme-elevation-150: #dde8f7 !important;
+  --theme-elevation-200: #cfdef2 !important;
+  --theme-elevation-300: #adc5e3 !important;
+  --theme-elevation-400: #7f9fc8 !important;
+  --theme-elevation-500: #5e7ea9 !important;
+  --theme-elevation-600: #466489 !important;
+  --theme-elevation-700: #2f4968 !important;
+  --theme-elevation-800: #1d334d !important;
+  --theme-elevation-900: #112133 !important;
+  --theme-elevation-1000: #09111d !important;
+
+  --style-radius-s: 12px !important;
+  --style-radius-m: 16px !important;
+  --style-radius-l: 20px !important;
+}
+
+.payload .app-header {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-bottom: 1px solid #cbd9ee !important;
+  backdrop-filter: blur(10px);
+}
+
+.payload .template-default__nav,
+.payload .nav,
+.payload [class*='template-default__nav'] {
+  background: linear-gradient(180deg, #0b1730 0%, #162847 100%) !important;
+  color: #e5edf8 !important;
+}
+
+.payload .template-default__nav a,
+.payload .nav a {
+  border-radius: 10px !important;
+}
+
+.payload .template-default__nav a:hover,
+.payload .template-default__nav a.active,
+.payload .nav a:hover,
+.payload .nav a.active {
+  background: rgba(96, 165, 250, 0.25) !important;
+  color: #fff !important;
+}
+
+.payload .collection-list,
+.payload .table,
+.payload .render-fields,
+.payload .document-fields,
+.payload .dashboard,
+.payload .doc-controls,
+.payload .drawer__content {
+  background: #fff !important;
+  border: 1px solid #d5e1f1 !important;
+  border-radius: 16px !important;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08) !important;
+}
