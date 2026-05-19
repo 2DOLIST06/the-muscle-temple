@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { SiteShell } from '@/components/layout/SiteShell';
+import { AppLayoutBoundary } from './AppLayoutBoundary';
 import { siteConfig } from '@/lib/constants';
 import { buildMetadata } from '@/lib/seo/metadata';
 
@@ -14,7 +14,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="fr">
       <body>
-        <SiteShell>{children}</SiteShell>
+        <AppLayoutBoundary>{children}</AppLayoutBoundary>
       </body>
     </html>
   );
