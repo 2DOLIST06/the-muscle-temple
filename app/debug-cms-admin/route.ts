@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getPayload } from 'payload'
+import { getPayload, type Payload } from 'payload'
 import config from '@payload-config'
 
 export const runtime = 'nodejs'
@@ -12,18 +12,23 @@ type StepResult = {
   data?: unknown
 }
 
-async function runSqlReadOnly(payload: any, table: string) {
+type SqlQueryable = { query: (sql: string) => Promise<{ rows?: Array<{ count?: number | string | null }> }> }
+type DrizzleExecutable = { execute: (sql: string) => Promise<{ rows?: Array<{ count?: number | string | null }> } | Array<{ count?: number | string | null }>> }
+
+async function runSqlReadOnly(payload: Payload, table: string) {
   const query = `SELECT COUNT(*)::int AS count FROM ${table}`
 
-  if (payload?.db?.pool?.query) {
-    const result = await payload.db.pool.query(query)
+  const pool = (payload.db as unknown as { pool?: SqlQueryable }).pool
+  if (pool?.query) {
+    const result = await pool.query(query)
     return { count: Number(result?.rows?.[0]?.count ?? 0), driver: 'db.pool.query' }
   }
 
-  if (payload?.db?.drizzle?.execute) {
-    const result = await payload.db.drizzle.execute(query)
-    const row = result?.rows?.[0] ?? result?.[0] ?? {}
-    return { count: Number(row?.count ?? 0), driver: 'db.drizzle.execute' }
+  const drizzle = (payload.db as unknown as { drizzle?: DrizzleExecutable }).drizzle
+  if (drizzle?.execute) {
+    const result = await drizzle.execute(query)
+    const row = Array.isArray(result) ? (result[0] ?? {}) : (result.rows?.[0] ?? {})
+    return { count: Number(row.count ?? 0), driver: 'db.drizzle.execute' }
   }
 
   throw new Error('No SQL execution method found on payload.db (pool.query / drizzle.execute)')
