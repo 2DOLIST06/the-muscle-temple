@@ -45,43 +45,14 @@ export const Posts: CollectionConfig = {
               },
             },
             {
-              name: 'content',
-              label: 'Contenu de l’article',
-              type: 'richText',
-              required: true,
-              editor: lexicalEditor({
-                features: ({ rootFeatures }) => [
-                  ...rootFeatures,
-                  HeadingFeature({ enabledHeadingSizes: ['h2', 'h3', 'h4'] }),
-                  BoldFeature(),
-                  ItalicFeature(),
-                  UnorderedListFeature(),
-                  OrderedListFeature(),
-                  LinkFeature(),
-                  BlockquoteFeature(),
-                  UploadFeature({
-                    collections: {
-                      media: {
-                        fields: [
-                          {
-                            name: 'alt',
-                            type: 'text',
-                            label: 'Texte alternatif',
-                            required: false,
-                          },
-                        ],
-                      },
-                    },
-                  }),
-                  FixedToolbarFeature(),
-                  InlineToolbarFeature(),
-                ],
-              }),
-              admin: {
-                description:
-                  'Éditeur riche Lexical avec intertitres H2/H3/H4, listes, liens, citations et insertion de médias.',
-              },
-            },
+  name: 'content',
+  label: 'Contenu de l’article TEST',
+  type: 'textarea',
+  required: true,
+  admin: {
+    description: 'Test pour vérifier si le champ content est bien chargé.',
+  },
+},
             {
               name: 'slug',
               label: 'Slug',
