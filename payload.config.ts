@@ -2,11 +2,11 @@ import { buildConfig } from 'payload'
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 
-import { Users } from './payload/collections/Users'
-import { Authors } from './payload/collections/Authors'
-import { Posts } from './payload/collections/Posts'
-import { Categories } from './payload/collections/Categories'
-import { Media } from './payload/collections/Media'
+import { Users } from './payload/collections/Users.ts'
+import { Authors } from './payload/collections/Authors.ts'
+import { Posts } from './payload/collections/Posts.ts'
+import { Categories } from './payload/collections/Categories.ts'
+import { Media } from './payload/collections/Media.ts'
 
 const databaseUrl = process.env.DATABASE_URL
 const payloadSecret = process.env.PAYLOAD_SECRET
