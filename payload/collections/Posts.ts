@@ -44,16 +44,44 @@ export const Posts: CollectionConfig = {
                 description: 'Titre principal de l’article affiché en haut de page.',
               },
             },
-           {
+          {
   name: 'content',
   label: 'Contenu de l’article',
   type: 'richText',
   required: true,
-  editor: lexicalEditor(),
+  editor: lexicalEditor({
+    features: ({ rootFeatures }) => [
+      ...rootFeatures,
+      HeadingFeature({ enabledHeadingSizes: ['h2', 'h3', 'h4'] }),
+      BoldFeature(),
+      ItalicFeature(),
+      UnorderedListFeature(),
+      OrderedListFeature(),
+      LinkFeature(),
+      BlockquoteFeature(),
+      UploadFeature({
+        collections: {
+          media: {
+            fields: [
+              {
+                name: 'alt',
+                type: 'text',
+                label: 'Texte alternatif',
+                required: false,
+              },
+            ],
+          },
+        },
+      }),
+      FixedToolbarFeature(),
+      InlineToolbarFeature(),
+    ],
+  }),
   admin: {
-    description: 'Éditeur riche minimal pour tester Lexical.',
+    description:
+      'Éditeur riche Lexical avec intertitres H2/H3/H4, listes, liens, citations et insertion de médias.',
   },
-},        {
+},       {
               name: 'slug',
               label: 'Slug',
               type: 'text',
