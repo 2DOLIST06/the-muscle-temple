@@ -32,6 +32,7 @@ export default buildConfig({
     user: Users.slug,
     importMap: {
       baseDir: dirname,
+      importMapFile: path.resolve(dirname, 'app/(payload)/cms/importMap.ts'),
     },
   },
   editor: lexicalEditor(),
