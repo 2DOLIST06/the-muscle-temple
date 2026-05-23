@@ -12,7 +12,7 @@
   "payload:migrate:create": "payload migrate:create",
   "payload:generate:types": "payload generate:types",
   "payload:generate:importmap": "payload generate:importmap"
-}
+},
   "dependencies": {
     "@payloadcms/db-postgres": "3.84.1",
     "@payloadcms/next": "3.84.1",
