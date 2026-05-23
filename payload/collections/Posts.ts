@@ -45,25 +45,6 @@ export const Posts: CollectionConfig = {
               },
             },
             {
-              name: 'slug',
-              label: 'Slug',
-              type: 'text',
-              required: true,
-              unique: true,
-              index: true,
-              admin: {
-                description: 'Exemple : guide-musculation-debutant',
-              },
-            },
-            {
-              name: 'excerpt',
-              label: 'Chapo / résumé court',
-              type: 'textarea',
-              admin: {
-                description: 'Résumé court utilisé dans les listes d’articles et aperçus SEO.',
-              },
-            },
-            {
               name: 'content',
               label: 'Contenu de l’article',
               type: 'richText',
@@ -99,6 +80,25 @@ export const Posts: CollectionConfig = {
               admin: {
                 description:
                   'Éditeur riche Lexical avec intertitres H2/H3/H4, listes, liens, citations et insertion de médias.',
+              },
+            },
+            {
+              name: 'slug',
+              label: 'Slug',
+              type: 'text',
+              required: true,
+              unique: true,
+              index: true,
+              admin: {
+                description: 'Exemple : guide-musculation-debutant',
+              },
+            },
+            {
+              name: 'excerpt',
+              label: 'Chapo / résumé court',
+              type: 'textarea',
+              admin: {
+                description: 'Résumé court utilisé dans les listes d’articles et aperçus SEO.',
               },
             },
             {
