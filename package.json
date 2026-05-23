@@ -3,15 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
-    "typecheck": "tsc --noEmit",
-    "payload:migrate": "payload migrate",
-    "payload:migrate:create": "payload migrate:create",
-    "payload:generate:types": "payload generate:types"
-  },
+  "dev": "next dev",
+  "build": "payload generate:importmap && next build",
+  "start": "next start",
+  "lint": "next lint",
+  "typecheck": "tsc --noEmit",
+  "payload:migrate": "payload migrate",
+  "payload:migrate:create": "payload migrate:create",
+  "payload:generate:types": "payload generate:types",
+  "payload:generate:importmap": "payload generate:importmap"
+}
   "dependencies": {
     "@payloadcms/db-postgres": "3.84.1",
     "@payloadcms/next": "3.84.1",
