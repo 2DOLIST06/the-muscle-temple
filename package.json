@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "payload generate:importmap && next build",
+    "build": "NODE_OPTIONS='--experimental-print-required-tla' payload generate:importmap && next build",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
