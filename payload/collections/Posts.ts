@@ -46,11 +46,26 @@ export const Posts: CollectionConfig = {
             },
             {
   name: 'content',
-  label: 'Contenu de l’article TEST',
-  type: 'textarea',
+  label: 'Contenu de l’article',
+  type: 'richText',
   required: true,
+  editor: lexicalEditor({
+    features: ({ rootFeatures }) => [
+      ...rootFeatures,
+      HeadingFeature({ enabledHeadingSizes: ['h2', 'h3', 'h4'] }),
+      BoldFeature(),
+      ItalicFeature(),
+      UnorderedListFeature(),
+      OrderedListFeature(),
+      LinkFeature(),
+      BlockquoteFeature(),
+      FixedToolbarFeature(),
+      InlineToolbarFeature(),
+    ],
+  }),
   admin: {
-    description: 'Test pour vérifier si le champ content est bien chargé.',
+    description:
+      'Éditeur riche Lexical avec intertitres H2/H3/H4, listes, liens et citations.',
   },
 },
             {
