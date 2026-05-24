@@ -8,25 +8,15 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "npm run payload:generate:importmap && next build",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit",
-    "payload:migrate": "node --import tsx ./node_modules/payload/dist/bin/index.js migrate",
-    "payload:migrate:create": "node --import tsx ./node_modules/payload/dist/bin/index.js migrate:create",
-    "payload:generate:types": "node --import tsx ./node_modules/payload/dist/bin/index.js generate:types",
-    "payload:generate:importmap": "node --import tsx ./node_modules/payload/dist/bin/index.js generate:importmap"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@payloadcms/db-postgres": "3.84.1",
-    "@payloadcms/next": "3.84.1",
-    "@payloadcms/richtext-lexical": "3.84.1",
-    "graphql": "latest",
     "next": "15.5.9",
-    "payload": "3.84.1",
     "react": "19.0.0",
-    "react-dom": "19.0.0",
-    "sharp": "latest"
+    "react-dom": "19.0.0"
   },
   "devDependencies": {
     "@types/node": "22.13.5",
