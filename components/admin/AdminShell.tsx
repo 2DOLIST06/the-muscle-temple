@@ -14,7 +14,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
-      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-0 md:grid-cols-[260px_1fr]">
+      <div className="grid min-h-screen grid-cols-1 gap-0 md:grid-cols-[260px_1fr]">
         <aside className="border-r border-slate-800 bg-slate-900 p-6">
           <p className="text-lg font-bold">Admin · The Muscle Temple</p>
           <nav className="mt-6 space-y-2">
