@@ -6,8 +6,7 @@ export async function POST(request: Request) {
   const rawBody = (await request.json().catch(() => ({}))) as { email?: string; password?: string };
   const body = {
     ...rawBody,
-    email: typeof rawBody.email === 'string' ? rawBody.email.trim().toLowerCase() : rawBody.email,
-    password: typeof rawBody.password === 'string' ? rawBody.password.trim() : rawBody.password
+    email: typeof rawBody.email === 'string' ? rawBody.email.trim().toLowerCase() : rawBody.email
   };
 
   const upstream = await fetch(buildApiUrl('/admin-api/auth/login'), {
