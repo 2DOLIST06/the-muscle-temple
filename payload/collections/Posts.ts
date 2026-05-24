@@ -1,10 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import {
-  lexicalEditor,
-  HeadingFeature,
-  FixedToolbarFeature,
-  InlineToolbarFeature,
-} from '@payloadcms/richtext-lexical'
+import { lexicalEditor } from '@payloadcms/richtext-lexical'
 
 export const Posts: CollectionConfig = {
   slug: 'posts',
@@ -42,17 +37,10 @@ export const Posts: CollectionConfig = {
               label: 'Contenu de l’article',
               type: 'richText',
               required: true,
-              editor: lexicalEditor({
-                features: ({ defaultFeatures }) => [
-                  ...defaultFeatures,
-                  HeadingFeature({ enabledHeadingSizes: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'] }),
-                  FixedToolbarFeature(),
-                  InlineToolbarFeature(),
-                ],
-              }),
+              editor: lexicalEditor(),
               admin: {
                 description:
-                  'Éditeur Payload complet activé (toolbars complètes, titres H1-H6, médias, liens, formatage avancé).',
+                  'Éditeur Payload natif complet (toolbars, commandes /, formatage, liens et médias).',
               },
             },
             {
