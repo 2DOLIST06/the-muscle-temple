@@ -1,11 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const nextPath = useMemo(() => {
+    if (typeof window === 'undefined') return '/admin/posts';
+    return new URLSearchParams(window.location.search).get('next') || '/admin/posts';
+  }, []);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -29,8 +32,7 @@ export default function AdminLoginPage() {
       return;
     }
 
-    const to = searchParams.get('next') || '/admin/posts';
-    router.replace(to);
+    router.replace(nextPath);
     router.refresh();
   }
 

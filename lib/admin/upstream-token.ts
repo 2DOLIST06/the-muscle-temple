@@ -45,7 +45,7 @@ export async function getUpstreamAdminToken() {
   return { token: null, mode, bypass: false } as const;
 }
 
-export async function buildUpstreamAuthHeaders() {
+export async function buildUpstreamAuthHeaders(): Promise<Record<string, string> | null> {
   const session = await getUpstreamAdminToken();
   if (session.bypass) return {};
   if (session.token) return { Authorization: `Bearer ${session.token}` };
