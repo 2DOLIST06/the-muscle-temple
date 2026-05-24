@@ -3,7 +3,11 @@ import { buildApiUrl } from '@/lib/api/env';
 import { ADMIN_AUTH_COOKIE, buildAdminCookieOptions } from '@/lib/admin/auth';
 
 export async function POST(request: Request) {
-  const body = await request.json().catch(() => ({}));
+  const rawBody = (await request.json().catch(() => ({}))) as { email?: string; password?: string };
+  const body = {
+    ...rawBody,
+    email: typeof rawBody.email === 'string' ? rawBody.email.trim().toLowerCase() : rawBody.email
+  };
 
   const upstream = await fetch(buildApiUrl('/admin-api/auth/login'), {
     method: 'POST',
