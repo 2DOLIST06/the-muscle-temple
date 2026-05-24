@@ -14,6 +14,7 @@ const mapStatusMessage = (status: number, fallback: string) => {
   if (status === 400) return 'Requête invalide. Vérifiez les champs saisis.';
   if (status === 401) return 'Session admin expirée. Reconnectez-vous.';
   if (status === 403) return 'Action refusée pour ce compte admin.';
+  if (status === 503) return 'Backend admin indisponible. Vérifiez NEXT_PUBLIC_API_URL/API_BASE_URL.';
   if (status >= 500) return 'Erreur serveur. Réessayez dans quelques instants.';
   return fallback;
 };
