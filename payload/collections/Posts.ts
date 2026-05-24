@@ -2,18 +2,6 @@ import type { CollectionConfig } from 'payload'
 import {
   lexicalEditor,
   HeadingFeature,
-  BoldFeature,
-  ItalicFeature,
-  UnderlineFeature,
-  StrikethroughFeature,
-  UnorderedListFeature,
-  OrderedListFeature,
-  LinkFeature,
-  BlockquoteFeature,
-  AlignFeature,
-  IndentFeature,
-  HorizontalRuleFeature,
-  UploadFeature,
   FixedToolbarFeature,
   InlineToolbarFeature,
 } from '@payloadcms/richtext-lexical'
@@ -57,26 +45,14 @@ export const Posts: CollectionConfig = {
               editor: lexicalEditor({
                 features: ({ rootFeatures }) => [
                   ...rootFeatures,
-                  HeadingFeature({ enabledHeadingSizes: ['h1', 'h2', 'h3', 'h4'] }),
-                  BoldFeature(),
-                  ItalicFeature(),
-                  UnderlineFeature(),
-                  StrikethroughFeature(),
-                  UnorderedListFeature(),
-                  OrderedListFeature(),
-                  LinkFeature(),
-                  BlockquoteFeature(),
-                  AlignFeature(),
-                  IndentFeature(),
-                  HorizontalRuleFeature(),
-                  UploadFeature(),
+                  HeadingFeature({ enabledHeadingSizes: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'] }),
                   FixedToolbarFeature(),
                   InlineToolbarFeature(),
                 ],
               }),
               admin: {
                 description:
-                  'Éditeur riche complet (style WordPress) avec titres H1-H4, formatage avancé, liens, alignements, médias et mise en page confortable.',
+                  'Éditeur Payload complet activé (toolbars complètes, titres H1-H6, médias, liens, formatage avancé).',
               },
             },
             {

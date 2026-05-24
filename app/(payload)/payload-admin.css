@@ -87,3 +87,17 @@ body [id*='payload'] {
   font-size: 17px !important;
   line-height: 1.85 !important;
 }
+
+
+/* Rich text toolbar visibility + spacing */
+.payload [class*='rich-text-lexical'] button,
+.payload [class*='lexical'] button {
+  color: #0f172a !important;
+}
+
+.payload [class*='rich-text-lexical'] [role='toolbar'],
+.payload [class*='lexical'] [role='toolbar'] {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 10px !important;
+}
