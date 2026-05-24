@@ -43,8 +43,8 @@ export const Posts: CollectionConfig = {
               type: 'richText',
               required: true,
               editor: lexicalEditor({
-                features: ({ rootFeatures }) => [
-                  ...rootFeatures,
+                features: ({ defaultFeatures }) => [
+                  ...defaultFeatures,
                   HeadingFeature({ enabledHeadingSizes: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'] }),
                   FixedToolbarFeature(),
                   InlineToolbarFeature(),
