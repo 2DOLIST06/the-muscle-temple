@@ -1,16 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import {
-  lexicalEditor,
-  HeadingFeature,
-  BoldFeature,
-  ItalicFeature,
-  UnorderedListFeature,
-  OrderedListFeature,
-  LinkFeature,
-  BlockquoteFeature,
-  FixedToolbarFeature,
-  InlineToolbarFeature,
-} from '@payloadcms/richtext-lexical'
+import { lexicalEditor } from '@payloadcms/richtext-lexical'
 
 export const Posts: CollectionConfig = {
   slug: 'posts',
@@ -48,23 +37,10 @@ export const Posts: CollectionConfig = {
               label: 'Contenu de l’article',
               type: 'richText',
               required: true,
-              editor: lexicalEditor({
-                features: ({ rootFeatures }) => [
-                  ...rootFeatures,
-                  HeadingFeature({ enabledHeadingSizes: ['h2', 'h3', 'h4'] }),
-                  BoldFeature(),
-                  ItalicFeature(),
-                  UnorderedListFeature(),
-                  OrderedListFeature(),
-                  LinkFeature(),
-                  BlockquoteFeature(),
-                  FixedToolbarFeature(),
-                  InlineToolbarFeature(),
-                ],
-              }),
+              editor: lexicalEditor(),
               admin: {
                 description:
-                  'Éditeur riche Lexical stable (sans UploadFeature) avec titres, listes, liens et citations.',
+                  'Éditeur Payload natif complet (toolbars, commandes /, formatage, liens et médias).',
               },
             },
             {

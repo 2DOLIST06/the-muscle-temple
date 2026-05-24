@@ -1,53 +1,51 @@
-/* GLOBAL TOKENS - applied regardless of Payload markup details */
 :root,
 html,
 body,
 [data-theme='light'],
 [data-theme='dark'] {
-  --theme-bg: #0b1020 !important;
-  --theme-input-bg: #111a2e !important;
-  --theme-text: #e6edf8 !important;
+  --theme-bg: #f4f6fb !important;
+  --theme-input-bg: #ffffff !important;
+  --theme-text: #0f172a !important;
 
-  --theme-elevation-0: #0f172a !important;
-  --theme-elevation-50: #111b31 !important;
-  --theme-elevation-100: #15213a !important;
-  --theme-elevation-150: #1a2743 !important;
-  --theme-elevation-200: #203051 !important;
-  --theme-elevation-300: #2f4672 !important;
-  --theme-elevation-400: #45639a !important;
-  --theme-elevation-500: #5a7dbc !important;
-  --theme-elevation-600: #6d94d8 !important;
-  --theme-elevation-700: #8caee7 !important;
-  --theme-elevation-800: #b5ccf3 !important;
-  --theme-elevation-900: #d5e3fb !important;
-  --theme-elevation-1000: #f8fbff !important;
+  --theme-elevation-0: #ffffff !important;
+  --theme-elevation-50: #f8fafc !important;
+  --theme-elevation-100: #f1f5f9 !important;
+  --theme-elevation-150: #e2e8f0 !important;
+  --theme-elevation-200: #cbd5e1 !important;
+  --theme-elevation-300: #94a3b8 !important;
+  --theme-elevation-400: #64748b !important;
+  --theme-elevation-500: #475569 !important;
+  --theme-elevation-600: #334155 !important;
+  --theme-elevation-700: #1e293b !important;
+  --theme-elevation-800: #0f172a !important;
+  --theme-elevation-900: #020617 !important;
+  --theme-elevation-1000: #000000 !important;
 
-  --style-radius-s: 14px !important;
-  --style-radius-m: 18px !important;
-  --style-radius-l: 24px !important;
+  --style-radius-s: 10px !important;
+  --style-radius-m: 14px !important;
+  --style-radius-l: 18px !important;
 }
 
 html,
 body,
 body .payload,
 body [id*='payload'] {
-  background: radial-gradient(circle at top left, #111b31, #070b16 65%) !important;
-  color: #e6edf8 !important;
+  background: #f4f6fb !important;
+  color: #0f172a !important;
 }
 
-/* Super visible proof of application */
 .payload .app-header,
 [class*='app-header'] {
-  background: linear-gradient(90deg, #2563eb, #7c3aed) !important;
-  color: #ffffff !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.3) !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-bottom: 1px solid #e2e8f0 !important;
 }
 
 .payload .template-default__nav,
 .payload .nav,
 [class*='template-default__nav'] {
-  background: #0a1224 !important;
-  border-right: 1px solid #263b63 !important;
+  background: #ffffff !important;
+  border-right: 1px solid #e2e8f0 !important;
 }
 
 .payload .collection-list,
@@ -59,10 +57,10 @@ body [id*='payload'] {
 .payload .drawer__content,
 [class*='collection-list'],
 [class*='document-fields'] {
-  background: #111a2e !important;
-  border: 1px solid #2d446f !important;
-  border-radius: 18px !important;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45) !important;
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06) !important;
 }
 
 .payload input,
@@ -71,8 +69,35 @@ body [id*='payload'] {
 [class*='field'] input,
 [class*='field'] textarea,
 [class*='field'] select {
-  background: #0d1628 !important;
-  color: #e6edf8 !important;
-  border: 1px solid #35548a !important;
-  border-radius: 12px !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 10px !important;
+}
+
+/* Make post editor area look like a full writing canvas */
+.payload [class*='rich-text-lexical'],
+.payload [class*='lexicalEditor'],
+.payload [class*='editor-container'] {
+  max-width: 100% !important;
+}
+
+.payload [contenteditable='true'] {
+  min-height: 560px !important;
+  font-size: 17px !important;
+  line-height: 1.85 !important;
+}
+
+
+/* Rich text toolbar visibility + spacing */
+.payload [class*='rich-text-lexical'] button,
+.payload [class*='lexical'] button {
+  color: #0f172a !important;
+}
+
+.payload [class*='rich-text-lexical'] [role='toolbar'],
+.payload [class*='lexical'] [role='toolbar'] {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 10px !important;
 }
