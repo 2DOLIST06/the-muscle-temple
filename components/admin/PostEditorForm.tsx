@@ -60,14 +60,32 @@ export function PostEditorForm({ initialPost }: { initialPost?: object }) {
   const save = async () => {
     try {
       setSaving(true); setError('');
+      const normalizedTitle = post.title.trim();
+      const normalizedSlug = post.slug.trim();
+      const normalizedContent = (post.contentJson.html || post.contentHtml || '').trim();
+      const normalizedAuthorId = post.authorId.trim();
+
+      if (normalizedTitle.length < 4) {
+        setError('Le titre doit contenir au moins 4 caractères.');
+        return;
+      }
+      if (normalizedContent.length < 10) {
+        setError('Le contenu doit contenir au moins 10 caractères.');
+        return;
+      }
+      if (!normalizedAuthorId) {
+        setError('Veuillez sélectionner un auteur.');
+        return;
+      }
+
       let parsedJsonLd: unknown = null;
       if (post.jsonLd.trim()) parsedJsonLd = JSON.parse(post.jsonLd);
       const payload = {
-        slug: post.slug,
-        title: post.title,
-        contentMarkdown: post.contentJson.html || post.contentHtml || '',
-        authorId: post.authorId || null,
-        h1: post.h1 || post.title,
+        slug: normalizedSlug || undefined,
+        title: normalizedTitle,
+        contentMarkdown: normalizedContent,
+        authorId: normalizedAuthorId,
+        h1: post.h1 || normalizedTitle,
         chapoHtml: post.chapoHtml || null,
         contentHtml: post.contentJson.html || null,
         contentJson: post.contentJson,
