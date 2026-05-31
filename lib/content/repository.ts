@@ -13,19 +13,30 @@ interface ApiPost {
   id: string;
   slug: string;
   title: string;
+  h1?: string | null;
   excerpt?: string | null;
+  chapoHtml?: string | null;
   contentMarkdown?: string | null;
+  contentHtml?: string | null;
   contentJson?: {
+    html?: string | null;
     sections?: Array<{ heading?: string | null; content?: string | string[] | null }>;
   } | null;
-  status?: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+  status?: string | null;
+  isActive?: boolean | null;
+  isIndexable?: boolean | null;
+  metaDescription?: string | null;
   publishedAt?: string | null;
   updatedAt?: string | null;
   readingTimeMinutes?: number | null;
   coverImage?: ApiMedia | null;
+  heroImageUrl?: string | null;
   category?: { slug?: string | null } | null;
+  categorySlug?: string | null;
   author?: { slug?: string | null } | null;
-  tags?: Array<{ slug?: string | null; name?: string | null }>;
+  authorSlug?: string | null;
+  tags?: Array<{ slug?: string | null; name?: string | null }> | string[];
+  tagsJson?: string[] | null;
   seo?: ApiSeo | null;
 }
 
@@ -87,6 +98,17 @@ const markdownToSections = (markdown: string, fallbackTitle = 'Contenu'): PostSe
   });
 };
 
+const stripHtml = (value: string) =>
+  value
+    .replace(/<br\s*\/?\s*>/gi, '\n')
+    .replace(/<\/p>/gi, '\n\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .trim();
+
 const toPostSections = (apiPost: ApiPost): PostSection[] => {
   const jsonSections =
     apiPost.contentJson?.sections
@@ -97,27 +119,43 @@ const toPostSections = (apiPost: ApiPost): PostSection[] => {
       .filter((section) => section.content.length > 0) ?? [];
 
   if (jsonSections.length > 0) return jsonSections;
-  if (apiPost.contentMarkdown?.trim()) return markdownToSections(apiPost.contentMarkdown, 'Contenu');
+  if (apiPost.contentMarkdown?.trim()) return markdownToSections(stripHtml(apiPost.contentMarkdown), 'Contenu');
+  if (apiPost.contentHtml?.trim()) return markdownToSections(stripHtml(apiPost.contentHtml), 'Contenu');
+  if (apiPost.contentJson?.html?.trim()) return markdownToSections(stripHtml(apiPost.contentJson.html), 'Contenu');
 
-  return [{ heading: 'Contenu', content: [apiPost.excerpt?.trim() || 'Contenu bientôt disponible.'] }];
+  return [{ heading: 'Contenu', content: [apiPost.excerpt?.trim() || stripHtml(apiPost.chapoHtml ?? '') || 'Contenu bientôt disponible.'] }];
+};
+
+const getPostExcerpt = (apiPost: ApiPost) =>
+  apiPost.excerpt?.trim() || stripHtml(apiPost.chapoHtml ?? '').slice(0, 280);
+
+const getPostTags = (apiPost: ApiPost) => {
+  if (apiPost.tagsJson?.length) return apiPost.tagsJson.map((tag) => tag.trim()).filter(Boolean);
+  return (apiPost.tags ?? [])
+    .map((tag) => (typeof tag === 'string' ? tag : tag.slug?.trim() || tag.name?.trim() || ''))
+    .filter(Boolean);
 };
 
 const toPost = (apiPost: ApiPost): Post => ({
   id: apiPost.id,
   slug: apiPost.slug,
-  title: apiPost.title,
-  excerpt: apiPost.excerpt?.trim() || '',
-  description: apiPost.seo?.description?.trim() || apiPost.excerpt?.trim() || '',
-  coverImage: apiPost.coverImage?.url?.trim() || 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438',
+  title: apiPost.h1?.trim() || apiPost.title,
+  excerpt: getPostExcerpt(apiPost),
+  description:
+    apiPost.seo?.description?.trim() ||
+    apiPost.metaDescription?.trim() ||
+    apiPost.excerpt?.trim() ||
+    stripHtml(apiPost.chapoHtml ?? ''),
+  coverImage:
+    apiPost.coverImage?.url?.trim() ||
+    apiPost.heroImageUrl?.trim() ||
+    'https://images.unsplash.com/photo-1517836357463-d25dfeac3438',
   publishedAt: apiPost.publishedAt || apiPost.updatedAt || new Date().toISOString(),
   updatedAt: apiPost.updatedAt || undefined,
   readingMinutes: apiPost.readingTimeMinutes ?? 6,
-  categorySlug: apiPost.category?.slug?.trim() || 'non-classe',
-  authorSlug: apiPost.author?.slug?.trim() || 'auteur-inconnu',
-  tags:
-    apiPost.tags
-      ?.map((tag) => tag.slug?.trim() || tag.name?.trim() || '')
-      .filter(Boolean) ?? [],
+  categorySlug: apiPost.category?.slug?.trim() || apiPost.categorySlug?.trim() || 'non-classe',
+  authorSlug: apiPost.author?.slug?.trim() || apiPost.authorSlug?.trim() || 'auteur-inconnu',
+  tags: getPostTags(apiPost),
   sections: toPostSections(apiPost),
   featured: false
 });
@@ -148,18 +186,19 @@ async function fetchCollection<T>(path: string): Promise<T[]> {
 
     const payload = (await response.json().catch(() => ({}))) as {
       data?: unknown;
+      docs?: unknown;
       items?: unknown;
       posts?: unknown;
       categories?: unknown;
       authors?: unknown;
     };
 
-    const candidates = [payload.data, payload.items, payload.posts, payload.categories, payload.authors];
+    const candidates = [payload.data, payload.docs, payload.items, payload.posts, payload.categories, payload.authors];
     for (const candidate of candidates) {
       if (Array.isArray(candidate)) return candidate as T[];
       if (candidate && typeof candidate === 'object') {
-        const nested = candidate as { items?: unknown; posts?: unknown; categories?: unknown; authors?: unknown };
-        const nestedCandidates = [nested.items, nested.posts, nested.categories, nested.authors];
+        const nested = candidate as { docs?: unknown; items?: unknown; posts?: unknown; categories?: unknown; authors?: unknown };
+        const nestedCandidates = [nested.docs, nested.items, nested.posts, nested.categories, nested.authors];
         for (const nestedCandidate of nestedCandidates) {
           if (Array.isArray(nestedCandidate)) return nestedCandidate as T[];
         }
@@ -204,7 +243,13 @@ async function fetchPostBySlug(slug: string): Promise<ApiPost | null> {
 export const contentRepository = {
   async getAllPosts(): Promise<Post[]> {
     const apiPosts = await fetchCollection<ApiPost>('/api/posts?limit=50');
-    const publishedPosts = apiPosts.filter((post) => post.status !== 'DRAFT' && post.status !== 'ARCHIVED').map(toPost);
+    const publishedPosts = apiPosts
+      .filter((post) => {
+        const status = post.status?.toUpperCase();
+        const isPublished = !status || status === 'PUBLISHED';
+        return isPublished && post.isActive !== false;
+      })
+      .map(toPost);
     return sortByDateDesc(publishedPosts);
   },
   async getFeaturedPosts(limit = 3): Promise<Post[]> {
@@ -217,7 +262,7 @@ export const contentRepository = {
   },
   async getPostBySlug(slug: string): Promise<Post | undefined> {
     const post = await fetchPostBySlug(slug);
-    if (!post || post.status === 'DRAFT' || post.status === 'ARCHIVED') return undefined;
+    if (!post || (post.status && post.status.toUpperCase() !== 'PUBLISHED') || post.isActive === false) return undefined;
     return toPost(post);
   },
   async getAllCategories(): Promise<Category[]> {
@@ -230,7 +275,14 @@ export const contentRepository = {
   },
   async getPostsByCategory(slug: string): Promise<Post[]> {
     const apiPosts = await fetchCollection<ApiPost>(`/api/categories/${slug}/posts`);
-    return sortByDateDesc(apiPosts.filter((post) => post.status !== 'DRAFT' && post.status !== 'ARCHIVED').map(toPost));
+    return sortByDateDesc(
+      apiPosts
+        .filter((post) => {
+          const status = post.status?.toUpperCase();
+          return (!status || status === 'PUBLISHED') && post.isActive !== false;
+        })
+        .map(toPost)
+    );
   },
   async getAllAuthors(): Promise<Author[]> {
     const apiAuthors = await fetchCollection<ApiAuthor>('/api/authors');
@@ -242,7 +294,14 @@ export const contentRepository = {
   },
   async getPostsByAuthor(slug: string): Promise<Post[]> {
     const apiPosts = await fetchCollection<ApiPost>(`/api/authors/${slug}/posts`);
-    return sortByDateDesc(apiPosts.filter((post) => post.status !== 'DRAFT' && post.status !== 'ARCHIVED').map(toPost));
+    return sortByDateDesc(
+      apiPosts
+        .filter((post) => {
+          const status = post.status?.toUpperCase();
+          return (!status || status === 'PUBLISHED') && post.isActive !== false;
+        })
+        .map(toPost)
+    );
   },
   async getRelatedPosts(currentPost: Post, limit = 3): Promise<RelatedPostSummary[]> {
     const posts = await this.getPostsByCategory(currentPost.categorySlug);
