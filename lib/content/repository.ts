@@ -1,4 +1,4 @@
-import { buildPublicApiUrl } from '@/lib/api/env';
+import { buildPublicApiUrl, getPublicApiBaseUrl } from '@/lib/api/env';
 import type { Author, Category, Post, PostSection, RelatedPostSummary } from '@/types/content';
 
 interface ApiMedia {
@@ -55,6 +55,31 @@ interface ApiAuthor {
   bio?: string | null;
   avatar?: ApiMedia | null;
 }
+
+const getPublicApiOrigin = () => {
+  try {
+    return new URL(getPublicApiBaseUrl()).origin;
+  } catch {
+    return getPublicApiBaseUrl().replace(/\/$/, '');
+  }
+};
+
+const toAbsoluteApiAssetUrl = (url: string) => {
+  const trimmed = url.trim();
+  if (!trimmed) return trimmed;
+  if (/^(?:[a-z][a-z\d+.-]*:|\/\/|#)/i.test(trimmed)) return trimmed;
+
+  const apiOrigin = getPublicApiOrigin();
+  if (trimmed.startsWith('/')) return `${apiOrigin}${trimmed}`;
+  if (/^(?:uploads|media|assets|files)\//i.test(trimmed)) return `${apiOrigin}/${trimmed}`;
+
+  return trimmed;
+};
+
+const normalizeContentImageSources = (html: string) =>
+  html.replace(/(<img\b[^>]*?\ssrc=["\'])([^"\']+)(["\'][^>]*>)/gi, (_match, before: string, src: string, after: string) => {
+    return `${before}${toAbsoluteApiAssetUrl(src)}${after}`;
+  });
 
 const sortByDateDesc = (items: Post[]) =>
   [...items].sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
@@ -136,8 +161,10 @@ const getPostTags = (apiPost: ApiPost) => {
     .filter(Boolean);
 };
 
-const getPostContentHtml = (apiPost: ApiPost) =>
-  apiPost.contentHtml?.trim() || apiPost.contentJson?.html?.trim() || undefined;
+const getPostContentHtml = (apiPost: ApiPost) => {
+  const html = apiPost.contentHtml?.trim() || apiPost.contentJson?.html?.trim();
+  return html ? normalizeContentImageSources(html) : undefined;
+};
 
 const toPost = (apiPost: ApiPost): Post => ({
   id: apiPost.id,

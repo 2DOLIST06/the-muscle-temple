@@ -186,8 +186,8 @@ export function RichContentEditor({
   const contentHtml = useMemo(() => value.html, [value.html]);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-700 bg-slate-950 shadow-xl shadow-black/20">
-      <div className="flex flex-wrap items-center gap-2 border-b border-slate-700 bg-slate-900/80 p-3">
+    <div className="rounded-xl border border-slate-700 bg-slate-950 shadow-xl shadow-black/20">
+      <div className="sticky top-0 z-30 flex flex-wrap items-center gap-2 rounded-t-xl border-b border-slate-700 bg-slate-900/95 p-3 shadow-lg shadow-slate-950/20 backdrop-blur">
         <button type="button" className={buttonClass(isBlock('p'))} onClick={() => exec('formatBlock', 'P')}>Paragraphe</button>
         <button type="button" className={buttonClass(isBlock('h1'))} onClick={() => exec('formatBlock', 'H1')}>H1</button>
         <button type="button" className={buttonClass(isBlock('h2'))} onClick={() => exec('formatBlock', 'H2')}>H2</button>
