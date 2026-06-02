@@ -306,14 +306,17 @@ export const contentRepository = {
   },
   async getPostsByCategory(slug: string): Promise<Post[]> {
     const apiPosts = await fetchCollection<ApiPost>(`/api/categories/${slug}/posts`);
-    return sortByDateDesc(
-      apiPosts
-        .filter((post) => {
-          const status = post.status?.toUpperCase();
-          return (!status || status === 'PUBLISHED') && post.isActive !== false;
-        })
-        .map(toPost)
-    );
+    const postsFromCategoryEndpoint = apiPosts
+      .filter((post) => {
+        const status = post.status?.toUpperCase();
+        return (!status || status === 'PUBLISHED') && post.isActive !== false;
+      })
+      .map(toPost);
+
+    if (postsFromCategoryEndpoint.length > 0) return sortByDateDesc(postsFromCategoryEndpoint);
+
+    const allPosts = await this.getAllPosts();
+    return sortByDateDesc(allPosts.filter((post) => post.categorySlug === slug));
   },
   async getAllAuthors(): Promise<Author[]> {
     const apiAuthors = await fetchCollection<ApiAuthor>('/api/authors');
