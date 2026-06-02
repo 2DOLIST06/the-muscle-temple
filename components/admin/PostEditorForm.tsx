@@ -41,7 +41,33 @@ type AuthorOption = {
   name: string;
 };
 
-const empty: PostModel = { slug: '', title: '', h1: '', chapoHtml: '', contentHtml: '', contentJson: { type: 'doc', html: '' }, faqJson: [], heroImageUrl: '', heroImageAlt: '', metaTitle: '', metaDescription: '', canonicalUrl: '', robots: 'index,follow', isActive: false, isIndexable: false, categorySlug: '', tagsJson: [], jsonLd: '', status: 'DRAFT', authorId: '' };
+const empty: PostModel = {
+  slug: '',
+  title: '',
+  h1: '',
+  chapoHtml: '',
+  contentHtml: '',
+  contentJson: { type: 'doc', html: '' },
+  faqJson: [],
+  heroImageUrl: '',
+  heroImageAlt: '',
+  metaTitle: '',
+  metaDescription: '',
+  canonicalUrl: '',
+  robots: 'index,follow',
+  isActive: false,
+  isIndexable: false,
+  categorySlug: '',
+  tagsJson: [],
+  jsonLd: '',
+  status: 'DRAFT',
+  authorId: ''
+};
+
+const fieldClass =
+  'w-full rounded border border-slate-600 bg-white p-2 text-slate-950 placeholder:text-slate-500 shadow-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30';
+const labelClass = 'block text-sm font-medium text-slate-200';
+const checkboxClass = 'h-4 w-4 rounded border-slate-500 bg-white text-brand-700 accent-brand-700';
 
 const normalizeInitialPost = (initialPost?: InitialPost): PostModel => {
   const status = initialPost?.status?.toUpperCase() === 'PUBLISHED' ? 'PUBLISHED' : 'DRAFT';
@@ -82,7 +108,8 @@ export function PostEditorForm({ initialPost }: { initialPost?: InitialPost }) {
 
   const save = async () => {
     try {
-      setSaving(true); setError('');
+      setSaving(true);
+      setError('');
       const normalizedTitle = post.title.trim();
       const normalizedSlug = post.slug.trim();
       const normalizedContent = (post.contentJson.html || post.contentHtml || '').trim();
@@ -135,10 +162,100 @@ export function PostEditorForm({ initialPost }: { initialPost?: InitialPost }) {
       router.refresh();
     } catch (e) {
       setError(e instanceof AdminApiError ? e.message : 'Erreur sauvegarde');
-    } finally { setSaving(false); }
+    } finally {
+      setSaving(false);
+    }
   };
 
   const warning = useMemo(() => (!post.isIndexable || !post.isActive) && post.robots === 'index,follow', [post]);
 
-  return <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]"><div className="space-y-4"><input className="w-full rounded border p-2" placeholder="Titre" value={post.title} onChange={(e)=>setPost({...post,title:e.target.value})} /><input className="w-full rounded border p-2" placeholder="H1" value={post.h1} onChange={(e)=>setPost({...post,h1:e.target.value})} /><textarea className="w-full rounded border p-2" placeholder="Chapo HTML" value={post.chapoHtml} onChange={(e)=>setPost({...post,chapoHtml:e.target.value})} /><RichContentEditor value={post.contentJson} onChange={(v)=>setPost({...post,contentJson:v,contentHtml:v.html})} /><section className="rounded border p-3"><button type="button" onClick={()=>setPost({...post,faqJson:[...post.faqJson,{question:'',answer:''}]})}>Ajouter question</button>{post.faqJson.map((faq,i)=><div key={i}><input className="w-full border p-1" value={faq.question} onChange={(e)=>setPost({...post,faqJson:post.faqJson.map((f,idx)=>idx===i?{...f,question:e.target.value}:f)})} /><textarea className="w-full border p-1" value={faq.answer} onChange={(e)=>setPost({...post,faqJson:post.faqJson.map((f,idx)=>idx===i?{...f,answer:e.target.value}:f)})} /></div>)}</section></div><aside className="space-y-3"><input className="w-full rounded border p-2" placeholder="slug" value={post.slug} onChange={(e)=>setPost({...post,slug:e.target.value})} /><label className="block text-sm">Auteur</label><select className="w-full rounded border p-2" value={post.authorId} onChange={(e)=>setPost({...post,authorId:e.target.value})}><option value="">Sélectionner un auteur</option>{authors.map((author)=><option key={author.id} value={author.id}>{author.name}</option>)}</select><input className="w-full rounded border p-2" placeholder="categorySlug" value={post.categorySlug} onChange={(e)=>setPost({...post,categorySlug:e.target.value})} /><input className="w-full rounded border p-2" placeholder="tags séparés virgules" value={post.tagsJson.join(',')} onChange={(e)=>setPost({...post,tagsJson:e.target.value.split(',').map((x)=>x.trim()).filter(Boolean)})} /><input className="w-full rounded border p-2" placeholder="heroImageUrl" value={post.heroImageUrl} onChange={(e)=>setPost({...post,heroImageUrl:e.target.value})} /><input className="w-full rounded border p-2" placeholder="heroImageAlt" value={post.heroImageAlt} onChange={(e)=>setPost({...post,heroImageAlt:e.target.value})} /><input className="w-full rounded border p-2" placeholder="metaTitle" value={post.metaTitle} onChange={(e)=>setPost({...post,metaTitle:e.target.value})} /><textarea className="w-full rounded border p-2" placeholder="metaDescription" value={post.metaDescription} onChange={(e)=>setPost({...post,metaDescription:e.target.value})} /><input className="w-full rounded border p-2" placeholder="canonicalUrl" value={post.canonicalUrl} onChange={(e)=>setPost({...post,canonicalUrl:e.target.value})} /><input className="w-full rounded border p-2" placeholder="robots" value={post.robots} onChange={(e)=>setPost({...post,robots:e.target.value})} /><textarea className="w-full rounded border p-2" placeholder="jsonLd objet/array" value={post.jsonLd} onChange={(e)=>setPost({...post,jsonLd:e.target.value})} /><label><input type="checkbox" checked={post.isActive} onChange={(e)=>setPost({...post,isActive:e.target.checked})} /> actif</label><label><input type="checkbox" checked={post.isIndexable} onChange={(e)=>setPost({...post,isIndexable:e.target.checked})} /> indexable</label><select value={post.status} onChange={(e)=>{const status=e.target.value as 'DRAFT'|'PUBLISHED';setPost({...post,status,isActive:status==='PUBLISHED'?true:post.isActive,isIndexable:status==='PUBLISHED'?true:post.isIndexable,robots:status==='PUBLISHED'?'index,follow':post.robots});}}><option value="DRAFT">DRAFT</option><option value="PUBLISHED">PUBLISHED</option></select><p className="text-xs text-slate-400">Un article publié est automatiquement envoyé comme actif et indexable pour apparaître sur /articles.</p>{warning ? <p className="text-amber-500 text-sm">Avertissement: robots index,follow incohérent avec visibilité.</p> : null}{error ? <p className="text-red-500 text-sm">{error}</p> : null}<button type="button" className="rounded bg-brand-700 px-3 py-2" onClick={save} disabled={saving}>{saving?'Enregistrement...':'Enregistrer'}</button></aside></div>;
+  return (
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="space-y-4">
+        <input className={fieldClass} placeholder="Titre" value={post.title} onChange={(e) => setPost({ ...post, title: e.target.value })} />
+        <input className={fieldClass} placeholder="H1" value={post.h1} onChange={(e) => setPost({ ...post, h1: e.target.value })} />
+        <textarea className={fieldClass} placeholder="Chapo HTML" value={post.chapoHtml} onChange={(e) => setPost({ ...post, chapoHtml: e.target.value })} />
+        <RichContentEditor value={post.contentJson} onChange={(v) => setPost({ ...post, contentJson: v, contentHtml: v.html })} />
+        <section className="rounded border border-slate-700 p-3">
+          <button
+            type="button"
+            className="rounded border border-slate-600 px-3 py-2 text-sm font-medium text-slate-100 hover:bg-slate-800"
+            onClick={() => setPost({ ...post, faqJson: [...post.faqJson, { question: '', answer: '' }] })}
+          >
+            Ajouter question
+          </button>
+          <div className="mt-3 space-y-3">
+            {post.faqJson.map((faq, i) => (
+              <div key={i} className="space-y-2">
+                <input
+                  className={fieldClass}
+                  placeholder="Question"
+                  value={faq.question}
+                  onChange={(e) => setPost({ ...post, faqJson: post.faqJson.map((f, idx) => (idx === i ? { ...f, question: e.target.value } : f)) })}
+                />
+                <textarea
+                  className={fieldClass}
+                  placeholder="Réponse"
+                  value={faq.answer}
+                  onChange={(e) => setPost({ ...post, faqJson: post.faqJson.map((f, idx) => (idx === i ? { ...f, answer: e.target.value } : f)) })}
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      <aside className="space-y-3">
+        <input className={fieldClass} placeholder="slug" value={post.slug} onChange={(e) => setPost({ ...post, slug: e.target.value })} />
+        <label className={labelClass} htmlFor="post-author">
+          Auteur
+        </label>
+        <select id="post-author" className={fieldClass} value={post.authorId} onChange={(e) => setPost({ ...post, authorId: e.target.value })}>
+          <option value="">Sélectionner un auteur</option>
+          {authors.map((author) => (
+            <option key={author.id} value={author.id}>
+              {author.name}
+            </option>
+          ))}
+        </select>
+        <input className={fieldClass} placeholder="categorySlug" value={post.categorySlug} onChange={(e) => setPost({ ...post, categorySlug: e.target.value })} />
+        <input
+          className={fieldClass}
+          placeholder="tags séparés virgules"
+          value={post.tagsJson.join(',')}
+          onChange={(e) => setPost({ ...post, tagsJson: e.target.value.split(',').map((x) => x.trim()).filter(Boolean) })}
+        />
+        <input className={fieldClass} placeholder="heroImageUrl" value={post.heroImageUrl} onChange={(e) => setPost({ ...post, heroImageUrl: e.target.value })} />
+        <input className={fieldClass} placeholder="heroImageAlt" value={post.heroImageAlt} onChange={(e) => setPost({ ...post, heroImageAlt: e.target.value })} />
+        <input className={fieldClass} placeholder="metaTitle" value={post.metaTitle} onChange={(e) => setPost({ ...post, metaTitle: e.target.value })} />
+        <textarea className={fieldClass} placeholder="metaDescription" value={post.metaDescription} onChange={(e) => setPost({ ...post, metaDescription: e.target.value })} />
+        <input className={fieldClass} placeholder="canonicalUrl" value={post.canonicalUrl} onChange={(e) => setPost({ ...post, canonicalUrl: e.target.value })} />
+        <input className={fieldClass} placeholder="robots" value={post.robots} onChange={(e) => setPost({ ...post, robots: e.target.value })} />
+        <textarea className={fieldClass} placeholder="jsonLd objet/array" value={post.jsonLd} onChange={(e) => setPost({ ...post, jsonLd: e.target.value })} />
+        <label className="flex items-center gap-2 text-sm text-slate-100">
+          <input className={checkboxClass} type="checkbox" checked={post.isActive} onChange={(e) => setPost({ ...post, isActive: e.target.checked })} /> actif
+        </label>
+        <label className="flex items-center gap-2 text-sm text-slate-100">
+          <input className={checkboxClass} type="checkbox" checked={post.isIndexable} onChange={(e) => setPost({ ...post, isIndexable: e.target.checked })} /> indexable
+        </label>
+        <select
+          className={fieldClass}
+          value={post.status}
+          onChange={(e) => {
+            const status = e.target.value as 'DRAFT' | 'PUBLISHED';
+            setPost({ ...post, status, isActive: status === 'PUBLISHED' ? true : post.isActive, isIndexable: status === 'PUBLISHED' ? true : post.isIndexable, robots: status === 'PUBLISHED' ? 'index,follow' : post.robots });
+          }}
+        >
+          <option value="DRAFT">DRAFT</option>
+          <option value="PUBLISHED">PUBLISHED</option>
+        </select>
+        <p className="text-xs text-slate-400">Un article publié est automatiquement envoyé comme actif et indexable pour apparaître sur /articles.</p>
+        {warning ? <p className="text-sm text-amber-500">Avertissement: robots index,follow incohérent avec visibilité.</p> : null}
+        {error ? <p className="text-sm text-red-500">{error}</p> : null}
+        <button type="button" className="rounded bg-brand-700 px-3 py-2 text-white disabled:cursor-not-allowed disabled:opacity-60" onClick={save} disabled={saving}>
+          {saving ? 'Enregistrement...' : 'Enregistrer'}
+        </button>
+      </aside>
+    </div>
+  );
 }
