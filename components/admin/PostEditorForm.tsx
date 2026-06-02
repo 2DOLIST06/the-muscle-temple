@@ -24,6 +24,7 @@ type PostModel = {
   robots: string;
   isActive: boolean;
   isIndexable: boolean;
+  categoryId: string;
   categorySlug: string;
   tagsJson: string[];
   jsonLd: string;
@@ -34,11 +35,18 @@ type PostModel = {
 type InitialPost = Partial<Omit<PostModel, 'status'>> & {
   status?: 'DRAFT' | 'PUBLISHED' | 'draft' | 'published';
   author?: { id?: string | null } | null;
+  category?: { id?: string | null; slug?: string | null; title?: string | null; name?: string | null } | null;
 };
 
 type AuthorOption = {
   id: string;
   name: string;
+};
+
+type CategoryOption = {
+  id: string;
+  slug: string;
+  label: string;
 };
 
 const empty: PostModel = {
@@ -57,6 +65,7 @@ const empty: PostModel = {
   robots: 'index,follow',
   isActive: false,
   isIndexable: false,
+  categoryId: '',
   categorySlug: '',
   tagsJson: [],
   jsonLd: '',
@@ -78,6 +87,8 @@ const normalizeInitialPost = (initialPost?: InitialPost): PostModel => {
     ...(initialPost ?? {}),
     status,
     authorId: initialPost?.authorId || initialPost?.author?.id || '',
+    categoryId: initialPost?.categoryId || initialPost?.category?.id || '',
+    categorySlug: initialPost?.categorySlug || initialPost?.category?.slug || '',
     contentHtml,
     contentJson: { type: 'doc', html: contentHtml },
     isActive: initialPost?.isActive ?? status === 'PUBLISHED',
@@ -88,6 +99,7 @@ const normalizeInitialPost = (initialPost?: InitialPost): PostModel => {
 export function PostEditorForm({ initialPost }: { initialPost?: InitialPost }) {
   const [post, setPost] = useState<PostModel>(() => normalizeInitialPost(initialPost));
   const [authors, setAuthors] = useState<AuthorOption[]>([]);
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const router = useRouter();
@@ -100,9 +112,21 @@ export function PostEditorForm({ initialPost }: { initialPost?: InitialPost }) {
     async function loadOptions() {
       const response = await fetch('/admin-api/content/options', { cache: 'no-store' });
       if (!response.ok) return;
-      const payload = (await response.json().catch(() => ({}))) as { authors?: Array<{ id?: string; name?: string }> };
-      const normalized = payload.authors?.map((author) => ({ id: author.id ?? '', name: author.name ?? '' })).filter((author) => author.id && author.name) ?? [];
-      setAuthors(normalized);
+      const payload = (await response.json().catch(() => ({}))) as {
+        authors?: Array<{ id?: string; name?: string }>;
+        categories?: Array<{ id?: string; slug?: string; title?: string; name?: string }>;
+      };
+      const normalizedAuthors = payload.authors?.map((author) => ({ id: author.id ?? '', name: author.name ?? '' })).filter((author) => author.id && author.name) ?? [];
+      const normalizedCategories =
+        payload.categories
+          ?.map((category) => ({
+            id: category.id ?? '',
+            slug: category.slug ?? '',
+            label: category.title?.trim() || category.name?.trim() || category.slug || ''
+          }))
+          .filter((category) => category.id && category.slug && category.label) ?? [];
+      setAuthors(normalizedAuthors);
+      setCategories(normalizedCategories);
     }
 
     void loadOptions();
@@ -116,6 +140,9 @@ export function PostEditorForm({ initialPost }: { initialPost?: InitialPost }) {
       const normalizedSlug = post.slug.trim();
       const normalizedContent = (post.contentJson.html || post.contentHtml || '').trim();
       const normalizedAuthorId = post.authorId.trim();
+      const selectedCategory = categories.find((category) => category.id === post.categoryId || category.slug === post.categorySlug);
+      const normalizedCategoryId = (post.categoryId || selectedCategory?.id || '').trim();
+      const normalizedCategorySlug = (post.categorySlug || selectedCategory?.slug || '').trim();
 
       if (normalizedTitle.length < 4) {
         setError('Le titre doit contenir au moins 4 caractères.');
@@ -151,7 +178,8 @@ export function PostEditorForm({ initialPost }: { initialPost?: InitialPost }) {
         robots: post.robots,
         isActive: publishing ? true : post.isActive,
         isIndexable: publishing ? true : post.isIndexable,
-        categorySlug: post.categorySlug || null,
+        categoryId: normalizedCategoryId || null,
+        categorySlug: normalizedCategorySlug || null,
         tagsJson: post.tagsJson,
         jsonLd: parsedJsonLd,
         status: post.status,
@@ -170,6 +198,8 @@ export function PostEditorForm({ initialPost }: { initialPost?: InitialPost }) {
   };
 
   const warning = useMemo(() => (!post.isIndexable || !post.isActive) && post.robots === 'index,follow', [post]);
+  const selectedCategory = categories.find((category) => category.id === post.categoryId || category.slug === post.categorySlug);
+  const categorySelectValue = selectedCategory?.id || post.categoryId || post.categorySlug;
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -220,7 +250,27 @@ export function PostEditorForm({ initialPost }: { initialPost?: InitialPost }) {
             </option>
           ))}
         </select>
-        <input className={fieldClass} placeholder="categorySlug" value={post.categorySlug} onChange={(e) => setPost({ ...post, categorySlug: e.target.value })} />
+        <label className={labelClass} htmlFor="post-category">
+          Catégorie
+        </label>
+        <select
+          id="post-category"
+          className={fieldClass}
+          value={categorySelectValue}
+          onChange={(e) => {
+            const selected = categories.find((category) => category.id === e.target.value || category.slug === e.target.value);
+            setPost({ ...post, categoryId: selected?.id ?? '', categorySlug: selected?.slug ?? e.target.value });
+          }}
+        >
+          <option value="">Sélectionner une catégorie</option>
+          {!selectedCategory && post.categorySlug ? <option value={post.categorySlug}>{post.categorySlug}</option> : null}
+          {categories.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.label}
+            </option>
+          ))}
+        </select>
+        {post.categorySlug ? <p className="text-xs text-slate-400">Slug catégorie envoyé : {post.categorySlug}</p> : null}
         <input
           className={fieldClass}
           placeholder="tags séparés virgules"

@@ -26,6 +26,7 @@ type ApiPost = Record<string, unknown> & {
   robots?: string | null;
   isActive?: boolean | null;
   isIndexable?: boolean | null;
+  categoryId?: string | null;
   categorySlug?: string | null;
   tagsJson?: unknown;
   jsonLd?: unknown;
@@ -38,7 +39,7 @@ type ApiPost = Record<string, unknown> & {
     canonicalUrl?: string | null;
     noIndex?: boolean | null;
   } | null;
-  category?: { slug?: string | null } | null;
+  category?: { id?: string | null; slug?: string | null; title?: string | null; name?: string | null } | null;
   coverImage?: { url?: string | null } | null;
   tags?: Array<{ slug?: string | null; name?: string | null }>;
 };
@@ -60,6 +61,7 @@ type EditorInitialPost = {
   robots?: string;
   isActive?: boolean;
   isIndexable?: boolean;
+  categoryId?: string;
   categorySlug?: string;
   tagsJson?: string[];
   jsonLd?: string;
@@ -160,6 +162,7 @@ const apiPostToEditorInitialPost = (post: ApiPost): EditorInitialPost => {
     robots: post.robots ?? (post.seo?.noIndex ? 'noindex,nofollow' : 'index,follow'),
     isActive: post.isActive ?? status === 'PUBLISHED',
     isIndexable: post.isIndexable ?? !post.seo?.noIndex,
+    categoryId: post.categoryId ?? post.category?.id ?? '',
     categorySlug: post.categorySlug ?? post.category?.slug ?? '',
     tagsJson:
       toStringArray(post.tagsJson).length > 0
