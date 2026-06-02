@@ -136,6 +136,9 @@ const getPostTags = (apiPost: ApiPost) => {
     .filter(Boolean);
 };
 
+const getPostContentHtml = (apiPost: ApiPost) =>
+  apiPost.contentHtml?.trim() || apiPost.contentJson?.html?.trim() || undefined;
+
 const toPost = (apiPost: ApiPost): Post => ({
   id: apiPost.id,
   slug: apiPost.slug,
@@ -157,6 +160,7 @@ const toPost = (apiPost: ApiPost): Post => ({
   authorSlug: apiPost.author?.slug?.trim() || apiPost.authorSlug?.trim() || 'auteur-inconnu',
   tags: getPostTags(apiPost),
   sections: toPostSections(apiPost),
+  contentHtml: getPostContentHtml(apiPost),
   featured: false
 });
 

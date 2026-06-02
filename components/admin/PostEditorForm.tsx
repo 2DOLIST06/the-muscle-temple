@@ -71,13 +71,15 @@ const checkboxClass = 'h-4 w-4 rounded border-slate-500 bg-white text-brand-700 
 
 const normalizeInitialPost = (initialPost?: InitialPost): PostModel => {
   const status = initialPost?.status?.toUpperCase() === 'PUBLISHED' ? 'PUBLISHED' : 'DRAFT';
+  const contentHtml = initialPost?.contentJson?.html || initialPost?.contentHtml || '';
 
   return {
     ...empty,
     ...(initialPost ?? {}),
     status,
     authorId: initialPost?.authorId || initialPost?.author?.id || '',
-    contentJson: initialPost?.contentJson ?? empty.contentJson,
+    contentHtml,
+    contentJson: { type: 'doc', html: contentHtml },
     isActive: initialPost?.isActive ?? status === 'PUBLISHED',
     isIndexable: initialPost?.isIndexable ?? status === 'PUBLISHED'
   };
