@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { AuthorBox } from '@/components/blog/AuthorBox';
 import { BlogPostSeo } from '@/components/blog/BlogPostSeo';
 import { PostCard } from '@/components/blog/PostCard';
+import { RichContentRenderer } from '@/components/blog/RichContentRenderer';
 import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
 import { Container } from '@/components/ui/Container';
 import { contentRepository } from '@/lib/content/repository';
@@ -73,16 +74,20 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         </div>
 
         <div className="mt-8 space-y-4">
-          {post.sections.map((section) => (
-            <section key={section.heading}>
-              <h2 className="text-2xl font-semibold">{section.heading}</h2>
-              {section.content.map((paragraph) => (
-                <p key={paragraph} className="mt-2 text-slate-700">
-                  {paragraph}
-                </p>
-              ))}
-            </section>
-          ))}
+          {post.contentHtml ? (
+            <RichContentRenderer contentHtml={post.contentHtml} />
+          ) : (
+            post.sections.map((section) => (
+              <section key={section.heading}>
+                <h2 className="text-2xl font-semibold">{section.heading}</h2>
+                {section.content.map((paragraph) => (
+                  <p key={paragraph} className="mt-2 text-slate-700">
+                    {paragraph}
+                  </p>
+                ))}
+              </section>
+            ))
+          )}
         </div>
 
         {author ? (

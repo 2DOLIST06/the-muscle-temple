@@ -38,6 +38,7 @@ export interface Post {
   authorSlug: string;
   tags: string[];
   sections: PostSection[];
+  contentHtml?: string;
   featured?: boolean;
 }
 

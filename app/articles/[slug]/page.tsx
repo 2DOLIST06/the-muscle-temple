@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { AuthorBox } from '@/components/blog/AuthorBox';
 import { PostCard } from '@/components/blog/PostCard';
+import { RichContentRenderer } from '@/components/blog/RichContentRenderer';
 import { TableOfContents } from '@/components/blog/TableOfContents';
 import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
 import { Container } from '@/components/ui/Container';
@@ -97,19 +98,23 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
 
         <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
           <div className="space-y-8">
-            {post.sections.map((section) => {
-              const id = `${post.slug}-${section.heading.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
-              return (
-                <section key={section.heading} id={id}>
-                  <h2 className="text-2xl font-semibold text-slate-900">{section.heading}</h2>
-                  <div className="mt-3 space-y-4 leading-8 text-slate-700">
-                    {section.content.map((paragraph) => (
-                      <p key={paragraph}>{paragraph}</p>
-                    ))}
-                  </div>
-                </section>
-              );
-            })}
+            {post.contentHtml ? (
+              <RichContentRenderer contentHtml={post.contentHtml} />
+            ) : (
+              post.sections.map((section) => {
+                const id = `${post.slug}-${section.heading.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+                return (
+                  <section key={section.heading} id={id}>
+                    <h2 className="text-2xl font-semibold text-slate-900">{section.heading}</h2>
+                    <div className="mt-3 space-y-4 leading-8 text-slate-700">
+                      {section.content.map((paragraph) => (
+                        <p key={paragraph}>{paragraph}</p>
+                      ))}
+                    </div>
+                  </section>
+                );
+              })
+            )}
             {author ? <AuthorBox author={author} /> : null}
           </div>
           <div className="lg:sticky lg:top-8 lg:self-start">
