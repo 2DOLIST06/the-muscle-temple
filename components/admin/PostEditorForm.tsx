@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { AdminApiError, adminApi, uploadAdminImage } from '@/lib/admin/api-client';
+import { absoluteUrl, getArticlePath, type Locale } from '@/lib/i18n/routing';
 import { RichContentEditor, type RichContentValue } from '@/components/admin/RichContentEditor';
 
 type FaqItem = { question: string; answer: string };
@@ -35,11 +36,15 @@ type PostModel = {
   jsonLd: string;
   status: 'DRAFT' | 'PUBLISHED';
   authorId: string;
+  locale: Locale;
+  translationGroupId: string;
+  translations: Array<{ locale: Locale; slug: string; path: string; canonicalUrl?: string }>;
 };
 
 type InitialPost = Partial<Omit<PostModel, 'status'>> & {
   status?: 'DRAFT' | 'PUBLISHED' | 'draft' | 'published';
   author?: { id?: string | null } | null;
+  translations?: Array<{ locale?: Locale | null; slug?: string | null; path?: string | null; canonicalUrl?: string | null }> | null;
   category?: { id?: string | null; slug?: string | null; title?: string | null; name?: string | null } | null;
   coverImage?: CoverImageValue;
 };
@@ -78,7 +83,10 @@ const empty: PostModel = {
   tagsJson: [],
   jsonLd: '',
   status: 'DRAFT',
-  authorId: ''
+  authorId: '',
+  locale: 'en',
+  translationGroupId: '',
+  translations: []
 };
 
 const fieldClass =
@@ -105,7 +113,16 @@ const normalizeInitialPost = (initialPost?: InitialPost): PostModel => {
     contentHtml,
     contentJson: { type: 'doc', html: contentHtml },
     isActive: initialPost?.isActive ?? status === 'PUBLISHED',
-    isIndexable: initialPost?.isIndexable ?? status === 'PUBLISHED'
+    isIndexable: initialPost?.isIndexable ?? status === 'PUBLISHED',
+    locale: initialPost?.locale === 'fr' ? 'fr' : 'en',
+    translationGroupId: initialPost?.translationGroupId || initialPost?.id || '',
+    translations:
+      initialPost?.translations
+        ?.flatMap((translation) => {
+          const locale = translation.locale === 'fr' ? 'fr' : translation.locale === 'en' ? 'en' : undefined;
+          if (!locale || !translation.slug || !translation.path) return [];
+          return [{ locale, slug: translation.slug, path: translation.path, canonicalUrl: translation.canonicalUrl || undefined }];
+        }) ?? []
   };
 };
 
@@ -118,10 +135,37 @@ export function PostEditorForm({ initialPost }: { initialPost?: InitialPost }) {
   const [coverUploading, setCoverUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     if (initialPost) setPost(normalizeInitialPost(initialPost));
   }, [initialPost]);
+
+  useEffect(() => {
+    if (initialPost) return;
+    const locale = searchParams.get('locale') === 'fr' ? 'fr' : searchParams.get('locale') === 'en' ? 'en' : undefined;
+    const translationGroupId = searchParams.get('translationGroupId') || '';
+    const authorId = searchParams.get('authorId') || '';
+    const categoryId = searchParams.get('categoryId') || '';
+    const categorySlug = searchParams.get('categorySlug') || '';
+    const coverImageId = searchParams.get('coverImageId') || '';
+    const heroImageUrl = searchParams.get('heroImageUrl') || '';
+    if (!locale && !translationGroupId) return;
+    setPost((current) => ({
+      ...current,
+      locale: locale ?? current.locale,
+      translationGroupId: translationGroupId || current.translationGroupId,
+      authorId: authorId || current.authorId,
+      categoryId: categoryId || current.categoryId,
+      categorySlug: categorySlug || current.categorySlug,
+      coverImageId: coverImageId || current.coverImageId,
+      heroImageUrl: heroImageUrl || current.heroImageUrl,
+      coverImageUrl: heroImageUrl || current.coverImageUrl,
+      status: 'DRAFT',
+      isActive: false,
+      isIndexable: false
+    }));
+  }, [initialPost, searchParams]);
 
   useEffect(() => {
     async function loadOptions() {
@@ -202,6 +246,8 @@ export function PostEditorForm({ initialPost }: { initialPost?: InitialPost }) {
       const payload = {
         slug: normalizedSlug || undefined,
         title: normalizedTitle,
+        locale: post.locale,
+        translationGroupId: post.translationGroupId || null,
         contentMarkdown: normalizedContent,
         authorId: normalizedAuthorId,
         h1: post.h1 || normalizedTitle,
@@ -241,6 +287,17 @@ export function PostEditorForm({ initialPost }: { initialPost?: InitialPost }) {
   const selectedCategory = categories.find((category) => category.id === post.categoryId || category.slug === post.categorySlug);
   const categorySelectValue = selectedCategory?.id || post.categoryId || post.categorySlug;
   const coverPreviewUrl = post.coverImageUrl || post.heroImageUrl;
+  const publicUrl = post.slug.trim() ? absoluteUrl(getArticlePath(post.locale, post.slug.trim())) : '';
+  const oppositeLocale: Locale = post.locale === 'en' ? 'fr' : 'en';
+  const createTranslationHref = `/admin/posts/new?${new URLSearchParams({
+    locale: oppositeLocale,
+    translationGroupId: post.translationGroupId || post.id || '',
+    authorId: post.authorId,
+    categoryId: post.categoryId,
+    categorySlug: post.categorySlug,
+    coverImageId: post.coverImageId,
+    heroImageUrl: post.heroImageUrl || post.coverImageUrl
+  }).toString()}`;
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -280,6 +337,30 @@ export function PostEditorForm({ initialPost }: { initialPost?: InitialPost }) {
 
       <aside className="space-y-3">
         <input className={fieldClass} placeholder="slug" value={post.slug} onChange={(e) => setPost({ ...post, slug: e.target.value })} />
+        <label className={labelClass} htmlFor="post-locale">Langue</label>
+        <select id="post-locale" className={fieldClass} value={post.locale} onChange={(e) => setPost({ ...post, locale: e.target.value === 'fr' ? 'fr' : 'en' })}>
+          <option value="en">English / en</option>
+          <option value="fr">Français / fr</option>
+        </select>
+        <input className={fieldClass} placeholder="translationGroupId" value={post.translationGroupId} onChange={(e) => setPost({ ...post, translationGroupId: e.target.value })} />
+        {publicUrl ? <p className="rounded border border-slate-700 p-2 text-xs text-slate-300">URL publique : {publicUrl}</p> : null}
+        {post.translations.length > 0 ? (
+          <div className="rounded border border-slate-700 p-3 text-xs text-slate-300">
+            <p className="font-semibold text-slate-100">Traductions existantes</p>
+            <ul className="mt-2 space-y-1">
+              {post.translations.map((translation) => (
+                <li key={`${translation.locale}-${translation.slug}`}>
+                  {translation.locale} · {translation.path}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+        {post.id ? (
+          <a className={secondaryButtonClass} href={createTranslationHref}>
+            {post.locale === 'en' ? 'Créer la version française' : 'Créer la version anglaise'}
+          </a>
+        ) : null}
         <label className={labelClass} htmlFor="post-author">
           Auteur
         </label>

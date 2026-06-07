@@ -3,6 +3,8 @@ import type { Post } from '@/types/content';
 export const posts: Post[] = [
   {
     id: 'p1',
+    locale: 'en',
+    translationGroupId: 'p1',
     slug: 'programme-prise-de-masse-12-semaines',
     title: 'Programme prise de masse sur 12 semaines : structure, charges et progression',
     excerpt: 'Un plan clair pour construire du muscle avec une surcharge progressive maîtrisée.',
@@ -34,6 +36,8 @@ export const posts: Post[] = [
   },
   {
     id: 'p2',
+    locale: 'en',
+    translationGroupId: 'p2',
     slug: 'nutrition-prise-de-masse-propre',
     title: 'Nutrition de prise de masse propre : calories, macros et exemples de journée',
     excerpt: 'Comment prendre du muscle sans accumuler trop de gras grâce à une stratégie nutritionnelle durable.',
@@ -64,6 +68,8 @@ export const posts: Post[] = [
   },
   {
     id: 'p3',
+    locale: 'en',
+    translationGroupId: 'p3',
     slug: 'ameliorer-sommeil-pour-musculation',
     title: 'Améliorer son sommeil pour progresser en musculation',
     excerpt: 'Le sommeil est un levier sous-estimé pour la récupération nerveuse et la progression long terme.',
@@ -86,6 +92,8 @@ export const posts: Post[] = [
   },
   {
     id: 'p4',
+    locale: 'en',
+    translationGroupId: 'p4',
     slug: 'split-push-pull-legs-debutant',
     title: 'Push Pull Legs pour débutant : erreurs fréquentes et plan d’action',
     excerpt: 'Le PPL peut être redoutablement efficace si tu évites les pièges classiques de volume et de récupération.',
@@ -108,6 +116,8 @@ export const posts: Post[] = [
   },
   {
     id: 'p5',
+    locale: 'en',
+    translationGroupId: 'p5',
     slug: 'pre-workout-cafeine-verite',
     title: 'Pré-workout et caféine : ce qui fonctionne vraiment',
     excerpt: 'Doses efficaces, timing et précautions pour utiliser la caféine sans nuire au sommeil.',

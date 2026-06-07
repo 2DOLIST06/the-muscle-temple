@@ -76,7 +76,10 @@ const mapPost = (p: CmsPost): Post => {
     categorySlug: category?.slug || 'non-classe',
     authorSlug: author?.slug || 'auteur-inconnu',
     tags: [],
-    sections: toSections(p.content, p.excerpt)
+    sections: toSections(p.content, p.excerpt),
+    locale: 'en',
+    translationGroupId: p.id,
+    path: `/articles/${p.slug}`
   };
 };
 

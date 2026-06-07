@@ -1,3 +1,5 @@
+import type { Hreflang, Locale } from '@/lib/i18n/routing';
+
 export interface Author {
   id: string;
   slug: string;
@@ -24,6 +26,18 @@ export interface PostSection {
   content: string[];
 }
 
+export interface PostTranslation {
+  locale: Locale;
+  slug: string;
+  path: string;
+  canonicalUrl?: string;
+}
+
+export interface PostHreflang {
+  hreflang: Hreflang;
+  href: string;
+}
+
 export interface Post {
   id: string;
   slug: string;
@@ -40,6 +54,12 @@ export interface Post {
   sections: PostSection[];
   contentHtml?: string;
   featured?: boolean;
+  locale: Locale;
+  translationGroupId: string;
+  path?: string;
+  canonicalUrl?: string;
+  translations?: PostTranslation[];
+  hreflang?: PostHreflang[];
 }
 
 export interface RelatedPostSummary {

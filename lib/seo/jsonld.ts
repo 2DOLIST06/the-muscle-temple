@@ -1,4 +1,5 @@
 import { siteConfig } from '@/lib/constants';
+import { absoluteUrl, getArticlePath, type Locale } from '@/lib/i18n/routing';
 
 export const blogPostingJsonLd = (props: {
   title: string;
@@ -9,6 +10,8 @@ export const blogPostingJsonLd = (props: {
   dateModified?: string;
   authorName: string;
   category: string;
+  locale?: Locale;
+  url?: string;
 }) => ({
   '@context': 'https://schema.org',
   '@type': 'BlogPosting',
@@ -18,6 +21,7 @@ export const blogPostingJsonLd = (props: {
   datePublished: props.datePublished,
   dateModified: props.dateModified ?? props.datePublished,
   articleSection: props.category,
+  inLanguage: props.locale ?? 'en',
   author: {
     '@type': 'Person',
     name: props.authorName
@@ -26,7 +30,7 @@ export const blogPostingJsonLd = (props: {
     '@type': 'Organization',
     name: siteConfig.name
   },
-  mainEntityOfPage: `${siteConfig.baseUrl}/articles/${props.slug}`
+  mainEntityOfPage: props.url ?? absoluteUrl(getArticlePath(props.locale ?? 'en', props.slug))
 });
 
 export const breadcrumbJsonLd = (items: { name: string; path: string }[]) => ({
@@ -36,6 +40,6 @@ export const breadcrumbJsonLd = (items: { name: string; path: string }[]) => ({
     '@type': 'ListItem',
     position: index + 1,
     name: item.name,
-    item: `${siteConfig.baseUrl}${item.path}`
+    item: absoluteUrl(item.path)
   }))
 });
