@@ -15,20 +15,20 @@ import { buildMetadata } from '@/lib/seo/metadata';
 import { blogPostingJsonLd, breadcrumbJsonLd } from '@/lib/seo/jsonld';
 
 export async function generateStaticParams() {
-  const posts = await contentRepository.getAllPostsByLocale('en');
+  const posts = await contentRepository.getAllPostsByLocale('fr');
   return posts.map((post) => ({ slug: post.slug }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const post = await contentRepository.getPostBySlugAndLocale(slug, 'en');
+  const post = await contentRepository.getPostBySlugAndLocale(slug, 'fr');
 
   if (!post) {
     return buildMetadata({
-      title: 'Article not found | Body Training Guide',
-      description: 'The requested article was not found.',
-      path: getArticlePath('en', slug),
-      locale: 'en',
+      title: 'Article introuvable | Body Training Guide',
+      description: "L’article demandé est introuvable.",
+      path: getArticlePath('fr', slug),
+      locale: 'fr',
       noIndex: true
     });
   }
@@ -37,8 +37,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     title: `${post.title} | Body Training Guide`,
     description: post.description,
     canonicalUrl: post.canonicalUrl,
-    path: post.path ?? getArticlePath('en', post.slug),
-    locale: 'en',
+    path: post.path ?? getArticlePath('fr', post.slug),
+    locale: 'fr',
     hreflang: post.hreflang,
     image: post.coverImage,
     type: 'article',
@@ -50,7 +50,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function ArticlePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const post = await contentRepository.getPostBySlugAndLocale(slug, 'en');
+  const post = await contentRepository.getPostBySlugAndLocale(slug, 'fr');
 
   if (!post) notFound();
 
@@ -60,9 +60,9 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
     contentRepository.getRelatedPosts(post, 3)
   ]);
 
-  const articlePath = post.path ?? getArticlePath('en', post.slug);
+  const articlePath = post.path ?? getArticlePath('fr', post.slug);
   const articleUrl = post.canonicalUrl ?? absoluteUrl(articlePath);
-  const translation = post.translations?.find((item) => item.locale === 'fr');
+  const translation = post.translations?.find((item) => item.locale === 'en');
   const postJsonLd = blogPostingJsonLd({
     title: post.title,
     description: post.description,
@@ -71,26 +71,26 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
     datePublished: post.publishedAt,
     dateModified: post.updatedAt,
     authorName: author?.name ?? 'Body Training Guide',
-    category: category?.title ?? 'Training',
-    locale: 'en',
+    category: category?.title ?? 'Musculation',
+    locale: 'fr',
     url: articleUrl
   });
 
   const breadcrumbs = breadcrumbJsonLd([
-    { name: 'Home', path: '/' },
-    { name: 'Articles', path: '/articles' },
+    { name: 'Accueil', path: '/fr' },
+    { name: 'Articles', path: '/fr/articles' },
     { name: post.title, path: articlePath }
   ]);
 
   return (
     <Container>
       <article className="py-10">
-        <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Articles', href: '/articles' }, { label: post.title, href: articlePath }]} />
+        <Breadcrumbs items={[{ label: 'Accueil', href: '/fr' }, { label: 'Articles', href: '/fr/articles' }, { label: post.title, href: articlePath }]} />
 
         {translation ? (
           <div className="mb-5">
             <Link href={translation.path} className="rounded border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700">
-              Lire en français
+              Read in English
             </Link>
           </div>
         ) : null}
@@ -99,7 +99,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
         <p className="mt-4 max-w-3xl text-lg text-slate-600">{post.description}</p>
 
         <div className="mt-5 text-sm text-slate-500">
-          <span>{author?.name}</span> · <span>{formatDate(post.publishedAt, 'en')}</span> · <span>{post.readingMinutes} min read</span>
+          <span>{author?.name}</span> · <span>{formatDate(post.publishedAt, 'fr')}</span> · <span>{post.readingMinutes} min de lecture</span>
         </div>
 
         <div className="relative mt-8 h-72 overflow-hidden rounded-2xl md:h-[420px]">
@@ -117,7 +117,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           <div className="lg:sticky lg:top-8 lg:self-start"><TableOfContents slug={post.slug} sections={post.sections} /></div>
         </div>
 
-        {relatedPosts.length > 0 ? <section className="mt-14 border-t border-slate-200 pt-10"><h2 className="text-2xl font-bold">Related articles</h2><div className="mt-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">{relatedPosts.map((relatedPost) => <PostCard key={relatedPost.slug} post={{ ...post, ...relatedPost, id: relatedPost.slug, locale: 'en', path: getArticlePath('en', relatedPost.slug), categorySlug: post.categorySlug, authorSlug: post.authorSlug, readingMinutes: 5, description: relatedPost.excerpt, tags: [], sections: [] }} category={category} author={author} />)}</div></section> : null}
+        {relatedPosts.length > 0 ? <section className="mt-14 border-t border-slate-200 pt-10"><h2 className="text-2xl font-bold">Articles liés</h2><div className="mt-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">{relatedPosts.map((relatedPost) => <PostCard key={relatedPost.slug} post={{ ...post, ...relatedPost, id: relatedPost.slug, locale: 'fr', path: getArticlePath('fr', relatedPost.slug), categorySlug: post.categorySlug, authorSlug: post.authorSlug, readingMinutes: 5, description: relatedPost.excerpt, tags: [], sections: [] }} category={category} author={author} />)}</div></section> : null}
 
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(postJsonLd) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }} />

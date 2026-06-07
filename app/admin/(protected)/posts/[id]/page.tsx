@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { PostEditorForm } from '@/components/admin/PostEditorForm';
 import { AdminApiError, adminApi } from '@/lib/admin/api-client';
 import type { RichContentValue } from '@/components/admin/RichContentEditor';
+import type { Locale } from '@/lib/i18n/routing';
 
 type FaqItem = { question: string; answer: string };
 
@@ -32,6 +33,9 @@ type ApiPost = Record<string, unknown> & {
   tagsJson?: unknown;
   jsonLd?: unknown;
   status?: string | null;
+  locale?: Locale | null;
+  translationGroupId?: string | null;
+  translations?: Array<{ locale?: Locale | null; slug?: string | null; path?: string | null; canonicalUrl?: string | null }> | null;
   authorId?: string | null;
   author?: { id?: string | null } | null;
   seo?: {
@@ -72,6 +76,9 @@ type EditorInitialPost = {
   status?: 'DRAFT' | 'PUBLISHED' | 'draft' | 'published';
   authorId?: string;
   author?: { id?: string | null } | null;
+  locale?: Locale;
+  translationGroupId?: string;
+  translations?: Array<{ locale: Locale; slug: string; path: string; canonicalUrl?: string }>;
 };
 
 type SinglePostResponse = { data?: ApiPost } | ApiPost;
@@ -178,7 +185,16 @@ const apiPostToEditorInitialPost = (post: ApiPost): EditorInitialPost => {
     jsonLd: stringifyJsonLd(post.jsonLd),
     status,
     authorId: post.authorId ?? post.author?.id ?? '',
-    author: post.author
+    author: post.author,
+    locale: post.locale === 'fr' ? 'fr' : 'en',
+    translationGroupId: post.translationGroupId ?? post.id ?? '',
+    translations:
+      post.translations
+        ?.flatMap((translation) => {
+          const locale = translation.locale === 'fr' ? 'fr' : translation.locale === 'en' ? 'en' : undefined;
+          if (!locale || !translation.slug || !translation.path) return [];
+          return [{ locale, slug: translation.slug, path: translation.path, canonicalUrl: translation.canonicalUrl || undefined }];
+        }) ?? []
   };
 };
 

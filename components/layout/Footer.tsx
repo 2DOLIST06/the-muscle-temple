@@ -1,34 +1,41 @@
+'use client';
+
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Container } from '@/components/ui/Container';
+import { siteConfig } from '@/lib/constants';
+import { getNavigation, getPathLocale } from '@/lib/i18n/routing';
 
 export function Footer() {
+  const pathname = usePathname();
+  const locale = getPathLocale(pathname ?? '/');
+  const navigation = getNavigation(locale).filter((item) => item.href !== (locale === 'fr' ? '/fr' : '/'));
+
   return (
     <footer className="border-t border-slate-200 bg-slate-50 py-10">
       <Container>
         <div className="grid gap-8 md:grid-cols-3">
           <div>
-            <h3 className="font-semibold text-slate-900">The Muscle Temple</h3>
+            <h3 className="font-semibold text-slate-900">{siteConfig.name}</h3>
             <p className="mt-2 text-sm text-slate-600">
-              Blog musculation premium : entraînement, nutrition, récupération.
+              {locale === 'fr'
+                ? 'Guides de musculation, nutrition et récupération pour progresser durablement.'
+                : 'Strength training, nutrition and recovery guides for sustainable progress.'}
             </p>
           </div>
           <div>
             <h3 className="font-semibold text-slate-900">Navigation</h3>
             <ul className="mt-2 space-y-2 text-sm text-slate-600">
-              <li>
-                <Link href="/articles">Articles</Link>
-              </li>
-              <li>
-                <Link href="/about">À propos</Link>
-              </li>
-              <li>
-                <Link href="/contact">Contact</Link>
-              </li>
+              {navigation.map((item) => (
+                <li key={item.href}>
+                  <Link href={item.href}>{item.label}</Link>
+                </li>
+              ))}
             </ul>
           </div>
           <div>
             <h3 className="font-semibold text-slate-900">Newsletter</h3>
-            <p className="mt-2 text-sm text-slate-600">Recevez chaque semaine nos stratégies terrain.</p>
+            <p className="mt-2 text-sm text-slate-600">{locale === 'fr' ? 'Recevez nos stratégies terrain.' : 'Get practical training strategies.'}</p>
           </div>
         </div>
       </Container>

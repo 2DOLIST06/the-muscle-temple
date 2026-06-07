@@ -1,17 +1,17 @@
 import type { NavigationItem } from '@/types/content';
 
 export const siteConfig = {
-  name: 'The Muscle Temple',
+  name: 'Body Training Guide',
   description:
-    'Blog musculation premium : entraînement, nutrition et récupération pour progresser durablement.',
-  baseUrl: 'https://themuscletemple.com',
+    'Strength training, nutrition and recovery guides for sustainable progress.',
+  baseUrl: 'https://bodytrainingguide.com',
   defaultOgImage: '/og-default.svg'
 };
 
 export const mainNavigation: NavigationItem[] = [
-  { label: 'Accueil', href: '/' },
+  { label: 'Home', href: '/' },
   { label: 'Articles', href: '/articles' },
-  { label: 'Catégories', href: '/categories' },
+  { label: 'Categories', href: '/categories' },
   { label: 'À propos', href: '/about' },
   { label: 'Contact', href: '/contact' }
 ];
