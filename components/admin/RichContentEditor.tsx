@@ -53,14 +53,6 @@ const selectionHasLink = () => {
   return Boolean(element?.closest('a'));
 };
 
-const readFileAsDataUrl = (file: File) =>
-  new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result ?? ''));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
-
 export function RichContentEditor({
   value,
   onChange,
@@ -74,6 +66,7 @@ export function RichContentEditor({
   const savedSelection = useRef<Range | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
   const [activeFormats, setActiveFormats] = useState<ActiveFormats>(emptyFormats);
 
   useEffect(() => {
@@ -168,14 +161,29 @@ export function RichContentEditor({
     if (!url) return;
     const alt = window.prompt('Texte alternatif / légende (optionnel)') ?? '';
     restoreSelection();
+    setUploadError('');
     insertImage(url, alt);
   };
 
-  const uploadImageFile = async (file: File) => {
+  const uploadImageFile = async (file?: File) => {
+    setUploadError('');
+
+    if (!file) {
+      setUploadError('Aucun fichier image sélectionné.');
+      return;
+    }
+
+    if (!onUploadImage) {
+      setUploadError('Upload image indisponible: aucun endpoint backend n’est configuré pour cet éditeur.');
+      return;
+    }
+
     setUploading(true);
     try {
-      const uploaded = onUploadImage ? await onUploadImage(file) : { url: await readFileAsDataUrl(file), alt: file.name };
+      const uploaded = await onUploadImage(file);
       insertImage(uploaded.url, uploaded.alt ?? file.name);
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : 'Upload image impossible.');
     } finally {
       setUploading(false);
     }
@@ -231,7 +239,6 @@ export function RichContentEditor({
           onChange={async (e) => {
             const file = e.target.files?.[0];
             e.currentTarget.value = '';
-            if (!file) return;
             await uploadImageFile(file);
           }}
         />
@@ -261,8 +268,9 @@ export function RichContentEditor({
           refreshActiveFormats();
         }}
       />
+      {uploadError ? <p className="border-t border-red-900 bg-red-950/70 px-3 py-2 text-xs text-red-100">{uploadError}</p> : null}
       <div className="flex items-center justify-between gap-3 border-t border-slate-700 bg-slate-900/70 p-2 text-xs text-slate-300">
-        <span>{uploading ? 'Insertion image…' : `${contentHtml.length} caractères HTML`}</span>
+        <span>{uploading ? 'Upload image en cours…' : `${contentHtml.length} caractères HTML`}</span>
         <span>Format courant : {activeFormats.block.toUpperCase()}{activeFormats.link ? ' · lien' : ''}</span>
       </div>
     </div>
