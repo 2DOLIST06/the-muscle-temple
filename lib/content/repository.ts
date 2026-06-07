@@ -176,10 +176,11 @@ const toPost = (apiPost: ApiPost): Post => ({
     apiPost.metaDescription?.trim() ||
     apiPost.excerpt?.trim() ||
     stripHtml(apiPost.chapoHtml ?? ''),
-  coverImage:
+  coverImage: toAbsoluteApiAssetUrl(
     apiPost.coverImage?.url?.trim() ||
-    apiPost.heroImageUrl?.trim() ||
-    'https://images.unsplash.com/photo-1517836357463-d25dfeac3438',
+      apiPost.heroImageUrl?.trim() ||
+      'https://images.unsplash.com/photo-1517836357463-d25dfeac3438'
+  ),
   publishedAt: apiPost.publishedAt || apiPost.updatedAt || new Date().toISOString(),
   updatedAt: apiPost.updatedAt || undefined,
   readingMinutes: apiPost.readingTimeMinutes ?? 6,
@@ -204,7 +205,7 @@ const toAuthor = (author: ApiAuthor): Author => ({
   name: author.name,
   role: 'Auteur',
   bio: author.bio?.trim() || 'Auteur The Muscle Temple.',
-  avatar: author.avatar?.url?.trim() || 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5'
+  avatar: toAbsoluteApiAssetUrl(author.avatar?.url?.trim() || 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5')
 });
 
 async function fetchCollection<T>(path: string): Promise<T[]> {

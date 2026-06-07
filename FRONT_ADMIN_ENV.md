@@ -6,6 +6,9 @@ Copiez en local / Vercel:
 NEXT_PUBLIC_API_URL=https://the-muscle-temple-api-1.onrender.com
 API_BASE_URL=https://the-muscle-temple-api-1.onrender.com
 ADMIN_AUTH_MODE=jwt
+# Domaine CDN autorisé par next/image pour les médias S3 exposés via CloudFront.
+# Renseignez soit un host (cdn.example.com), soit une URL complète (https://cdn.example.com).
+NEXT_PUBLIC_CLOUDFRONT_DOMAIN=cdn.example.com
 ```
 
 ## Modes

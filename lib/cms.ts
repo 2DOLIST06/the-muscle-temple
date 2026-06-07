@@ -20,6 +20,21 @@ export interface PostsResult { posts: Post[]; totalPages: number; page: number; 
 
 const toSections = (content?: string | null, excerpt?: string | null): PostSection[] => [{ heading: 'Contenu', content: [content?.trim() || excerpt?.trim() || 'Contenu indisponible.'] }];
 
+const toCmsAssetUrl = (url?: string | null) => {
+  const trimmed = url?.trim() || '';
+  if (!trimmed) return trimmed;
+  if (/^(?:[a-z][a-z\d+.-]*:|\/\/|#)/i.test(trimmed) || !CMS_API_URL) return trimmed;
+
+  let origin = CMS_API_URL.replace(/\/$/, '');
+  try {
+    origin = new URL(CMS_API_URL).origin;
+  } catch {
+    // Keep the normalized CMS_API_URL fallback above.
+  }
+  if (trimmed.startsWith('/')) return `${origin}${trimmed}`;
+  return `${origin}/${trimmed}`;
+};
+
 const withTimeout = async (input: string, init: RequestInit, timeoutMs = 6000) => {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -44,7 +59,7 @@ async function cmsFetch<T>(path: string, revalidate = 120): Promise<T | null> {
 }
 
 const mapCategory = (c: CmsCategory): Category => ({ id: c.id, slug: c.slug, title: c.title?.trim() || c.name?.trim() || 'Catégorie', description: c.description?.trim() || 'Sans description.' });
-const mapAuthor = (a?: CmsAuthor | null): Author => ({ id: a?.id || 'unknown-author', slug: a?.slug || 'auteur-inconnu', name: a?.name?.trim() || 'Équipe éditoriale', role: 'Auteur', bio: a?.bio?.trim() || 'Auteur The Muscle Temple.', avatar: a?.avatar?.url || DEFAULT_AVATAR });
+const mapAuthor = (a?: CmsAuthor | null): Author => ({ id: a?.id || 'unknown-author', slug: a?.slug || 'auteur-inconnu', name: a?.name?.trim() || 'Équipe éditoriale', role: 'Auteur', bio: a?.bio?.trim() || 'Auteur The Muscle Temple.', avatar: toCmsAssetUrl(a?.avatar?.url) || DEFAULT_AVATAR });
 const mapPost = (p: CmsPost): Post => {
   const category = typeof p.category === 'object' && p.category ? p.category : null;
   const author = typeof p.author === 'object' && p.author ? p.author : null;
@@ -54,7 +69,7 @@ const mapPost = (p: CmsPost): Post => {
     title: p.title?.trim() || 'Sans titre',
     excerpt: p.excerpt?.trim() || '',
     description: p.excerpt?.trim() || '',
-    coverImage: p.image?.url || DEFAULT_IMAGE,
+    coverImage: toCmsAssetUrl(p.image?.url) || DEFAULT_IMAGE,
     publishedAt: p.publishedAt || p.updatedAt || new Date().toISOString(),
     updatedAt: p.updatedAt || undefined,
     readingMinutes: 5,
@@ -89,7 +104,7 @@ export async function getCategories(): Promise<Category[]> {
 export async function getRelatedPosts(postId: string, categorySlug?: string): Promise<RelatedPostSummary[]> {
   const where = encodeURIComponent(JSON.stringify({ and: [{ status: { equals: 'published' } }, { id: { not_equals: postId } }, ...(categorySlug ? [{ 'category.slug': { equals: categorySlug } }] : [])] }));
   const data = await cmsFetch<CmsListResponse<CmsPost>>(`/api/posts?where=${where}&limit=3&sort=-publishedAt`);
-  return (data?.docs ?? []).map((p) => ({ slug: p.slug, title: p.title?.trim() || 'Sans titre', excerpt: p.excerpt?.trim() || '', coverImage: p.image?.url || DEFAULT_IMAGE, publishedAt: p.publishedAt || p.updatedAt || new Date().toISOString() }));
+  return (data?.docs ?? []).map((p) => ({ slug: p.slug, title: p.title?.trim() || 'Sans titre', excerpt: p.excerpt?.trim() || '', coverImage: toCmsAssetUrl(p.image?.url) || DEFAULT_IMAGE, publishedAt: p.publishedAt || p.updatedAt || new Date().toISOString() }));
 }
 
 export async function getPostAuthorBySlug(slug: string): Promise<Author | undefined> {

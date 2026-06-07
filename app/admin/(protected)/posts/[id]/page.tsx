@@ -18,6 +18,7 @@ type ApiPost = Record<string, unknown> & {
   contentMarkdown?: string | null;
   contentJson?: unknown;
   faqJson?: unknown;
+  coverImageId?: string | null;
   heroImageUrl?: string | null;
   heroImageAlt?: string | null;
   metaTitle?: string | null;
@@ -40,7 +41,7 @@ type ApiPost = Record<string, unknown> & {
     noIndex?: boolean | null;
   } | null;
   category?: { id?: string | null; slug?: string | null; title?: string | null; name?: string | null } | null;
-  coverImage?: { url?: string | null } | null;
+  coverImage?: { id?: string | null; url?: string | null } | null;
   tags?: Array<{ slug?: string | null; name?: string | null }>;
 };
 
@@ -53,6 +54,9 @@ type EditorInitialPost = {
   contentHtml?: string;
   contentJson?: RichContentValue;
   faqJson?: FaqItem[];
+  coverImageId?: string;
+  coverImageUrl?: string;
+  coverImage?: { id?: string | null; url?: string | null } | null;
   heroImageUrl?: string;
   heroImageAlt?: string;
   metaTitle?: string;
@@ -154,6 +158,9 @@ const apiPostToEditorInitialPost = (post: ApiPost): EditorInitialPost => {
     contentHtml: contentJson.html,
     contentJson,
     faqJson: toFaqItems(post.faqJson),
+    coverImageId: post.coverImageId ?? post.coverImage?.id ?? '',
+    coverImageUrl: post.coverImage?.url ?? post.heroImageUrl ?? '',
+    coverImage: post.coverImage ?? null,
     heroImageUrl: post.heroImageUrl ?? post.coverImage?.url ?? '',
     heroImageAlt: post.heroImageAlt ?? '',
     metaTitle: post.metaTitle ?? post.seo?.title ?? '',
