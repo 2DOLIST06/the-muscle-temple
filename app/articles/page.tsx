@@ -4,24 +4,27 @@ import { PostCard } from '@/components/blog/PostCard';
 import { Container } from '@/components/ui/Container';
 import { contentRepository } from '@/lib/content/repository';
 import { buildMetadata } from '@/lib/seo/metadata';
+import { getPageSeo } from '@/lib/seo/pages';
 
-export const metadata: Metadata = buildMetadata({
-  title: 'Training and nutrition articles | Body Training Guide',
-  description: 'All English articles about training, nutrition and recovery.',
-  path: '/articles',
-  locale: 'en',
-  hreflang: [
-    { hreflang: 'en', href: 'https://bodytrainingguide.com/articles' },
-    { hreflang: 'fr', href: 'https://bodytrainingguide.com/fr/articles' },
-    { hreflang: 'x-default', href: 'https://bodytrainingguide.com/articles' }
-  ]
-});
+export async function generateMetadata(): Promise<Metadata> {
+  return buildMetadata(await getPageSeo('articles', 'en', {
+    title: 'Training and nutrition articles | Body Training Guide',
+    description: 'All English articles about training, nutrition and recovery.',
+    path: '/articles',
+    locale: 'en',
+    hreflang: [
+      { hreflang: 'en', href: 'https://bodytrainingguide.com/articles' },
+      { hreflang: 'fr', href: 'https://bodytrainingguide.com/fr/articles' },
+      { hreflang: 'x-default', href: 'https://bodytrainingguide.com/articles' }
+    ]
+  }));
+}
 
 export default async function ArticlesPage() {
   const [posts, authors, categories] = await Promise.all([
     contentRepository.getAllPostsByLocale('en'),
-    contentRepository.getAllAuthors(),
-    contentRepository.getAllCategories()
+    contentRepository.getAllAuthorsByLocale('en'),
+    contentRepository.getAllCategoriesByLocale('en')
   ]);
 
   return (

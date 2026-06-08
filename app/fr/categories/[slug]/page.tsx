@@ -7,30 +7,30 @@ import { absoluteUrl, getCategoryPath } from '@/lib/i18n/routing';
 import { buildMetadata } from '@/lib/seo/metadata';
 
 export async function generateStaticParams() {
-  const categories = await contentRepository.getAllCategoriesByLocale('en');
+  const categories = await contentRepository.getAllCategoriesByLocale('fr');
   return categories.map((category) => ({ slug: category.slug }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const category = await contentRepository.getCategoryBySlugAndLocale(slug, 'en');
-  const path = getCategoryPath('en', slug);
+  const category = await contentRepository.getCategoryBySlugAndLocale(slug, 'fr');
+  const path = getCategoryPath('fr', slug);
 
   if (!category) {
     return buildMetadata({
-      title: 'Category not found | Body Training Guide',
-      description: 'Category unavailable.',
+      title: 'Catégorie introuvable | Body Training Guide',
+      description: 'Catégorie indisponible.',
       path,
-      locale: 'en',
+      locale: 'fr',
       noIndex: true
     });
   }
 
   return buildMetadata({
-    title: `${category.title} | Category`,
+    title: `${category.title} | Catégorie`,
     description: category.description,
-    path: getCategoryPath('en', category.slug),
-    locale: 'en',
+    path: getCategoryPath('fr', category.slug),
+    locale: 'fr',
     hreflang: [
       { hreflang: 'en', href: absoluteUrl(getCategoryPath('en', category.slug)) },
       { hreflang: 'fr', href: absoluteUrl(getCategoryPath('fr', category.slug)) },
@@ -39,15 +39,15 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   });
 }
 
-export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function FrenchCategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const category = await contentRepository.getCategoryBySlugAndLocale(slug, 'en');
+  const category = await contentRepository.getCategoryBySlugAndLocale(slug, 'fr');
 
   if (!category) notFound();
 
   const [posts, authors] = await Promise.all([
-    contentRepository.getPostsByCategoryAndLocale(slug, 'en'),
-    contentRepository.getAllAuthorsByLocale('en')
+    contentRepository.getPostsByCategoryAndLocale(slug, 'fr'),
+    contentRepository.getAllAuthorsByLocale('fr')
   ]);
 
   return (

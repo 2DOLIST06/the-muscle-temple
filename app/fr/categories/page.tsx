@@ -6,11 +6,11 @@ import { buildMetadata } from '@/lib/seo/metadata';
 import { getPageSeo } from '@/lib/seo/pages';
 
 export async function generateMetadata(): Promise<Metadata> {
-  return buildMetadata(await getPageSeo('categories', 'en', {
-    title: 'Categories | Body Training Guide',
-    description: 'Explore the strength training blog categories.',
-    path: '/categories',
-    locale: 'en',
+  return buildMetadata(await getPageSeo('categories', 'fr', {
+    title: 'Catégories | Body Training Guide',
+    description: 'Explorez les catégories du blog musculation.',
+    path: '/fr/categories',
+    locale: 'fr',
     hreflang: [
       { hreflang: 'en', href: 'https://bodytrainingguide.com/categories' },
       { hreflang: 'fr', href: 'https://bodytrainingguide.com/fr/categories' },
@@ -19,16 +19,16 @@ export async function generateMetadata(): Promise<Metadata> {
   }));
 }
 
-export default async function CategoriesPage() {
-  const categories = await contentRepository.getAllCategoriesByLocale('en');
+export default async function FrenchCategoriesPage() {
+  const categories = await contentRepository.getAllCategoriesByLocale('fr');
 
   return (
     <Container>
       <section className="py-12">
-        <h1 className="text-3xl font-bold">Categories</h1>
+        <h1 className="text-3xl font-bold">Catégories</h1>
         <div className="mt-8 grid gap-4 md:grid-cols-3">
           {categories.map((category) => (
-            <CategoryCard key={category.id} category={category} locale="en" />
+            <CategoryCard key={category.id} category={category} locale="fr" />
           ))}
         </div>
       </section>

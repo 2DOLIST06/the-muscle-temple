@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { contentRepository } from '@/lib/content/repository';
 import { siteConfig } from '@/lib/constants';
-import { absoluteUrl, getArticlePath } from '@/lib/i18n/routing';
+import { absoluteUrl, getArticlePath, getAuthorPath, getCategoryPath } from '@/lib/i18n/routing';
 import type { Post } from '@/types/content';
 
 const postAlternates = (post: Post) => {
@@ -27,15 +27,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${siteConfig.baseUrl}/articles`, lastModified: new Date(), alternates: { languages: { en: `${siteConfig.baseUrl}/articles`, fr: `${siteConfig.baseUrl}/fr/articles`, 'x-default': `${siteConfig.baseUrl}/articles` } } },
     { url: `${siteConfig.baseUrl}/fr`, lastModified: new Date(), alternates: { languages: { en: `${siteConfig.baseUrl}/`, fr: `${siteConfig.baseUrl}/fr`, 'x-default': `${siteConfig.baseUrl}/` } } },
     { url: `${siteConfig.baseUrl}/fr/articles`, lastModified: new Date(), alternates: { languages: { en: `${siteConfig.baseUrl}/articles`, fr: `${siteConfig.baseUrl}/fr/articles`, 'x-default': `${siteConfig.baseUrl}/articles` } } },
+    { url: `${siteConfig.baseUrl}/categories`, lastModified: new Date(), alternates: { languages: { en: `${siteConfig.baseUrl}/categories`, fr: `${siteConfig.baseUrl}/fr/categories`, 'x-default': `${siteConfig.baseUrl}/categories` } } },
+    { url: `${siteConfig.baseUrl}/fr/categories`, lastModified: new Date(), alternates: { languages: { en: `${siteConfig.baseUrl}/categories`, fr: `${siteConfig.baseUrl}/fr/categories`, 'x-default': `${siteConfig.baseUrl}/categories` } } },
+    { url: `${siteConfig.baseUrl}/authors`, lastModified: new Date(), alternates: { languages: { en: `${siteConfig.baseUrl}/authors`, fr: `${siteConfig.baseUrl}/fr/authors`, 'x-default': `${siteConfig.baseUrl}/authors` } } },
+    { url: `${siteConfig.baseUrl}/fr/authors`, lastModified: new Date(), alternates: { languages: { en: `${siteConfig.baseUrl}/authors`, fr: `${siteConfig.baseUrl}/fr/authors`, 'x-default': `${siteConfig.baseUrl}/authors` } } },
     { url: `${siteConfig.baseUrl}/about`, lastModified: new Date() },
     { url: `${siteConfig.baseUrl}/contact`, lastModified: new Date() }
   ];
 
-  const [englishPosts, frenchPosts, allCategories, allAuthors] = await Promise.all([
+  const [englishPosts, frenchPosts, englishCategories, frenchCategories, englishAuthors, frenchAuthors] = await Promise.all([
     contentRepository.getAllPostsByLocale('en'),
     contentRepository.getAllPostsByLocale('fr'),
-    contentRepository.getAllCategories(),
-    contentRepository.getAllAuthors()
+    contentRepository.getAllCategoriesByLocale('en'),
+    contentRepository.getAllCategoriesByLocale('fr'),
+    contentRepository.getAllAuthorsByLocale('en'),
+    contentRepository.getAllAuthorsByLocale('fr')
   ]);
 
   const posts: MetadataRoute.Sitemap = [...englishPosts, ...frenchPosts].map((post) => ({
@@ -44,8 +50,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     alternates: postAlternates(post)
   }));
 
-  const categories = allCategories.map((category) => ({ url: `${siteConfig.baseUrl}/categories/${category.slug}`, lastModified: new Date() }));
-  const authors = allAuthors.map((author) => ({ url: `${siteConfig.baseUrl}/authors/${author.slug}`, lastModified: new Date() }));
+  const categories = [...englishCategories.map((category) => ({ locale: 'en' as const, category })), ...frenchCategories.map((category) => ({ locale: 'fr' as const, category }))].map(({ locale, category }) => ({
+    url: absoluteUrl(getCategoryPath(locale, category.slug)),
+    lastModified: new Date(),
+    alternates: { languages: { en: absoluteUrl(getCategoryPath('en', category.slug)), fr: absoluteUrl(getCategoryPath('fr', category.slug)), 'x-default': absoluteUrl(getCategoryPath('en', category.slug)) } }
+  }));
+  const authors = [...englishAuthors.map((author) => ({ locale: 'en' as const, author })), ...frenchAuthors.map((author) => ({ locale: 'fr' as const, author }))].map(({ locale, author }) => ({
+    url: absoluteUrl(getAuthorPath(locale, author.slug)),
+    lastModified: new Date(),
+    alternates: { languages: { en: absoluteUrl(getAuthorPath('en', author.slug)), fr: absoluteUrl(getAuthorPath('fr', author.slug)), 'x-default': absoluteUrl(getAuthorPath('en', author.slug)) } }
+  }));
 
   return [...staticPages, ...posts, ...categories, ...authors];
 }
