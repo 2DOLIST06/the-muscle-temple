@@ -11,6 +11,8 @@ type FaqItem = { question: string; answer: string };
 
 type CoverImageValue = { id?: string | null; url?: string | null } | null;
 
+type TranslationSummary = { id?: string; locale: Locale; slug: string; path: string; canonicalUrl?: string };
+
 type PostModel = {
   id?: string;
   slug: string;
@@ -38,13 +40,13 @@ type PostModel = {
   authorId: string;
   locale: Locale;
   translationGroupId: string;
-  translations: Array<{ locale: Locale; slug: string; path: string; canonicalUrl?: string }>;
+  translations: TranslationSummary[];
 };
 
 type InitialPost = Partial<Omit<PostModel, 'status'>> & {
   status?: 'DRAFT' | 'PUBLISHED' | 'draft' | 'published';
   author?: { id?: string | null } | null;
-  translations?: Array<{ locale?: Locale | null; slug?: string | null; path?: string | null; canonicalUrl?: string | null }> | null;
+  translations?: Array<{ id?: string | null; locale?: Locale | null; slug?: string | null; path?: string | null; canonicalUrl?: string | null }> | null;
   category?: { id?: string | null; slug?: string | null; title?: string | null; name?: string | null } | null;
   coverImage?: CoverImageValue;
 };
@@ -96,6 +98,37 @@ const checkboxClass = 'h-4 w-4 rounded border-slate-500 bg-white text-brand-700 
 const secondaryButtonClass =
   'rounded border border-slate-600 px-3 py-2 text-sm font-medium text-slate-100 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60';
 
+type SavePostResponse = {
+  data?: {
+    id?: string;
+    locale?: Locale | null;
+    translationGroupId?: string | null;
+    translations?: InitialPost['translations'];
+  };
+};
+
+const serializePost = (value: PostModel) => JSON.stringify(value);
+
+const getPostPath = (locale: Locale, slug: string) => (slug.trim() ? getArticlePath(locale, slug.trim()) : '');
+
+const summarizeCurrentPost = (post: PostModel): TranslationSummary | undefined => {
+  if (!post.id || !post.slug.trim()) return undefined;
+  return {
+    id: post.id,
+    locale: post.locale,
+    slug: post.slug.trim(),
+    path: getPostPath(post.locale, post.slug),
+    canonicalUrl: post.canonicalUrl || absoluteUrl(getPostPath(post.locale, post.slug))
+  };
+};
+
+const mergeTranslations = (translations: TranslationSummary[], next?: TranslationSummary) => {
+  const indexed = new Map<string, TranslationSummary>();
+  for (const translation of translations) indexed.set(translation.locale, translation);
+  if (next) indexed.set(next.locale, next);
+  return Array.from(indexed.values());
+};
+
 const normalizeInitialPost = (initialPost?: InitialPost): PostModel => {
   const status = initialPost?.status?.toUpperCase() === 'PUBLISHED' ? 'PUBLISHED' : 'DRAFT';
   const contentHtml = initialPost?.contentJson?.html || initialPost?.contentHtml || '';
@@ -121,7 +154,7 @@ const normalizeInitialPost = (initialPost?: InitialPost): PostModel => {
         ?.flatMap((translation) => {
           const locale = translation.locale === 'fr' ? 'fr' : translation.locale === 'en' ? 'en' : undefined;
           if (!locale || !translation.slug || !translation.path) return [];
-          return [{ locale, slug: translation.slug, path: translation.path, canonicalUrl: translation.canonicalUrl || undefined }];
+          return [{ id: translation.id || undefined, locale, slug: translation.slug, path: translation.path, canonicalUrl: translation.canonicalUrl || undefined }];
         }) ?? []
   };
 };
@@ -134,11 +167,17 @@ export function PostEditorForm({ initialPost }: { initialPost?: InitialPost }) {
   const [coverUploadError, setCoverUploadError] = useState('');
   const [coverUploading, setCoverUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [translationNotice, setTranslationNotice] = useState('');
+  const [savedSnapshot, setSavedSnapshot] = useState(() => serializePost(normalizeInitialPost(initialPost)));
   const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    if (initialPost) setPost(normalizeInitialPost(initialPost));
+    if (!initialPost) return;
+    const normalized = normalizeInitialPost(initialPost);
+    setPost(normalized);
+    setSavedSnapshot(serializePost(normalized));
+    setTranslationNotice('');
   }, [initialPost]);
 
   useEffect(() => {
@@ -151,20 +190,22 @@ export function PostEditorForm({ initialPost }: { initialPost?: InitialPost }) {
     const coverImageId = searchParams.get('coverImageId') || '';
     const heroImageUrl = searchParams.get('heroImageUrl') || '';
     if (!locale && !translationGroupId) return;
-    setPost((current) => ({
-      ...current,
-      locale: locale ?? current.locale,
-      translationGroupId: translationGroupId || current.translationGroupId,
-      authorId: authorId || current.authorId,
-      categoryId: categoryId || current.categoryId,
-      categorySlug: categorySlug || current.categorySlug,
-      coverImageId: coverImageId || current.coverImageId,
-      heroImageUrl: heroImageUrl || current.heroImageUrl,
-      coverImageUrl: heroImageUrl || current.coverImageUrl,
-      status: 'DRAFT',
+    const nextPost = {
+      ...empty,
+      locale: locale ?? empty.locale,
+      translationGroupId,
+      authorId,
+      categoryId,
+      categorySlug,
+      coverImageId,
+      heroImageUrl,
+      coverImageUrl: heroImageUrl,
+      status: 'DRAFT' as const,
       isActive: false,
       isIndexable: false
-    }));
+    };
+    setPost(nextPost);
+    setSavedSnapshot(serializePost(nextPost));
   }, [initialPost, searchParams]);
 
   useEffect(() => {
@@ -213,6 +254,49 @@ export function PostEditorForm({ initialPost }: { initialPost?: InitialPost }) {
     } finally {
       setCoverUploading(false);
     }
+  };
+
+  const hasUnsavedChanges = useMemo(() => serializePost(post) !== savedSnapshot, [post, savedSnapshot]);
+
+  const switchLocale = (targetLocale: Locale) => {
+    if (targetLocale === post.locale) return;
+    if (hasUnsavedChanges && !window.confirm('Vous avez des changements non sauvegardés. Changer de langue les abandonnera. Continuer ?')) return;
+
+    const existingTranslation = post.translations.find((translation) => translation.locale === targetLocale);
+    if (existingTranslation) {
+      const editId = existingTranslation.id || existingTranslation.slug;
+      if (!editId) {
+        setError('La traduction existe mais son identifiant est absent de la réponse API.');
+        return;
+      }
+      router.push(`/admin/posts/${encodeURIComponent(editId)}`);
+      return;
+    }
+
+    const sourceSummary = summarizeCurrentPost(post);
+    const nextPost: PostModel = {
+      ...empty,
+      id: undefined,
+      locale: targetLocale,
+      translationGroupId: post.translationGroupId || post.id || '',
+      authorId: post.authorId,
+      categoryId: post.categoryId,
+      categorySlug: post.categorySlug,
+      coverImageId: post.coverImageId,
+      coverImageUrl: post.coverImageUrl,
+      heroImageUrl: post.heroImageUrl,
+      heroImageAlt: post.heroImageAlt,
+      tagsJson: post.tagsJson,
+      status: 'DRAFT',
+      isActive: false,
+      isIndexable: false,
+      translations: mergeTranslations(post.translations, sourceSummary)
+    };
+
+    setPost(nextPost);
+    setSavedSnapshot(serializePost(nextPost));
+    setError('');
+    setTranslationNotice(`La version ${targetLocale.toUpperCase()} n’existe pas encore. Elle sera créée à la première sauvegarde.`);
   };
 
   const save = async () => {
@@ -272,10 +356,43 @@ export function PostEditorForm({ initialPost }: { initialPost?: InitialPost }) {
         publishedAt: publishing ? new Date().toISOString() : null
       };
 
-      if (post.id) await adminApi.put(`/admin-api/posts/${post.id}`, payload);
-      else await adminApi.post('/admin-api/posts', payload);
-      router.push('/admin/posts');
-      router.refresh();
+      if (post.id) {
+        await adminApi.put(`/admin-api/posts/${post.id}`, payload);
+        const savedPost: PostModel = {
+          ...post,
+          slug: normalizedSlug,
+          title: normalizedTitle,
+          h1: post.h1 || normalizedTitle,
+          chapoHtml: post.chapoHtml,
+          contentHtml: post.contentJson.html,
+          authorId: normalizedAuthorId,
+          isActive: publishing ? true : post.isActive,
+          isIndexable: publishing ? true : post.isIndexable,
+          categoryId: normalizedCategoryId,
+          categorySlug: normalizedCategorySlug,
+          id: post.id
+        };
+        setPost(savedPost);
+        setSavedSnapshot(serializePost(savedPost));
+        router.refresh();
+      } else {
+        const response = await adminApi.post<SavePostResponse>('/admin-api/posts', payload);
+        const createdId = response.data?.id;
+        if (!createdId) throw new AdminApiError('Réponse création invalide: data.id est requis.', 502, response);
+        const createdLocale = response.data?.locale === 'fr' ? 'fr' : response.data?.locale === 'en' ? 'en' : post.locale;
+        const savedPost = {
+          ...post,
+          id: createdId,
+          locale: createdLocale,
+          translationGroupId: response.data?.translationGroupId || post.translationGroupId,
+          translations: response.data?.translations ? normalizeInitialPost({ translations: response.data.translations }).translations : post.translations
+        };
+        setPost(savedPost);
+        setSavedSnapshot(serializePost(savedPost));
+        setTranslationNotice('');
+        router.replace(`/admin/posts/${encodeURIComponent(createdId)}`);
+        router.refresh();
+      }
     } catch (e) {
       setError(e instanceof AdminApiError ? e.message : 'Erreur sauvegarde');
     } finally {
@@ -289,15 +406,7 @@ export function PostEditorForm({ initialPost }: { initialPost?: InitialPost }) {
   const coverPreviewUrl = post.coverImageUrl || post.heroImageUrl;
   const publicUrl = post.slug.trim() ? absoluteUrl(getArticlePath(post.locale, post.slug.trim())) : '';
   const oppositeLocale: Locale = post.locale === 'en' ? 'fr' : 'en';
-  const createTranslationHref = `/admin/posts/new?${new URLSearchParams({
-    locale: oppositeLocale,
-    translationGroupId: post.translationGroupId || post.id || '',
-    authorId: post.authorId,
-    categoryId: post.categoryId,
-    categorySlug: post.categorySlug,
-    coverImageId: post.coverImageId,
-    heroImageUrl: post.heroImageUrl || post.coverImageUrl
-  }).toString()}`;
+  const oppositeTranslation = post.translations.find((translation) => translation.locale === oppositeLocale);
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -337,11 +446,24 @@ export function PostEditorForm({ initialPost }: { initialPost?: InitialPost }) {
 
       <aside className="space-y-3">
         <input className={fieldClass} placeholder="slug" value={post.slug} onChange={(e) => setPost({ ...post, slug: e.target.value })} />
-        <label className={labelClass} htmlFor="post-locale">Langue</label>
-        <select id="post-locale" className={fieldClass} value={post.locale} onChange={(e) => setPost({ ...post, locale: e.target.value === 'fr' ? 'fr' : 'en' })}>
-          <option value="en">English / en</option>
-          <option value="fr">Français / fr</option>
-        </select>
+        <div className="space-y-2">
+          <p className={labelClass}>Langue</p>
+          <div className="grid grid-cols-2 gap-2">
+            {(['en', 'fr'] as Locale[]).map((locale) => (
+              <button
+                key={locale}
+                type="button"
+                className={`${secondaryButtonClass} ${post.locale === locale ? 'border-brand-500 bg-brand-950 text-white' : ''}`}
+                onClick={() => switchLocale(locale)}
+              >
+                {locale === 'en' ? 'English / en' : 'Français / fr'}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-slate-400">
+            Le switch charge l’article traduit existant ou prépare une nouvelle traduction sans modifier la locale de l’article source.
+          </p>
+        </div>
         <input className={fieldClass} placeholder="translationGroupId" value={post.translationGroupId} onChange={(e) => setPost({ ...post, translationGroupId: e.target.value })} />
         {publicUrl ? <p className="rounded border border-slate-700 p-2 text-xs text-slate-300">URL publique : {publicUrl}</p> : null}
         {post.translations.length > 0 ? (
@@ -350,17 +472,18 @@ export function PostEditorForm({ initialPost }: { initialPost?: InitialPost }) {
             <ul className="mt-2 space-y-1">
               {post.translations.map((translation) => (
                 <li key={`${translation.locale}-${translation.slug}`}>
-                  {translation.locale} · {translation.path}
+                  {translation.locale} · {translation.id ? `${translation.id} · ` : ''}{translation.path}
                 </li>
               ))}
             </ul>
           </div>
         ) : null}
         {post.id ? (
-          <a className={secondaryButtonClass} href={createTranslationHref}>
-            {post.locale === 'en' ? 'Créer la version française' : 'Créer la version anglaise'}
-          </a>
+          <button type="button" className={secondaryButtonClass} onClick={() => switchLocale(oppositeLocale)}>
+            {oppositeTranslation ? `Ouvrir la version ${oppositeLocale.toUpperCase()}` : `Préparer la version ${oppositeLocale.toUpperCase()}`}
+          </button>
         ) : null}
+        {translationNotice ? <p className="rounded border border-amber-600 bg-amber-950/40 p-2 text-sm text-amber-100">{translationNotice}</p> : null}
         <label className={labelClass} htmlFor="post-author">
           Auteur
         </label>

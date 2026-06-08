@@ -35,7 +35,7 @@ type ApiPost = Record<string, unknown> & {
   status?: string | null;
   locale?: Locale | null;
   translationGroupId?: string | null;
-  translations?: Array<{ locale?: Locale | null; slug?: string | null; path?: string | null; canonicalUrl?: string | null }> | null;
+  translations?: Array<{ id?: string | null; locale?: Locale | null; slug?: string | null; path?: string | null; canonicalUrl?: string | null }> | null;
   authorId?: string | null;
   author?: { id?: string | null } | null;
   seo?: {
@@ -78,7 +78,7 @@ type EditorInitialPost = {
   author?: { id?: string | null } | null;
   locale?: Locale;
   translationGroupId?: string;
-  translations?: Array<{ locale: Locale; slug: string; path: string; canonicalUrl?: string }>;
+  translations?: Array<{ id?: string; locale: Locale; slug: string; path: string; canonicalUrl?: string }>;
 };
 
 type SinglePostResponse = { data?: ApiPost } | ApiPost;
@@ -193,7 +193,7 @@ const apiPostToEditorInitialPost = (post: ApiPost): EditorInitialPost => {
         ?.flatMap((translation) => {
           const locale = translation.locale === 'fr' ? 'fr' : translation.locale === 'en' ? 'en' : undefined;
           if (!locale || !translation.slug || !translation.path) return [];
-          return [{ locale, slug: translation.slug, path: translation.path, canonicalUrl: translation.canonicalUrl || undefined }];
+          return [{ id: translation.id || undefined, locale, slug: translation.slug, path: translation.path, canonicalUrl: translation.canonicalUrl || undefined }];
         }) ?? []
   };
 };
