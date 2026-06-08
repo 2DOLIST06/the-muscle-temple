@@ -6,15 +6,41 @@ export type Hreflang = 'en' | 'fr' | 'x-default';
 export const locales: Locale[] = ['en', 'fr'];
 
 const cleanSlug = (slug: string) => slug.replace(/^\/+|\/+$/g, '');
+const ensurePathname = (pathname: string) => {
+  const trimmed = pathname.trim();
+  if (!trimmed || trimmed === '/') return '/';
+  const pathOnly = trimmed.split(/[?#]/)[0] || '/';
+  return pathOnly.startsWith('/') ? pathOnly : `/${pathOnly}`;
+};
 
-export const getHomePath = (locale: Locale) => (locale === 'fr' ? '/fr' : '/');
-export const getArticlesPath = (locale: Locale) => (locale === 'fr' ? '/fr/articles' : '/articles');
+export const getLocaleFromPathname = (pathname: string): Locale => {
+  const path = ensurePathname(pathname);
+  return path === '/fr' || path.startsWith('/fr/') ? 'fr' : 'en';
+};
+
+export const stripLocalePrefix = (pathname: string) => {
+  const path = ensurePathname(pathname);
+  if (path === '/fr') return '/';
+  if (path.startsWith('/fr/')) return path.slice(3) || '/';
+  return path;
+};
+
+export const localizePath = (path: string, locale: Locale) => {
+  const basePath = stripLocalePrefix(path);
+  if (locale === 'en') return basePath;
+  return basePath === '/' ? '/fr' : `/fr${basePath}`;
+};
+
+export const getHomePath = (locale: Locale) => localizePath('/', locale);
+export const getArticlesPath = (locale: Locale) => localizePath('/articles', locale);
+export const getCategoriesPath = (locale: Locale) => localizePath('/categories', locale);
+export const getAuthorsPath = (locale: Locale) => localizePath('/authors', locale);
 export const getArticlePath = (locale: Locale, slug: string) => `${getArticlesPath(locale)}/${cleanSlug(slug)}`;
-export const getCategoryPath = (locale: Locale, slug: string) => `${locale === 'fr' ? '/fr/categories' : '/categories'}/${cleanSlug(slug)}`;
-export const getAuthorPath = (locale: Locale, slug: string) => `${locale === 'fr' ? '/fr/authors' : '/authors'}/${cleanSlug(slug)}`;
+export const getCategoryPath = (locale: Locale, slug: string) => `${getCategoriesPath(locale)}/${cleanSlug(slug)}`;
+export const getAuthorPath = (locale: Locale, slug: string) => `${getAuthorsPath(locale)}/${cleanSlug(slug)}`;
 export const getGymPath = (locale: Locale, slug: string) => `${locale === 'fr' ? '/fr/salles' : '/gyms'}/${cleanSlug(slug)}`;
 
-export const getPathLocale = (pathname: string): Locale => (pathname === '/fr' || pathname.startsWith('/fr/') ? 'fr' : 'en');
+export const getPathLocale = getLocaleFromPathname;
 
 export const absoluteUrl = (pathOrUrl: string) => {
   if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
@@ -27,12 +53,14 @@ export const getNavigation = (locale: Locale) =>
     ? [
         { label: 'Accueil', href: getHomePath('fr') },
         { label: 'Articles', href: getArticlesPath('fr') },
-        { label: 'Catégories', href: '/fr/categories' }
+        { label: 'Catégories', href: getCategoriesPath('fr') },
+        { label: 'Auteurs', href: getAuthorsPath('fr') }
       ]
     : [
-        { label: 'Home', href: '/' },
-        { label: 'Articles', href: '/articles' },
-        { label: 'Categories', href: '/categories' },
+        { label: 'Home', href: getHomePath('en') },
+        { label: 'Articles', href: getArticlesPath('en') },
+        { label: 'Categories', href: getCategoriesPath('en') },
+        { label: 'Authors', href: getAuthorsPath('en') },
         { label: 'About', href: '/about' },
         { label: 'Contact', href: '/contact' }
       ];

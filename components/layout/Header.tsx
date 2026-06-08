@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { siteConfig } from '@/lib/constants';
 import { getNavigation, getPathLocale } from '@/lib/i18n/routing';
+import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
 import { Container } from '@/components/ui/Container';
 
 export function Header() {
@@ -18,13 +19,16 @@ export function Header() {
           <Link href={locale === 'fr' ? '/fr' : '/'} className="text-lg font-bold text-slate-900">
             {siteConfig.name}
           </Link>
-          <nav className="flex gap-5 text-sm font-medium text-slate-600">
-            {navigation.map((item) => (
-              <Link key={item.href} href={item.href} className="transition hover:text-slate-900">
-                {item.label}
-              </Link>
-            ))}
-          </nav>
+          <div className="flex items-center gap-5">
+            <nav className="flex gap-5 text-sm font-medium text-slate-600">
+              {navigation.map((item) => (
+                <Link key={item.href} href={item.href} className="transition hover:text-slate-900">
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+            <LanguageSwitcher />
+          </div>
         </div>
       </Container>
     </header>

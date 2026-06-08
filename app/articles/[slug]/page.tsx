@@ -55,8 +55,8 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
   if (!post) notFound();
 
   const [author, category, relatedPosts] = await Promise.all([
-    contentRepository.getAuthorBySlug(post.authorSlug),
-    contentRepository.getCategoryBySlug(post.categorySlug),
+    contentRepository.getAuthorBySlugAndLocale(post.authorSlug, 'en'),
+    contentRepository.getCategoryBySlugAndLocale(post.categorySlug, 'en'),
     contentRepository.getRelatedPosts(post, 3)
   ]);
 
@@ -87,13 +87,11 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
       <article className="py-10">
         <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Articles', href: '/articles' }, { label: post.title, href: articlePath }]} />
 
-        {translation ? (
-          <div className="mb-5">
-            <Link href={translation.path} className="rounded border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700">
-              Lire en français
-            </Link>
-          </div>
-        ) : null}
+        <div className="mb-5">
+          <Link href={translation?.path ?? '/fr/articles'} className="rounded border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700">
+            Lire en français
+          </Link>
+        </div>
 
         <h1 className="max-w-4xl text-4xl font-bold tracking-tight text-slate-900">{post.title}</h1>
         <p className="mt-4 max-w-3xl text-lg text-slate-600">{post.description}</p>

@@ -315,13 +315,19 @@ export const contentRepository = {
   async getAllPosts(): Promise<Post[]> {
     return this.getAllPostsByLocale('en');
   },
+  async getFeaturedPostsByLocale(locale: Locale, limit = 3): Promise<Post[]> {
+    const posts = await this.getAllPostsByLocale(locale);
+    return posts.slice(0, limit);
+  },
   async getFeaturedPosts(limit = 3): Promise<Post[]> {
-    const posts = await this.getAllPosts();
+    return this.getFeaturedPostsByLocale('en', limit);
+  },
+  async getRecentPostsByLocale(locale: Locale, limit = 4): Promise<Post[]> {
+    const posts = await this.getAllPostsByLocale(locale);
     return posts.slice(0, limit);
   },
   async getRecentPosts(limit = 4): Promise<Post[]> {
-    const posts = await this.getAllPosts();
-    return posts.slice(0, limit);
+    return this.getRecentPostsByLocale('en', limit);
   },
   async getPostBySlugAndLocale(slug: string, locale: Locale): Promise<Post | undefined> {
     const post = await fetchPostBySlug(slug, locale);
@@ -331,16 +337,22 @@ export const contentRepository = {
   async getPostBySlug(slug: string): Promise<Post | undefined> {
     return this.getPostBySlugAndLocale(slug, 'en');
   },
-  async getAllCategories(): Promise<Category[]> {
-    const apiCategories = await fetchCollection<ApiCategory>('/api/categories');
+  async getAllCategoriesByLocale(locale: Locale): Promise<Category[]> {
+    const apiCategories = await fetchCollection<ApiCategory>(`/api/categories?locale=${locale}`);
     return apiCategories.map(toCategory);
   },
-  async getCategoryBySlug(slug: string): Promise<Category | undefined> {
-    const categories = await this.getAllCategories();
+  async getAllCategories(): Promise<Category[]> {
+    return this.getAllCategoriesByLocale('en');
+  },
+  async getCategoryBySlugAndLocale(slug: string, locale: Locale): Promise<Category | undefined> {
+    const categories = await this.getAllCategoriesByLocale(locale);
     return categories.find((category) => category.slug === slug);
   },
-  async getPostsByCategory(slug: string): Promise<Post[]> {
-    const apiPosts = await fetchCollection<ApiPost>(`/api/categories/${slug}/posts`);
+  async getCategoryBySlug(slug: string): Promise<Category | undefined> {
+    return this.getCategoryBySlugAndLocale(slug, 'en');
+  },
+  async getPostsByCategoryAndLocale(slug: string, locale: Locale): Promise<Post[]> {
+    const apiPosts = await fetchCollection<ApiPost>(`/api/categories/${slug}/posts?locale=${locale}`);
     const postsFromCategoryEndpoint = apiPosts
       .filter((post) => {
         const status = post.status?.toUpperCase();
@@ -350,19 +362,28 @@ export const contentRepository = {
 
     if (postsFromCategoryEndpoint.length > 0) return sortByDateDesc(postsFromCategoryEndpoint);
 
-    const allPosts = await this.getAllPosts();
+    const allPosts = await this.getAllPostsByLocale(locale);
     return sortByDateDesc(allPosts.filter((post) => post.categorySlug === slug));
   },
-  async getAllAuthors(): Promise<Author[]> {
-    const apiAuthors = await fetchCollection<ApiAuthor>('/api/authors');
+  async getPostsByCategory(slug: string): Promise<Post[]> {
+    return this.getPostsByCategoryAndLocale(slug, 'en');
+  },
+  async getAllAuthorsByLocale(locale: Locale): Promise<Author[]> {
+    const apiAuthors = await fetchCollection<ApiAuthor>(`/api/authors?locale=${locale}`);
     return apiAuthors.map(toAuthor);
   },
-  async getAuthorBySlug(slug: string): Promise<Author | undefined> {
-    const authors = await this.getAllAuthors();
+  async getAllAuthors(): Promise<Author[]> {
+    return this.getAllAuthorsByLocale('en');
+  },
+  async getAuthorBySlugAndLocale(slug: string, locale: Locale): Promise<Author | undefined> {
+    const authors = await this.getAllAuthorsByLocale(locale);
     return authors.find((author) => author.slug === slug);
   },
-  async getPostsByAuthor(slug: string): Promise<Post[]> {
-    const apiPosts = await fetchCollection<ApiPost>(`/api/authors/${slug}/posts`);
+  async getAuthorBySlug(slug: string): Promise<Author | undefined> {
+    return this.getAuthorBySlugAndLocale(slug, 'en');
+  },
+  async getPostsByAuthorAndLocale(slug: string, locale: Locale): Promise<Post[]> {
+    const apiPosts = await fetchCollection<ApiPost>(`/api/authors/${slug}/posts?locale=${locale}`);
     return sortByDateDesc(
       apiPosts
         .filter((post) => {
@@ -371,6 +392,9 @@ export const contentRepository = {
         })
         .map(toPost)
     );
+  },
+  async getPostsByAuthor(slug: string): Promise<Post[]> {
+    return this.getPostsByAuthorAndLocale(slug, 'en');
   },
   async getRelatedPosts(currentPost: Post, limit = 3): Promise<RelatedPostSummary[]> {
     const posts = (await this.getAllPostsByLocale(currentPost.locale)).filter((post) => post.categorySlug === currentPost.categorySlug);

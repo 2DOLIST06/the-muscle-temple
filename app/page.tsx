@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { CategoryCard } from '@/components/blog/CategoryCard';
 import { NewsletterCta } from '@/components/blog/NewsletterCta';
@@ -5,13 +6,30 @@ import { PostCard } from '@/components/blog/PostCard';
 import { SectionHeading } from '@/components/blog/SectionHeading';
 import { Container } from '@/components/ui/Container';
 import { contentRepository } from '@/lib/content/repository';
+import { buildMetadata } from '@/lib/seo/metadata';
+import { getPageSeo } from '@/lib/seo/pages';
+
+export async function generateMetadata(): Promise<Metadata> {
+  return buildMetadata(await getPageSeo('home', 'en', {
+    title: 'Body Training Guide | Strength training guides',
+    description: 'Training, nutrition and recovery guides to help you make sustainable progress.',
+    path: '/',
+    locale: 'en',
+    hreflang: [
+      { hreflang: 'en', href: 'https://bodytrainingguide.com/' },
+      { hreflang: 'fr', href: 'https://bodytrainingguide.com/fr' },
+      { hreflang: 'x-default', href: 'https://bodytrainingguide.com/' }
+    ]
+  }));
+}
 
 export default async function HomePage() {
+  const locale = 'en';
   const [featuredPosts, categories, recentPosts, authors] = await Promise.all([
-    contentRepository.getFeaturedPosts(3),
-    contentRepository.getAllCategories(),
-    contentRepository.getRecentPosts(4),
-    contentRepository.getAllAuthors()
+    contentRepository.getFeaturedPostsByLocale(locale, 3),
+    contentRepository.getAllCategoriesByLocale(locale),
+    contentRepository.getRecentPostsByLocale(locale, 4),
+    contentRepository.getAllAuthorsByLocale(locale)
   ]);
   const latestPost = recentPosts[0];
 
@@ -55,7 +73,7 @@ export default async function HomePage() {
           <SectionHeading>Categories</SectionHeading>
           <div className="mt-6 grid gap-4 md:grid-cols-3">
             {categories.map((category) => (
-              <CategoryCard key={category.id} category={category} />
+              <CategoryCard key={category.id} category={category} locale={locale} />
             ))}
           </div>
         </Container>
