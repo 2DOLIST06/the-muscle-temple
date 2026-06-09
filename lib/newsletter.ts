@@ -1,5 +1,3 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL?.trim().replace(/\/+$/, '');
-
 export interface NewsletterSubscriptionResponse {
   message: string;
   data?: {
@@ -21,17 +19,13 @@ const getErrorMessage = (payload: unknown) => {
 };
 
 export async function subscribeToNewsletter(email: string, source = 'newsletter-section'): Promise<NewsletterSubscriptionResponse> {
-  if (!API_BASE_URL) {
-    throw new Error('NEXT_PUBLIC_API_URL is not configured');
-  }
-
   const normalizedEmail = email.trim();
 
   if (!normalizedEmail) {
     throw new Error('Veuillez saisir une adresse e-mail.');
   }
 
-  const response = await fetch(`${API_BASE_URL}/api/newsletter`, {
+  const response = await fetch('/api/newsletter', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
