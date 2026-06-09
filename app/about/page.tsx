@@ -3,9 +3,9 @@ import { Container } from '@/components/ui/Container';
 import { buildMetadata } from '@/lib/seo/metadata';
 
 export const metadata: Metadata = buildMetadata({
-  title: 'À propos | Body Training Guide',
+  title: 'About | Body Training Guide',
   description:
-    'Body Training Guide est un blog consacré à la musculation, au fitness et aux sports qui sollicitent le corps et les muscles.',
+    'Body Training Guide is a blog about strength training, fitness, and sports that involve the body and muscles.',
   path: '/about'
 });
 
@@ -14,111 +14,108 @@ export default function AboutPage() {
     <Container>
       <section className="py-12">
         <div className="max-w-3xl">
-          <h1 className="text-3xl font-bold text-slate-950">À propos de Body Training Guide</h1>
+          <h1 className="text-3xl font-bold text-slate-950">About Body Training Guide</h1>
 
           <p className="mt-6 text-slate-700">
-            Body Training Guide est un blog consacré à la musculation, au fitness et aux sports qui sollicitent le
-            corps.
+            Body Training Guide is a blog about strength training, fitness, and sports that involve the body.
           </p>
 
           <p className="mt-4 text-slate-700">
-            Le but est simple : aider à mieux comprendre l’entraînement, les muscles, les exercices et les méthodes
-            utilisées pour progresser. Le site s’adresse aux personnes qui veulent s’entraîner avec plus de logique, que
-            ce soit pour prendre du muscle, perdre du gras, améliorer leur condition physique ou simplement mieux
-            utiliser leur corps.
+            The goal is simple: to help people better understand training, muscles, exercises, and the methods used to
+            make progress. The site is made for people who want to train with more logic, whether their goal is to build
+            muscle, lose fat, improve their fitness, or simply use their body better.
           </p>
 
-          <h2 className="mt-10 text-2xl font-bold text-slate-950">Une approche simple de l’entraînement</h2>
+          <h2 className="mt-10 text-2xl font-bold text-slate-950">A simple approach to training</h2>
 
           <p className="mt-4 text-slate-700">
-            La musculation peut vite devenir compliquée. Il y a beaucoup de programmes, de méthodes, de conseils et
-            d’avis différents. Body Training Guide cherche à remettre les choses dans l’ordre, avec des contenus clairs,
-            faciles à suivre et centrés sur ce qui compte vraiment.
-          </p>
-
-          <p className="mt-4 text-slate-700">
-            Chaque article a pour objectif d’expliquer un sujet utile : un groupe musculaire, un exercice, une méthode
-            d’entraînement, une erreur fréquente, un programme ou une notion liée au corps.
+            Strength training can quickly become confusing. There are many programs, methods, tips, and opinions. Body
+            Training Guide aims to put things back in order with clear content that is easy to follow and focused on
+            what really matters.
           </p>
 
           <p className="mt-4 text-slate-700">
-            L’idée n’est pas de vendre une méthode miracle. L’idée est de donner des bases solides pour mieux comprendre
-            ce que l’on fait à l’entraînement.
+            Each article is designed to explain a useful topic: a muscle group, an exercise, a training method, a common
+            mistake, a workout program, or a concept related to the body.
+          </p>
+
+          <p className="mt-4 text-slate-700">
+            The idea is not to sell a miracle method. The idea is to give solid basics so people can better understand
+            what they are doing when they train.
           </p>
 
           <h2 className="mt-10 text-2xl font-bold text-slate-950">
-            Musculation, fitness et sports liés au corps
+            Strength training, fitness, and sports related to the body
           </h2>
 
           <p className="mt-4 text-slate-700">
-            Le blog parle d’abord de musculation, car cette discipline aide à développer la force, les muscles et la
-            maîtrise du mouvement. Mais le corps ne se limite pas aux haltères, aux machines ou aux exercices en salle.
+            The blog first focuses on strength training, because it helps develop strength, muscle, and movement
+            control. But the body is not limited to dumbbells, machines, or gym exercises.
           </p>
 
           <p className="mt-4 text-slate-700">
-            Body Training Guide aborde aussi le fitness, la préparation physique, le poids du corps, la mobilité, les
-            exercices fonctionnels et les sports où les muscles jouent un rôle direct dans la performance.
+            Body Training Guide also covers fitness, physical conditioning, bodyweight training, mobility, functional
+            exercises, and sports where muscles play a direct role in performance.
           </p>
 
           <p className="mt-4 text-slate-700">
-            Le fil conducteur reste toujours le même : comprendre comment le corps travaille et comment l’entraînement
-            peut être organisé de façon plus efficace.
+            The main idea stays the same: understand how the body works and how training can be organized in a more
+            effective way.
           </p>
 
-          <h2 className="mt-10 text-2xl font-bold text-slate-950">Des contenus pensés pour être utiles</h2>
+          <h2 className="mt-10 text-2xl font-bold text-slate-950">Content made to be useful</h2>
 
           <p className="mt-4 text-slate-700">
-            Les articles sont écrits avec un style direct, sans phrases inutiles. Le but n’est pas de remplir des pages
-            avec du texte, mais de répondre clairement à une question.
+            The articles are written in a direct style, without unnecessary text. The goal is not to fill pages with
+            words, but to answer a question clearly.
           </p>
 
-          <p className="mt-4 text-slate-700">Vous trouverez par exemple des contenus sur :</p>
+          <p className="mt-4 text-slate-700">You will find content about:</p>
 
           <ul className="mt-4 list-disc space-y-2 pl-6 text-slate-700">
-            <li>les groupes musculaires du corps ;</li>
-            <li>les exercices de musculation ;</li>
-            <li>les programmes d’entraînement ;</li>
-            <li>les erreurs à éviter ;</li>
-            <li>les bases de la progression ;</li>
-            <li>le rôle des muscles dans différents mouvements ;</li>
-            <li>les liens entre force, posture, mobilité et performance.</li>
+            <li>the muscle groups of the body;</li>
+            <li>strength training exercises;</li>
+            <li>workout programs;</li>
+            <li>common mistakes to avoid;</li>
+            <li>the basics of progression;</li>
+            <li>the role of muscles in different movements;</li>
+            <li>the links between strength, posture, mobility, and performance.</li>
           </ul>
 
           <p className="mt-4 text-slate-700">
-            Chaque sujet est traité avec une logique simple : expliquer, organiser, puis aider à passer à l’action.
+            Each topic follows a simple logic: explain, organize, then help people take action.
           </p>
 
-          <h2 className="mt-10 text-2xl font-bold text-slate-950">Pour qui est fait Body Training Guide ?</h2>
+          <h2 className="mt-10 text-2xl font-bold text-slate-950">Who is Body Training Guide for?</h2>
 
           <p className="mt-4 text-slate-700">
-            Body Training Guide s’adresse aux débutants qui veulent comprendre les bases, mais aussi aux pratiquants qui
-            cherchent à structurer leur entraînement.
-          </p>
-
-          <p className="mt-4 text-slate-700">
-            Le site peut être utile si vous voulez savoir quel muscle travaille pendant un exercice, comment organiser
-            une séance, pourquoi un mouvement est important ou comment construire une progression plus cohérente.
+            Body Training Guide is for beginners who want to understand the basics, but also for people who already
+            train and want to structure their workouts better.
           </p>
 
           <p className="mt-4 text-slate-700">
-            L’objectif n’est pas de remplacer un coach, un professionnel de santé ou un suivi personnalisé. Le blog sert
-            plutôt de guide pour mieux comprendre les notions liées au corps et à l’entraînement.
-          </p>
-
-          <h2 className="mt-10 text-2xl font-bold text-slate-950">Notre vision</h2>
-
-          <p className="mt-4 text-slate-700">
-            S’entraîner ne devrait pas être confus. Un bon entraînement commence souvent par des choses simples : savoir
-            ce que l’on veut travailler, choisir les bons exercices, progresser avec régularité et respecter les limites
-            de son corps.
+            The site can be useful if you want to know which muscle works during an exercise, how to organize a workout,
+            why a movement matters, or how to build a more consistent progression.
           </p>
 
           <p className="mt-4 text-slate-700">
-            Body Training Guide défend cette approche : moins de bruit, plus de clarté.
+            The goal is not to replace a coach, a health professional, or personalized guidance. The blog is meant to be
+            a guide to better understand the body and training.
+          </p>
+
+          <h2 className="mt-10 text-2xl font-bold text-slate-950">Our vision</h2>
+
+          <p className="mt-4 text-slate-700">
+            Training should not be confusing. Good training often starts with simple things: knowing what you want to
+            work on, choosing the right exercises, making steady progress, and respecting the limits of your body.
           </p>
 
           <p className="mt-4 text-slate-700">
-            Le site avance avec une idée centrale : mieux comprendre son corps permet de mieux s’entraîner.
+            Body Training Guide follows this approach: less noise, more clarity.
+          </p>
+
+          <p className="mt-4 text-slate-700">
+            The site is built around one central idea: understanding your body helps you train better.
           </p>
         </div>
       </section>
