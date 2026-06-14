@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { absoluteUrl, getLocaleFromPathname, getArticlesPath, localizePath, stripLocalePrefix, type Locale } from '@/lib/i18n/routing';
+import { absoluteUrl, getCategoryPath, getLocaleFromPathname, localizePath, stripLocalePrefix, type Locale } from '@/lib/i18n/routing';
 
 const getPathFromHref = (href: string) => {
   try {
@@ -17,7 +17,7 @@ const isArticleDetailPath = (basePath: string) => /^\/articles\/[^/]+\/?$/.test(
 
 const buildGenericTarget = (pathname: string, targetLocale: Locale) => {
   const basePath = stripLocalePrefix(pathname);
-  const targetBasePath = isArticleDetailPath(basePath) ? getArticlesPath('en') : basePath;
+  const targetBasePath = isArticleDetailPath(basePath) ? getCategoryPath('en', 'musculation') : basePath;
   return localizePath(targetBasePath, targetLocale);
 };
 
