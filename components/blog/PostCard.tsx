@@ -16,6 +16,12 @@ export function PostCard({ post, category, author, href }: PostCardProps) {
   const articleHref = href ?? getArticlePath(post.locale, post.slug);
   const byline = post.locale === 'fr' ? 'Équipe éditoriale' : 'Editorial team';
   const readingLabel = post.locale === 'fr' ? 'min de lecture' : 'min read';
+  const excerpt =
+    post.excerpt?.trim() ||
+    post.description?.trim() ||
+    (post.locale === 'fr'
+      ? 'Un guide pour comprendre les bases du sujet et mieux organiser vos entraînements.'
+      : 'A guide to understand the basics of the topic and organize your training more effectively.');
 
   return (
     <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -29,7 +35,7 @@ export function PostCard({ post, category, author, href }: PostCardProps) {
         <h3 className="mt-3 text-lg font-semibold text-slate-900">
           <Link href={articleHref}>{post.title}</Link>
         </h3>
-        <p className="mt-2 text-sm text-slate-600">{post.excerpt}</p>
+        <p className="mt-2 text-sm text-slate-600">{excerpt}</p>
         <div className="mt-4 text-xs text-slate-500">
           <span>{author?.name ?? byline}</span> · <span>{formatDate(post.publishedAt, post.locale)}</span> ·{' '}
           <span>{post.readingMinutes} {readingLabel}</span>
