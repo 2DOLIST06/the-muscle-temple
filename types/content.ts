@@ -26,6 +26,11 @@ export interface PostSection {
   content: string[];
 }
 
+export interface PostFaq {
+  question: string;
+  answer: string;
+}
+
 export interface PostTranslation {
   locale: Locale;
   slug: string;
@@ -53,6 +58,7 @@ export interface Post {
   tags: string[];
   sections: PostSection[];
   contentHtml?: string;
+  faqJson?: PostFaq[];
   featured?: boolean;
   locale: Locale;
   translationGroupId: string;

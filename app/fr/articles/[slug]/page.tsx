@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { AuthorBox } from '@/components/blog/AuthorBox';
+import { FaqSection } from '@/components/blog/FaqSection';
 import { PostCard } from '@/components/blog/PostCard';
 import { RichContentRenderer } from '@/components/blog/RichContentRenderer';
 import { TableOfContents } from '@/components/blog/TableOfContents';
@@ -112,6 +113,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
               const id = `${post.slug}-${section.heading.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
               return <section key={section.heading} id={id}><h2 className="text-2xl font-semibold text-slate-900">{section.heading}</h2><div className="mt-3 space-y-4 leading-8 text-slate-700">{section.content.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}</div></section>;
             })}
+            <FaqSection faqs={post.faqJson ?? []} title="FAQ" />
             {author ? <AuthorBox author={author} /> : null}
           </div>
           <div className="lg:sticky lg:top-8 lg:self-start"><TableOfContents slug={post.slug} sections={post.sections} headings={articleHeadings} /></div>
