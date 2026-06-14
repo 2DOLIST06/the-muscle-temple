@@ -23,7 +23,7 @@ export const blogPostingJsonLd = (props: {
   articleSection: props.category,
   inLanguage: props.locale ?? 'en',
   author: {
-    '@type': 'Organization',
+    '@type': 'Person',
     name: props.authorName
   },
   publisher: {
