@@ -232,7 +232,7 @@ const toAuthor = (author: ApiAuthor): Author => ({
   slug: author.slug,
   name: author.name,
   role: 'Auteur',
-  bio: author.bio?.trim() || 'Auteur The Muscle Temple.',
+  bio: author.bio?.trim() || 'Auteur Body Training Guide.',
   avatar: toAbsoluteApiAssetUrl(author.avatar?.url?.trim() || 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5')
 });
 

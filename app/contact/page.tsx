@@ -3,7 +3,7 @@ import { Container } from '@/components/ui/Container';
 import { buildMetadata } from '@/lib/seo/metadata';
 
 export const metadata: Metadata = buildMetadata({
-  title: 'Contact | The Muscle Temple',
+  title: 'Contact | Body Training Guide',
   description: 'Contactez notre équipe éditoriale.',
   path: '/contact'
 });
