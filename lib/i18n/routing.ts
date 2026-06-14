@@ -52,15 +52,9 @@ export const getNavigation = (locale: Locale) =>
   locale === 'fr'
     ? [
         { label: 'Accueil', href: getHomePath('fr') },
-        { label: 'Articles', href: getArticlesPath('fr') },
-        { label: 'Catégories', href: getCategoriesPath('fr') },
-        { label: 'Auteurs', href: getAuthorsPath('fr') }
+        { label: 'Musculation', href: getCategoryPath('fr', 'musculation') }
       ]
     : [
         { label: 'Home', href: getHomePath('en') },
-        { label: 'Articles', href: getArticlesPath('en') },
-        { label: 'Categories', href: getCategoriesPath('en') },
-        { label: 'Authors', href: getAuthorsPath('en') },
-        { label: 'About', href: '/about' },
-        { label: 'Contact', href: '/contact' }
+        { label: 'Strength training', href: getCategoryPath('en', 'musculation') }
       ];

@@ -9,7 +9,7 @@ import { getNavigation, getPathLocale } from '@/lib/i18n/routing';
 export function Footer() {
   const pathname = usePathname();
   const locale = getPathLocale(pathname ?? '/');
-  const navigation = getNavigation(locale).filter((item) => item.href !== (locale === 'fr' ? '/fr' : '/'));
+  const navigation = getNavigation(locale);
 
   return (
     <footer className="border-t border-slate-200 bg-slate-50 py-10">
@@ -35,7 +35,7 @@ export function Footer() {
           </div>
           <div>
             <h3 className="font-semibold text-slate-900">Newsletter</h3>
-            <p className="mt-2 text-sm text-slate-600">{locale === 'fr' ? 'Recevez nos stratégies terrain.' : 'Get practical training strategies.'}</p>
+            <p className="mt-2 text-sm text-slate-600">{locale === 'fr' ? 'Recevez nos contenus sur l’entraînement, la nutrition et la récupération.' : 'Get practical training, nutrition and recovery content.'}</p>
           </div>
         </div>
       </Container>
