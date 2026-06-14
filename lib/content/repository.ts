@@ -1,7 +1,7 @@
 import { buildPublicApiUrl, getPublicApiBaseUrl } from '@/lib/api/env';
 import { getStrengthTrainingCategoryCopy } from '@/lib/content/category-copy';
 import { getArticlePath, type Hreflang, type Locale } from '@/lib/i18n/routing';
-import type { Author, Category, Post, PostSection, RelatedPostSummary } from '@/types/content';
+import type { Author, Category, Post, PostFaq, PostSection, RelatedPostSummary } from '@/types/content';
 
 interface ApiMedia {
   url?: string | null;
@@ -24,6 +24,7 @@ interface ApiPost {
     html?: string | null;
     sections?: Array<{ heading?: string | null; content?: string | string[] | null }>;
   } | null;
+  faqJson?: Array<{ question?: string | null; answer?: string | null }> | null;
   status?: string | null;
   isActive?: boolean | null;
   isIndexable?: boolean | null;
@@ -174,6 +175,14 @@ const getPostContentHtml = (apiPost: ApiPost) => {
   return html ? normalizeContentImageSources(html) : undefined;
 };
 
+const getPostFaqs = (apiPost: ApiPost): PostFaq[] =>
+  (apiPost.faqJson ?? [])
+    .map((faq) => ({
+      question: faq.question?.trim() || '',
+      answer: faq.answer?.trim() || ''
+    }))
+    .filter((faq) => faq.question && faq.answer);
+
 const toPost = (apiPost: ApiPost): Post => {
   const locale: Locale = apiPost.locale === 'fr' ? 'fr' : 'en';
 
@@ -200,6 +209,7 @@ const toPost = (apiPost: ApiPost): Post => {
   tags: getPostTags(apiPost),
   sections: toPostSections(apiPost),
   contentHtml: getPostContentHtml(apiPost),
+  faqJson: getPostFaqs(apiPost),
   featured: false,
   locale,
   translationGroupId: apiPost.translationGroupId?.trim() || apiPost.id,
