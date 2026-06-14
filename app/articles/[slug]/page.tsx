@@ -8,7 +8,6 @@ import { RichContentRenderer } from '@/components/blog/RichContentRenderer';
 import { TableOfContents } from '@/components/blog/TableOfContents';
 import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
 import { Container } from '@/components/ui/Container';
-import { getArticleCategoryLabel, getArticleCategoryPath, getArticleDescription, getPublicAuthorName, buildTocFromHtml, buildTocFromSections, slugifyHeading } from '@/lib/content/article-utils';
 import { formatDate } from '@/lib/content/presenters';
 import { contentRepository } from '@/lib/content/repository';
 import { absoluteUrl, getArticlePath } from '@/lib/i18n/routing';
@@ -36,7 +35,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
   return buildMetadata({
     title: `${post.title} | Body Training Guide`,
-    description: getArticleDescription(post.description, 'en'),
+    description: post.description,
     canonicalUrl: post.canonicalUrl,
     path: post.path ?? getArticlePath('en', post.slug),
     locale: 'en',
@@ -61,50 +60,44 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
     contentRepository.getRelatedPosts(post, 3)
   ]);
 
-  const articleDescription = getArticleDescription(post.description, 'en');
-  const publicAuthorName = getPublicAuthorName(author?.name);
-  const categoryLabel = getArticleCategoryLabel('en');
-  const categoryPath = getArticleCategoryPath('en');
   const articlePath = post.path ?? getArticlePath('en', post.slug);
   const articleUrl = post.canonicalUrl ?? absoluteUrl(articlePath);
   const translation = post.translations?.find((item) => item.locale === 'fr');
   const postJsonLd = blogPostingJsonLd({
     title: post.title,
-    description: articleDescription,
+    description: post.description,
     slug: post.slug,
     image: post.coverImage,
     datePublished: post.publishedAt,
     dateModified: post.updatedAt,
-    authorName: publicAuthorName,
-    category: categoryLabel,
+    authorName: author?.name ?? 'Body Training Guide',
+    category: category?.title ?? 'Training',
     locale: 'en',
     url: articleUrl
   });
 
-  const tocItems = post.contentHtml ? buildTocFromHtml(post.contentHtml) : buildTocFromSections(post.slug, post.sections);
-
   const breadcrumbs = breadcrumbJsonLd([
     { name: 'Home', path: '/' },
-    { name: categoryLabel, path: categoryPath },
+    { name: 'Articles', path: '/articles' },
     { name: post.title, path: articlePath }
   ]);
 
   return (
     <Container>
       <article className="py-10">
-        <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: categoryLabel, href: categoryPath }, { label: post.title, href: articlePath }]} />
+        <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Articles', href: '/articles' }, { label: post.title, href: articlePath }]} />
 
         <div className="mb-5">
-          <Link href={translation?.path ?? getArticleCategoryPath('fr')} className="rounded border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700">
+          <Link href={translation?.path ?? '/fr/articles'} className="rounded border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700">
             Lire en français
           </Link>
         </div>
 
         <h1 className="max-w-4xl text-4xl font-bold tracking-tight text-slate-900">{post.title}</h1>
-        <p className="mt-4 max-w-3xl text-lg text-slate-600">{articleDescription}</p>
+        <p className="mt-4 max-w-3xl text-lg text-slate-600">{post.description}</p>
 
         <div className="mt-5 text-sm text-slate-500">
-          <span>{publicAuthorName}</span> · <span>{formatDate(post.publishedAt, 'en')}</span> · <span>{post.readingMinutes} min read</span>
+          <span>{author?.name}</span> · <span>{formatDate(post.publishedAt, 'en')}</span> · <span>{post.readingMinutes} min read</span>
         </div>
 
         <div className="relative mt-8 h-72 overflow-hidden rounded-2xl md:h-[420px]">
@@ -113,13 +106,13 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
 
         <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
           <div className="space-y-8">
-            {post.contentHtml ? <RichContentRenderer contentHtml={post.contentHtml} /> : post.sections.filter((section) => section.heading.trim() && section.heading.trim().toLowerCase() !== 'contenu').map((section) => {
-              const id = `${post.slug}-${slugifyHeading(section.heading)}`;
-              return <section key={section.heading} id={id}><h2 className="text-2xl font-semibold text-slate-900">{section.heading}</h2><div className="mt-3 space-y-4 leading-8 text-slate-700">{section.content.filter((paragraph) => paragraph.trim()).map((paragraph) => <p key={paragraph}>{paragraph}</p>)}</div></section>;
+            {post.contentHtml ? <RichContentRenderer contentHtml={post.contentHtml} /> : post.sections.map((section) => {
+              const id = `${post.slug}-${section.heading.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+              return <section key={section.heading} id={id}><h2 className="text-2xl font-semibold text-slate-900">{section.heading}</h2><div className="mt-3 space-y-4 leading-8 text-slate-700">{section.content.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}</div></section>;
             })}
             {author ? <AuthorBox author={author} /> : null}
           </div>
-          <div className="lg:sticky lg:top-8 lg:self-start"><TableOfContents slug={post.slug} sections={post.sections} items={tocItems} /></div>
+          <div className="lg:sticky lg:top-8 lg:self-start"><TableOfContents slug={post.slug} sections={post.sections} /></div>
         </div>
 
         {relatedPosts.length > 0 ? <section className="mt-14 border-t border-slate-200 pt-10"><h2 className="text-2xl font-bold">Related articles</h2><div className="mt-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">{relatedPosts.map((relatedPost) => <PostCard key={relatedPost.slug} post={{ ...post, ...relatedPost, id: relatedPost.slug, locale: 'en', path: getArticlePath('en', relatedPost.slug), categorySlug: post.categorySlug, authorSlug: post.authorSlug, readingMinutes: 5, description: relatedPost.excerpt, tags: [], sections: [] }} category={category} author={author} />)}</div></section> : null}

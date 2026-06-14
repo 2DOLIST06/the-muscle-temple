@@ -228,12 +228,10 @@ const toCategory = (category: ApiCategory): Category => ({
   description: category.description?.trim() || 'Découvrez tous les articles de cette catégorie.'
 });
 
-const toPublicAuthorName = (name: string) => name.trim().toLowerCase() === 'admin' ? 'Body Training Guide' : name;
-
 const toAuthor = (author: ApiAuthor): Author => ({
   id: author.id,
   slug: author.slug,
-  name: toPublicAuthorName(author.name),
+  name: author.name,
   role: 'Auteur',
   bio: author.bio?.trim() || 'Auteur Body Training Guide.',
   avatar: toAbsoluteApiAssetUrl(author.avatar?.url?.trim() || 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5')
