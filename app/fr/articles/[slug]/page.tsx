@@ -8,6 +8,7 @@ import { RichContentRenderer } from '@/components/blog/RichContentRenderer';
 import { TableOfContents } from '@/components/blog/TableOfContents';
 import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
 import { Container } from '@/components/ui/Container';
+import { extractHeadingsFromHtml } from '@/lib/content/headings';
 import { formatDate } from '@/lib/content/presenters';
 import { contentRepository } from '@/lib/content/repository';
 import { absoluteUrl, getArticlePath } from '@/lib/i18n/routing';
@@ -60,6 +61,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
     contentRepository.getRelatedPosts(post, 3)
   ]);
 
+  const articleHeadings = extractHeadingsFromHtml(post.contentHtml);
   const articlePath = post.path ?? getArticlePath('fr', post.slug);
   const articleUrl = post.canonicalUrl ?? absoluteUrl(articlePath);
   const translation = post.translations?.find((item) => item.locale === 'en');
@@ -112,7 +114,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
             })}
             {author ? <AuthorBox author={author} /> : null}
           </div>
-          <div className="lg:sticky lg:top-8 lg:self-start"><TableOfContents slug={post.slug} sections={post.sections} /></div>
+          <div className="lg:sticky lg:top-8 lg:self-start"><TableOfContents slug={post.slug} sections={post.sections} headings={articleHeadings} /></div>
         </div>
 
         {relatedPosts.length > 0 ? <section className="mt-14 border-t border-slate-200 pt-10"><h2 className="text-2xl font-bold">Articles liés</h2><div className="mt-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">{relatedPosts.map((relatedPost) => <PostCard key={relatedPost.slug} post={{ ...post, ...relatedPost, id: relatedPost.slug, locale: 'fr', path: getArticlePath('fr', relatedPost.slug), categorySlug: post.categorySlug, authorSlug: post.authorSlug, readingMinutes: 5, description: relatedPost.excerpt, tags: [], sections: [] }} category={category} author={author} />)}</div></section> : null}
