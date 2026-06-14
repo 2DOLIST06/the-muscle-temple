@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { CategoryCard } from '@/components/blog/CategoryCard';
 import { NewsletterCta } from '@/components/blog/NewsletterCta';
 import { PostCard } from '@/components/blog/PostCard';
 import { SectionHeading } from '@/components/blog/SectionHeading';
 import { Container } from '@/components/ui/Container';
+import { withStrengthTrainingShortCopy } from '@/lib/content/category-copy';
 import { contentRepository } from '@/lib/content/repository';
 import { buildMetadata } from '@/lib/seo/metadata';
 
@@ -43,15 +43,7 @@ export default async function FrenchHomePage() {
   ]);
   const displayablePosts = recentPosts.length > 0 ? recentPosts : featuredPosts;
   const primaryPosts = displayablePosts.length >= 3 ? displayablePosts.slice(0, 3) : displayablePosts;
-  const normalizedCategories = categories.map((category) =>
-    category.slug === 'entrainement' || category.slug === 'musculation'
-      ? {
-          ...category,
-          title: 'Musculation',
-          description: 'Articles sur la musculation, la prise de poids, la prise de muscle, la sèche, les exercices et l’hypertrophie.'
-        }
-      : category
-  );
+  const normalizedCategories = categories.map((category) => withStrengthTrainingShortCopy(category, locale));
 
   return (
     <>
@@ -63,14 +55,6 @@ export default async function FrenchHomePage() {
             Construisez un physique fort avec une méthode claire.
           </h1>
           <p className="mt-5 max-w-2xl text-base text-slate-600">{homeDescription}</p>
-          <div className="mt-8 flex gap-3">
-            <Link href="/fr/articles" className="rounded-lg bg-slate-900 px-5 py-3 text-sm font-semibold text-white">
-              Voir les articles français
-            </Link>
-            <Link href="/" className="rounded-lg border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700">
-              English
-            </Link>
-          </div>
         </Container>
       </section>
 

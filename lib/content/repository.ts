@@ -1,4 +1,5 @@
 import { buildPublicApiUrl, getPublicApiBaseUrl } from '@/lib/api/env';
+import { getStrengthTrainingCategoryCopy } from '@/lib/content/category-copy';
 import { getArticlePath, type Hreflang, type Locale } from '@/lib/i18n/routing';
 import type { Author, Category, Post, PostSection, RelatedPostSummary } from '@/types/content';
 
@@ -339,7 +340,20 @@ export const contentRepository = {
   },
   async getAllCategoriesByLocale(locale: Locale): Promise<Category[]> {
     const apiCategories = await fetchCollection<ApiCategory>(`/api/categories?locale=${locale}`);
-    return apiCategories.map(toCategory);
+    const categories = apiCategories.map(toCategory);
+
+    if (categories.some((category) => category.slug === 'musculation')) return categories;
+
+    const strengthTrainingCopy = getStrengthTrainingCategoryCopy(locale);
+    return [
+      ...categories,
+      {
+        id: `musculation-${locale}`,
+        slug: 'musculation',
+        title: strengthTrainingCopy.title,
+        description: strengthTrainingCopy.shortDescription
+      }
+    ];
   },
   async getAllCategories(): Promise<Category[]> {
     return this.getAllCategoriesByLocale('en');
