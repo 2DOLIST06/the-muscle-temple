@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { AuthorBox } from '@/components/blog/AuthorBox';
 import { PostCard } from '@/components/blog/PostCard';
-import { cleanRichHtml, RichContentRenderer } from '@/components/blog/RichContentRenderer';
+import { RichContentRenderer } from '@/components/blog/RichContentRenderer';
 import { TableOfContents } from '@/components/blog/TableOfContents';
 import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
 import { Container } from '@/components/ui/Container';
@@ -81,8 +81,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
     url: articleUrl
   });
 
-  const cleanedContentHtml = post.contentHtml ? cleanRichHtml(post.contentHtml) : undefined;
-  const tocItems = cleanedContentHtml ? buildTocFromHtml(cleanedContentHtml) : buildTocFromSections(post.slug, post.sections);
+  const tocItems = post.contentHtml ? buildTocFromHtml(post.contentHtml) : buildTocFromSections(post.slug, post.sections);
 
   const breadcrumbs = breadcrumbJsonLd([
     { name: 'Home', path: '/' },
@@ -114,7 +113,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
 
         <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
           <div className="space-y-8">
-            {cleanedContentHtml ? <RichContentRenderer contentHtml={cleanedContentHtml} /> : post.sections.filter((section) => section.heading.trim() && section.heading.trim().toLowerCase() !== 'contenu').map((section) => {
+            {post.contentHtml ? <RichContentRenderer contentHtml={post.contentHtml} /> : post.sections.filter((section) => section.heading.trim() && section.heading.trim().toLowerCase() !== 'contenu').map((section) => {
               const id = `${post.slug}-${slugifyHeading(section.heading)}`;
               return <section key={section.heading} id={id}><h2 className="text-2xl font-semibold text-slate-900">{section.heading}</h2><div className="mt-3 space-y-4 leading-8 text-slate-700">{section.content.filter((paragraph) => paragraph.trim()).map((paragraph) => <p key={paragraph}>{paragraph}</p>)}</div></section>;
             })}
