@@ -46,12 +46,26 @@ const getNodeTagName = (node: Node | null) => {
   return element?.tagName.toLowerCase() ?? '';
 };
 
-const selectionHasLink = () => {
+const getSelectionElement = () => {
   const selection = document.getSelection();
   const node = selection?.anchorNode;
-  const element = node?.nodeType === Node.ELEMENT_NODE ? (node as Element) : node?.parentElement;
-  return Boolean(element?.closest('a'));
+  return node?.nodeType === Node.ELEMENT_NODE ? (node as Element) : node?.parentElement;
 };
+
+const selectionHasLink = () => Boolean(getSelectionElement()?.closest('a'));
+
+const getSelectedImage = () => {
+  const closest = getSelectionElement()?.closest('img, figure');
+  if (!closest) return null;
+  return closest.tagName.toLowerCase() === 'img' ? (closest as HTMLImageElement) : closest.querySelector('img');
+};
+
+const escapeHtmlAttribute = (value: string) =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 
 export function RichContentEditor({
   value,
@@ -146,13 +160,34 @@ export function RichContentEditor({
   };
 
   const insertImage = (url: string, alt = '') => {
-    const safeUrl = url.trim();
+    const safeUrl = escapeHtmlAttribute(url.trim());
     if (!safeUrl) return;
-    const safeAlt = alt.replace(/"/g, '&quot;');
+    const safeAlt = escapeHtmlAttribute(alt.trim());
     exec(
       'insertHTML',
       `<figure><img src="${safeUrl}" alt="${safeAlt}" /><figcaption>${safeAlt}</figcaption></figure><p><br></p>`
     );
+  };
+
+  const editSelectedImageAlt = () => {
+    saveSelection();
+    const image = getSelectedImage();
+    if (!image || !ref.current?.contains(image)) {
+      setUploadError('Cliquez d’abord sur une image dans le contenu pour modifier sa balise alt.');
+      return;
+    }
+
+    const currentAlt = image.getAttribute('alt') ?? '';
+    const nextAlt = window.prompt('Texte alternatif de l’image', currentAlt);
+    if (nextAlt === null) return;
+
+    image.setAttribute('alt', nextAlt.trim());
+    const figure = image.closest('figure');
+    const figcaption = figure?.querySelector('figcaption');
+    if (figcaption) figcaption.textContent = nextAlt.trim();
+    setUploadError('');
+    emit();
+    saveSelection();
   };
 
   const addImageByUrl = () => {
@@ -180,8 +215,10 @@ export function RichContentEditor({
 
     setUploading(true);
     try {
+      const alt = window.prompt('Texte alternatif de l’image', file.name);
+      if (alt === null) return;
       const uploaded = await onUploadImage(file);
-      insertImage(uploaded.url, uploaded.alt ?? file.name);
+      insertImage(uploaded.url, alt || uploaded.alt || file.name);
     } catch (error) {
       setUploadError(error instanceof Error ? error.message : 'Upload image impossible.');
     } finally {
@@ -231,6 +268,7 @@ export function RichContentEditor({
         <button type="button" className={buttonClass()} onClick={() => exec('unlink')}>Retirer lien</button>
         <button type="button" className={buttonClass()} onClick={addImageByUrl}>Image URL</button>
         <button type="button" className={buttonClass()} onClick={() => { saveSelection(); fileInputRef.current?.click(); }}>Image fichier</button>
+        <button type="button" className={buttonClass()} onClick={editSelectedImageAlt}>Alt image</button>
         <input
           ref={fileInputRef}
           type="file"
