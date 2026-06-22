@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AdminApiError, adminApi, uploadAdminImage } from '@/lib/admin/api-client';
@@ -98,6 +98,42 @@ const checkboxClass = 'h-4 w-4 rounded border-slate-500 bg-white text-brand-700 
 const secondaryButtonClass =
   'rounded border border-slate-600 px-3 py-2 text-sm font-medium text-slate-100 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60';
 
+type PostTranslationExport = {
+  schema: 'the-muscle-temple.post-translation';
+  version: 1;
+  exportedAt: string;
+  instructions: string;
+  post: Omit<PostModel, 'id' | 'translations'>;
+};
+
+const exportablePostFields = [
+  'slug',
+  'title',
+  'h1',
+  'chapoHtml',
+  'contentHtml',
+  'contentJson',
+  'faqJson',
+  'coverImageId',
+  'coverImageUrl',
+  'heroImageUrl',
+  'heroImageAlt',
+  'metaTitle',
+  'metaDescription',
+  'canonicalUrl',
+  'robots',
+  'isActive',
+  'isIndexable',
+  'categoryId',
+  'categorySlug',
+  'tagsJson',
+  'jsonLd',
+  'status',
+  'authorId',
+  'locale',
+  'translationGroupId'
+] as const satisfies readonly (keyof Omit<PostModel, 'id' | 'translations'>)[];
+
 type SavePostResponse = {
   data?: {
     id?: string;
@@ -108,6 +144,41 @@ type SavePostResponse = {
 };
 
 const serializePost = (value: PostModel) => JSON.stringify(value);
+
+const buildTranslationExport = (post: PostModel): PostTranslationExport => {
+  const exportedPost = Object.fromEntries(exportablePostFields.map((field) => [field, post[field]])) as Omit<PostModel, 'id' | 'translations'>;
+
+  return {
+    schema: 'the-muscle-temple.post-translation',
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    instructions:
+      'Traduire uniquement les valeurs textuelles (slug, title, h1, chapoHtml, contentJson.html, faqJson, heroImageAlt, metaTitle, metaDescription, tagsJson, jsonLd, attributs alt/figcaption dans le HTML). Conserver la structure JSON, les clés, les IDs techniques, les URLs des images, les balises HTML et les booléens.',
+    post: exportedPost
+  };
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const normalizeImportedPost = (payload: unknown): Partial<PostModel> => {
+  const rawPost = isRecord(payload) && isRecord(payload.post) ? payload.post : payload;
+  if (!isRecord(rawPost)) throw new Error('Le JSON doit contenir un objet post ou un objet article à la racine.');
+
+  const next: Partial<PostModel> = {};
+  for (const field of exportablePostFields) {
+    if (field in rawPost) (next as Record<string, unknown>)[field] = rawPost[field];
+  }
+
+  if (next.locale !== undefined && next.locale !== 'fr' && next.locale !== 'en') throw new Error('La locale importée doit être "fr" ou "en".');
+  if (next.status !== undefined && next.status !== 'DRAFT' && next.status !== 'PUBLISHED') throw new Error('Le status importé doit être "DRAFT" ou "PUBLISHED".');
+  if (next.contentJson !== undefined && (!isRecord(next.contentJson) || next.contentJson.type !== 'doc' || typeof next.contentJson.html !== 'string')) {
+    throw new Error('contentJson importé doit respecter le format { type: "doc", html: "..." }.');
+  }
+  if (next.faqJson !== undefined && !Array.isArray(next.faqJson)) throw new Error('faqJson importé doit être un tableau.');
+  if (next.tagsJson !== undefined && !Array.isArray(next.tagsJson)) throw new Error('tagsJson importé doit être un tableau.');
+
+  return next;
+};
 
 const getPostPath = (locale: Locale, slug: string) => (slug.trim() ? getArticlePath(locale, slug.trim()) : '');
 
@@ -168,6 +239,10 @@ export function PostEditorForm({ initialPost }: { initialPost?: InitialPost }) {
   const [coverUploading, setCoverUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [translationNotice, setTranslationNotice] = useState('');
+  const [translationExport, setTranslationExport] = useState('');
+  const [translationImport, setTranslationImport] = useState('');
+  const [translationToolNotice, setTranslationToolNotice] = useState('');
+  const importFileRef = useRef<HTMLInputElement | null>(null);
   const [savedSnapshot, setSavedSnapshot] = useState(() => serializePost(normalizeInitialPost(initialPost)));
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -297,6 +372,56 @@ export function PostEditorForm({ initialPost }: { initialPost?: InitialPost }) {
     setSavedSnapshot(serializePost(nextPost));
     setError('');
     setTranslationNotice(`La version ${targetLocale.toUpperCase()} n’existe pas encore. Elle sera créée à la première sauvegarde.`);
+  };
+
+  const refreshTranslationExport = () => {
+    setTranslationExport(JSON.stringify(buildTranslationExport(post), null, 2));
+    setTranslationToolNotice('Export généré. Vous pouvez le copier dans ChatGPT ou le télécharger.');
+  };
+
+  const copyTranslationExport = async () => {
+    const value = translationExport || JSON.stringify(buildTranslationExport(post), null, 2);
+    setTranslationExport(value);
+    await navigator.clipboard.writeText(value);
+    setTranslationToolNotice('Export copié dans le presse-papiers.');
+  };
+
+  const downloadTranslationExport = () => {
+    const value = translationExport || JSON.stringify(buildTranslationExport(post), null, 2);
+    setTranslationExport(value);
+    const blob = new Blob([value], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `article-${post.locale}-${post.slug || 'sans-slug'}-traduction.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    setTranslationToolNotice('Fichier export téléchargé.');
+  };
+
+  const applyTranslationImport = (rawValue = translationImport) => {
+    try {
+      const importedFields = normalizeImportedPost(JSON.parse(rawValue));
+      const nextPost: PostModel = {
+        ...post,
+        ...importedFields,
+        id: post.id,
+        translations: post.translations,
+        contentHtml: importedFields.contentJson?.html ?? importedFields.contentHtml ?? post.contentHtml,
+        contentJson: importedFields.contentJson ?? { type: 'doc', html: importedFields.contentHtml ?? post.contentJson.html },
+        faqJson: importedFields.faqJson ?? post.faqJson,
+        tagsJson: importedFields.tagsJson ?? post.tagsJson,
+        coverImageUrl: importedFields.coverImageUrl || importedFields.heroImageUrl || post.coverImageUrl,
+        status: importedFields.status ?? post.status,
+        locale: importedFields.locale ?? post.locale
+      };
+      setPost(nextPost);
+      setTranslationToolNotice('Import appliqué au formulaire. Vérifiez puis cliquez sur Enregistrer.');
+      setError('');
+    } catch (e) {
+      setTranslationToolNotice('');
+      setError(e instanceof Error ? e.message : 'Import JSON invalide.');
+    }
   };
 
   const save = async () => {
@@ -484,6 +609,48 @@ export function PostEditorForm({ initialPost }: { initialPost?: InitialPost }) {
           </button>
         ) : null}
         {translationNotice ? <p className="rounded border border-amber-600 bg-amber-950/40 p-2 text-sm text-amber-100">{translationNotice}</p> : null}
+        <section className="space-y-2 rounded border border-slate-700 p-3">
+          <p className={labelClass}>Export / import traduction</p>
+          <p className="text-xs text-slate-400">
+            Exportez tous les champs traduisibles du formulaire (slug, H1, contenu HTML, FAQ, SEO, tags, alt des images, JSON-LD), faites traduire le JSON, puis importez-le ici.
+          </p>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <button type="button" className={secondaryButtonClass} onClick={refreshTranslationExport}>Générer</button>
+            <button type="button" className={secondaryButtonClass} onClick={copyTranslationExport}>Copier</button>
+            <button type="button" className={secondaryButtonClass} onClick={downloadTranslationExport}>Télécharger</button>
+          </div>
+          <textarea
+            className={`${fieldClass} min-h-40 font-mono text-xs`}
+            placeholder="Export JSON à envoyer à ChatGPT"
+            value={translationExport}
+            onChange={(e) => setTranslationExport(e.target.value)}
+          />
+          <textarea
+            className={`${fieldClass} min-h-40 font-mono text-xs`}
+            placeholder="Collez ici le JSON traduit renvoyé par ChatGPT"
+            value={translationImport}
+            onChange={(e) => setTranslationImport(e.target.value)}
+          />
+          <div className="flex flex-wrap gap-2">
+            <button type="button" className={secondaryButtonClass} onClick={() => applyTranslationImport()} disabled={!translationImport.trim()}>Importer le JSON collé</button>
+            <button type="button" className={secondaryButtonClass} onClick={() => importFileRef.current?.click()}>Importer un fichier</button>
+            <input
+              ref={importFileRef}
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                e.currentTarget.value = '';
+                if (!file) return;
+                const value = await file.text();
+                setTranslationImport(value);
+                applyTranslationImport(value);
+              }}
+            />
+          </div>
+          {translationToolNotice ? <p className="text-xs text-emerald-300">{translationToolNotice}</p> : null}
+        </section>
         <label className={labelClass} htmlFor="post-author">
           Auteur
         </label>
