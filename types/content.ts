@@ -58,6 +58,7 @@ export interface Post {
   tags: string[];
   sections: PostSection[];
   contentHtml?: string;
+  chapoHtml?: string;
   faqJson?: PostFaq[];
   featured?: boolean;
   locale: Locale;

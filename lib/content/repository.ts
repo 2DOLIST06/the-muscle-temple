@@ -209,6 +209,7 @@ const toPost = (apiPost: ApiPost): Post => {
   tags: getPostTags(apiPost),
   sections: toPostSections(apiPost),
   contentHtml: getPostContentHtml(apiPost),
+  chapoHtml: apiPost.chapoHtml?.trim() ? normalizeContentImageSources(apiPost.chapoHtml.trim()) : undefined,
   faqJson: getPostFaqs(apiPost),
   featured: false,
   locale,
