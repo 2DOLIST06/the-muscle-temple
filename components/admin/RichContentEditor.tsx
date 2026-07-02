@@ -200,6 +200,10 @@ export function RichContentEditor({
     insertImage(url, alt);
   };
 
+  const insertMacroCalculator = () => {
+    exec('insertHTML', '<p>[[macro-calculator]]</p><p><br></p>');
+  };
+
   const uploadImageFile = async (file?: File) => {
     setUploadError('');
 
@@ -264,6 +268,7 @@ export function RichContentEditor({
         <span className="mx-1 h-6 w-px bg-slate-700" />
 
         <button type="button" className={buttonClass()} onClick={() => exec('insertHorizontalRule')}>Ligne</button>
+        <button type="button" className={buttonClass()} onClick={insertMacroCalculator}>Calculatrice macros</button>
         <button type="button" className={buttonClass(activeFormats.link)} onClick={addLink}>Lien</button>
         <button type="button" className={buttonClass()} onClick={() => exec('unlink')}>Retirer lien</button>
         <button type="button" className={buttonClass()} onClick={addImageByUrl}>Image URL</button>

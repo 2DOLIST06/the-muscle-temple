@@ -1,6 +1,14 @@
-# MacroCalculator integration example
+# MacroCalculator integration
 
-The component is reusable in any article page or MDX-style article component:
+The easiest way to add the calculator inside an article is to insert this shortcode exactly where it should appear:
+
+```html
+[[macro-calculator]]
+```
+
+In the admin rich-text editor, click the **Calculatrice macros** toolbar button to insert the shortcode automatically. The public article renderer replaces the shortcode with the React `MacroCalculator` component.
+
+You can also use the component directly in React/TSX pages:
 
 ```tsx
 import { MacroCalculator } from '@/components/calculators/MacroCalculator';

@@ -111,10 +111,10 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           <div className="space-y-8">
             {post.chapoHtml ? (
               <div className="rounded-2xl border-l-4 border-amber-400 bg-amber-50 px-6 py-5 text-lg leading-8 text-slate-800">
-                <RichContentRenderer contentHtml={post.chapoHtml} />
+                <RichContentRenderer contentHtml={post.chapoHtml} locale="fr" />
               </div>
             ) : null}
-            {post.contentHtml ? <RichContentRenderer contentHtml={post.contentHtml} /> : post.sections.map((section) => {
+            {post.contentHtml ? <RichContentRenderer contentHtml={post.contentHtml} locale="fr" /> : post.sections.map((section) => {
               const id = `${post.slug}-${section.heading.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
               return <section key={section.heading} id={id}><h2 className="text-2xl font-semibold text-slate-900">{section.heading}</h2><div className="mt-3 space-y-4 leading-8 text-slate-700">{section.content.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}</div></section>;
             })}
