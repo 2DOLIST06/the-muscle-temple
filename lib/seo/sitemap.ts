@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { contentRepository } from '@/lib/content/repository';
 import { siteConfig } from '@/lib/constants';
-import { absoluteUrl, getArticlePath, getCategoryPath } from '@/lib/i18n/routing';
+import { absoluteUrl, canonicalSiteUrl, getArticlePath, getCategoryPath } from '@/lib/i18n/routing';
 import type { Locale } from '@/lib/i18n/routing';
 
 const staticPathsByLocale: Record<Locale, string[]> = {
@@ -21,7 +21,7 @@ export const getLocalizedSitemap = async (locale: Locale): Promise<MetadataRoute
   }));
 
   const postPages: MetadataRoute.Sitemap = posts.map((post) => ({
-    url: post.canonicalUrl ?? absoluteUrl(post.path ?? getArticlePath(locale, post.slug)),
+    url: canonicalSiteUrl(post.canonicalUrl ?? absoluteUrl(post.path ?? getArticlePath(locale, post.slug))),
     lastModified: new Date(post.updatedAt ?? post.publishedAt)
   }));
 

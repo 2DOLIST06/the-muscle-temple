@@ -43,9 +43,22 @@ export const getGymPath = (locale: Locale, slug: string) => `${locale === 'fr' ?
 export const getPathLocale = getLocaleFromPathname;
 
 export const absoluteUrl = (pathOrUrl: string) => {
-  if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
+  if (/^https?:\/\//i.test(pathOrUrl)) return canonicalSiteUrl(pathOrUrl);
   const path = pathOrUrl.startsWith('/') ? pathOrUrl : `/${pathOrUrl}`;
   return `${siteConfig.baseUrl}${path}`;
+};
+
+export const canonicalSiteUrl = (url: string) => {
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname === 'bodytrainingguide.com' || parsed.hostname === 'www.bodytrainingguide.com') {
+      parsed.protocol = 'https:';
+      parsed.hostname = 'www.bodytrainingguide.com';
+    }
+    return parsed.toString();
+  } catch {
+    return url;
+  }
 };
 
 export const getNavigation = (locale: Locale) =>

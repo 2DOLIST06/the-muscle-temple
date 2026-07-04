@@ -1,6 +1,6 @@
 import { buildPublicApiUrl, getPublicApiBaseUrl } from '@/lib/api/env';
 import { getStrengthTrainingCategoryCopy } from '@/lib/content/category-copy';
-import { getArticlePath, type Hreflang, type Locale } from '@/lib/i18n/routing';
+import { canonicalSiteUrl, getArticlePath, type Hreflang, type Locale } from '@/lib/i18n/routing';
 import type { Author, Category, Post, PostFaq, PostSection, RelatedPostSummary } from '@/types/content';
 
 interface ApiMedia {
@@ -215,19 +215,19 @@ const toPost = (apiPost: ApiPost): Post => {
   locale,
   translationGroupId: apiPost.translationGroupId?.trim() || apiPost.id,
   path: apiPost.path?.trim() || getArticlePath(locale, apiPost.slug),
-  canonicalUrl: apiPost.canonicalUrl?.trim() || undefined,
+  canonicalUrl: apiPost.canonicalUrl?.trim() ? canonicalSiteUrl(apiPost.canonicalUrl.trim()) : undefined,
   translations: apiPost.translations
     ?.flatMap((translation) => {
       const translationLocale = translation.locale === 'fr' ? 'fr' : translation.locale === 'en' ? 'en' : undefined;
       const slug = translation.slug?.trim();
       const path = translation.path?.trim();
       if (!translationLocale || !slug || !path) return [];
-      return [{ locale: translationLocale, slug, path, canonicalUrl: translation.canonicalUrl?.trim() || undefined }];
+      return [{ locale: translationLocale, slug, path, canonicalUrl: translation.canonicalUrl?.trim() ? canonicalSiteUrl(translation.canonicalUrl.trim()) : undefined }];
     }),
   hreflang: apiPost.hreflang
     ?.flatMap((item) => {
       if ((item.hreflang !== 'en' && item.hreflang !== 'fr' && item.hreflang !== 'x-default') || !item.href?.trim()) return [];
-      return [{ hreflang: item.hreflang, href: item.href.trim() }];
+      return [{ hreflang: item.hreflang, href: canonicalSiteUrl(item.href.trim()) }];
     })
 });
 };

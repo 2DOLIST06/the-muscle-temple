@@ -13,9 +13,9 @@ export async function generateMetadata(): Promise<Metadata> {
     path: '/fr/categories',
     locale: 'fr',
     hreflang: [
-      { hreflang: 'en', href: 'https://bodytrainingguide.com/categories' },
-      { hreflang: 'fr', href: 'https://bodytrainingguide.com/fr/categories' },
-      { hreflang: 'x-default', href: 'https://bodytrainingguide.com/categories' }
+      { hreflang: 'en', href: 'https://www.bodytrainingguide.com/categories' },
+      { hreflang: 'fr', href: 'https://www.bodytrainingguide.com/fr/categories' },
+      { hreflang: 'x-default', href: 'https://www.bodytrainingguide.com/categories' }
     ]
   }));
 }
