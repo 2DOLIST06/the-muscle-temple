@@ -13,7 +13,7 @@ const websiteJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
   name: 'Body Training Guide',
-  url: 'https://bodytrainingguide.com',
+  url: 'https://www.bodytrainingguide.com',
   inLanguage: 'en',
   description: 'Strength training, exercise, nutrition and recovery guides to help you organize your workouts.'
 };
@@ -23,12 +23,12 @@ export async function generateMetadata(): Promise<Metadata> {
     title: 'Body Training Guide | Strength Training, Nutrition and Exercises',
     description: homeDescription,
     path: '/',
-    canonicalUrl: 'https://bodytrainingguide.com',
+    canonicalUrl: 'https://www.bodytrainingguide.com',
     locale: 'en',
     hreflang: [
-      { hreflang: 'en', href: 'https://bodytrainingguide.com' },
-      { hreflang: 'fr', href: 'https://bodytrainingguide.com/fr' },
-      { hreflang: 'x-default', href: 'https://bodytrainingguide.com' }
+      { hreflang: 'en', href: 'https://www.bodytrainingguide.com' },
+      { hreflang: 'fr', href: 'https://www.bodytrainingguide.com/fr' },
+      { hreflang: 'x-default', href: 'https://www.bodytrainingguide.com' }
     ]
   });
 }

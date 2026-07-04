@@ -4,7 +4,7 @@ export const siteConfig = {
   name: 'Body Training Guide',
   description:
     'Strength training, nutrition and recovery guides for sustainable progress.',
-  baseUrl: 'https://bodytrainingguide.com',
+  baseUrl: 'https://www.bodytrainingguide.com',
   defaultOgImage: '/og-default.svg'
 };
 

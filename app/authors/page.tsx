@@ -14,9 +14,9 @@ export async function generateMetadata(): Promise<Metadata> {
     path: '/authors',
     locale: 'en',
     hreflang: [
-      { hreflang: 'en', href: 'https://bodytrainingguide.com/authors' },
-      { hreflang: 'fr', href: 'https://bodytrainingguide.com/fr/authors' },
-      { hreflang: 'x-default', href: 'https://bodytrainingguide.com/authors' }
+      { hreflang: 'en', href: 'https://www.bodytrainingguide.com/authors' },
+      { hreflang: 'fr', href: 'https://www.bodytrainingguide.com/fr/authors' },
+      { hreflang: 'x-default', href: 'https://www.bodytrainingguide.com/authors' }
     ]
   }));
 }
