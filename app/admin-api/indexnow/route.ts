@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { buildUpstreamAuthHeaders } from '@/lib/admin/upstream-token';
-import { getIndexNowPages, submitIndexNowUrls } from '@/lib/seo/indexnow';
+import { IndexNowError, getIndexNowPages, submitIndexNowUrls } from '@/lib/seo/indexnow';
 
 const missingSession = () => NextResponse.json({ error: 'Session admin absente, reconnectez-vous.' }, { status: 401 });
 
@@ -28,6 +28,7 @@ export async function POST(request: Request) {
     const result = await submitIndexNowUrls(urls);
     return NextResponse.json(result);
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'Envoi IndexNow impossible.' }, { status: 400 });
+    const status = error instanceof IndexNowError ? error.status : 500;
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Envoi IndexNow impossible.' }, { status });
   }
 }
