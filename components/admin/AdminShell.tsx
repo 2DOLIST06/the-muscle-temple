@@ -6,7 +6,8 @@ import { usePathname } from 'next/navigation';
 const links = [
   { label: 'Dashboard', href: '/admin' },
   { label: 'Articles', href: '/admin/posts' },
-  { label: 'Créer un article', href: '/admin/posts/new' }
+  { label: 'Créer un article', href: '/admin/posts/new' },
+  { label: 'Bing IndexNow', href: '/admin/indexnow' }
 ];
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
