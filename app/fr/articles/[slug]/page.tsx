@@ -14,6 +14,7 @@ import { formatDate } from '@/lib/content/presenters';
 import { contentRepository } from '@/lib/content/repository';
 import { absoluteUrl, getArticlePath } from '@/lib/i18n/routing';
 import { buildMetadata } from '@/lib/seo/metadata';
+import { getAdminAuthMode, getAdminJwtFromCookies } from '@/lib/admin/auth';
 import { blogPostingJsonLd, breadcrumbJsonLd } from '@/lib/seo/jsonld';
 
 export async function generateStaticParams() {
@@ -56,11 +57,14 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
 
   if (!post) notFound();
 
-  const [author, category, relatedPosts] = await Promise.all([
+  const [author, category, relatedPosts, adminJwt] = await Promise.all([
     contentRepository.getAuthorBySlugAndLocale(post.authorSlug, 'fr'),
     contentRepository.getCategoryBySlugAndLocale(post.categorySlug, 'fr'),
-    contentRepository.getRelatedPosts(post, 3)
+    contentRepository.getRelatedPosts(post, 3),
+    getAdminJwtFromCookies()
   ]);
+
+  const isAdminAuthenticated = Boolean(adminJwt) || getAdminAuthMode() === 'dev-bypass';
 
   const articleHeadings = extractHeadingsFromHtml(post.contentHtml);
   const articlePath = post.path ?? getArticlePath('fr', post.slug);
@@ -90,10 +94,15 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
       <article className="py-10">
         <Breadcrumbs items={[{ label: 'Accueil', href: '/fr' }, { label: 'Articles', href: '/fr/articles' }, { label: post.title, href: articlePath }]} />
 
-        <div className="mb-5">
+        <div className="mb-5 flex flex-wrap gap-3">
           <Link href={translation?.path ?? '/articles'} className="rounded border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700">
             Read in English
           </Link>
+          {isAdminAuthenticated ? (
+            <Link href={`/admin/posts/${encodeURIComponent(post.id)}/edit`} className="rounded bg-slate-900 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-700">
+              Modifier l’article
+            </Link>
+          ) : null}
         </div>
 
         <h1 className="max-w-4xl text-4xl font-bold tracking-tight text-slate-900">{post.title}</h1>
