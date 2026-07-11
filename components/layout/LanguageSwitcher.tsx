@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { absoluteUrl, getLocaleFromPathname, getArticlesPath, localizePath, stripLocalePrefix, type Locale } from '@/lib/i18n/routing';
+import { absoluteUrl, getLocaleFromPathname, getArticlesPath, getMacroCalculatorPath, localizePath, stripLocalePrefix, type Locale } from '@/lib/i18n/routing';
 
 const getPathFromHref = (href: string) => {
   try {
@@ -14,9 +14,11 @@ const getPathFromHref = (href: string) => {
 };
 
 const isArticleDetailPath = (basePath: string) => /^\/articles\/[^/]+\/?$/.test(basePath);
+const isMacroCalculatorPath = (basePath: string) => basePath === '/calculateur-macros' || basePath === '/macro-calculator';
 
 const buildGenericTarget = (pathname: string, targetLocale: Locale) => {
   const basePath = stripLocalePrefix(pathname);
+  if (isMacroCalculatorPath(basePath)) return getMacroCalculatorPath(targetLocale);
   const targetBasePath = isArticleDetailPath(basePath) ? getArticlesPath('en') : basePath;
   return localizePath(targetBasePath, targetLocale);
 };
