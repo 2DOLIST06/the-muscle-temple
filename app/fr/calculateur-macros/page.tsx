@@ -59,6 +59,11 @@ export async function generateMetadata(): Promise<Metadata> {
     path: pagePath,
     canonicalUrl: `https://www.bodytrainingguide.com${pagePath}`,
     locale: 'fr',
+    hreflang: [
+      { hreflang: 'en', href: 'https://www.bodytrainingguide.com/macro-calculator' },
+      { hreflang: 'fr', href: 'https://www.bodytrainingguide.com/fr/calculateur-macros' },
+      { hreflang: 'x-default', href: 'https://www.bodytrainingguide.com/macro-calculator' }
+    ],
     keywords: ['calculateur macros', 'macro musculation', 'calcul calories musculation', 'protéines glucides lipides', 'prise de masse', 'sèche']
   });
 }
@@ -137,7 +142,7 @@ export default function FrenchMacroCalculatorPage() {
               <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
                 <h2 className="text-lg font-bold text-slate-950">Aller plus loin</h2>
                 <p className="mt-3 text-sm leading-6 text-slate-600">Pour comprendre la stratégie derrière les chiffres, consultez aussi notre guide nutrition.</p>
-                <Link href="/fr/articles/nutrition-prise-de-masse-propre" className="mt-4 inline-flex rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Lire le guide nutrition</Link>
+                <Link href="https://www.bodytrainingguide.com/fr/articles/calculer-ses-macros-et-calories-en-musculation" className="mt-4 inline-flex rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Lire le guide nutrition</Link>
               </div>
             </aside>
           </section>
