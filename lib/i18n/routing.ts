@@ -38,6 +38,7 @@ export const getAuthorsPath = (locale: Locale) => localizePath('/authors', local
 export const getArticlePath = (locale: Locale, slug: string) => `${getArticlesPath(locale)}/${cleanSlug(slug)}`;
 export const getCategoryPath = (locale: Locale, slug: string) => `${getCategoriesPath(locale)}/${cleanSlug(slug)}`;
 export const getAuthorPath = (locale: Locale, slug: string) => `${getAuthorsPath(locale)}/${cleanSlug(slug)}`;
+export const getMacroCalculatorPath = (locale: Locale) => (locale === 'fr' ? '/fr/calculateur-macros' : '/macro-calculator');
 export const getGymPath = (locale: Locale, slug: string) => `${locale === 'fr' ? '/fr/salles' : '/gyms'}/${cleanSlug(slug)}`;
 
 export const getPathLocale = getLocaleFromPathname;
@@ -65,9 +66,11 @@ export const getNavigation = (locale: Locale) =>
   locale === 'fr'
     ? [
         { label: 'Accueil', href: getHomePath('fr') },
-        { label: 'Musculation', href: getCategoryPath('fr', 'musculation') }
+        { label: 'Musculation', href: getCategoryPath('fr', 'musculation') },
+        { label: 'Calculateur macros', href: getMacroCalculatorPath('fr') }
       ]
     : [
         { label: 'Home', href: getHomePath('en') },
-        { label: 'Strength training', href: getCategoryPath('en', 'musculation') }
+        { label: 'Strength training', href: getCategoryPath('en', 'musculation') },
+        { label: 'Macro calculator', href: getMacroCalculatorPath('en') }
       ];
