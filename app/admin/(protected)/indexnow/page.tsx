@@ -1,17 +1,25 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AdminApiError, adminApi } from '@/lib/admin/api-client';
 
 interface IndexNowPageRow {
   url: string;
-  lastModified: string;
+  lastModified: string | null;
   submittedAt: string | null;
   needsSubmission: boolean;
+  submissionReason: 'never-submitted' | 'modified' | 'unchanged';
 }
 
-const formatDate = (value: string | null) => (value ? new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) : 'Jamais');
+const formatDate = (value: string | null, emptyLabel = 'Jamais') =>
+  value ? new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) : emptyLabel;
+
+const statusLabel = (page: IndexNowPageRow) => {
+  if (page.submissionReason === 'never-submitted') return 'Jamais envoyée';
+  if (page.submissionReason === 'modified') return `Modifiée depuis l’envoi du ${formatDate(page.submittedAt)}`;
+  return 'Aucune modification détectée';
+};
 
 export default function AdminIndexNowPage() {
   const router = useRouter();
@@ -21,9 +29,16 @@ export default function AdminIndexNowPage() {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const selectAllRef = useRef<HTMLInputElement>(null);
 
   const selectedCount = selected.size;
   const pendingCount = useMemo(() => pages.filter((page) => page.needsSubmission).length, [pages]);
+  const allSelected = pages.length > 0 && selectedCount === pages.length;
+  const partiallySelected = selectedCount > 0 && !allSelected;
+
+  useEffect(() => {
+    if (selectAllRef.current) selectAllRef.current.indeterminate = partiallySelected;
+  }, [partiallySelected]);
 
   const loadPages = () => {
     setLoading(true);
@@ -56,6 +71,10 @@ export default function AdminIndexNowPage() {
     });
   };
 
+  const toggleAll = () => {
+    setSelected(allSelected ? new Set() : new Set(pages.map((page) => page.url)));
+  };
+
   const submit = (onlyNeeded = false) => {
     setSubmitting(true);
     setMessage(null);
@@ -76,7 +95,7 @@ export default function AdminIndexNowPage() {
       <h1 className="mt-2 text-3xl font-bold">Bing IndexNow</h1>
       <p className="mt-3 max-w-3xl text-slate-300">
         Cochez les pages à envoyer à Bing. Les pages jamais envoyées ou modifiées depuis leur dernier envoi sont
-        présélectionnées automatiquement.
+        présélectionnées automatiquement. L’état explique si l’URL n’a jamais été envoyée, a été modifiée ou n’a pas changé.
       </p>
 
       <div className="mt-6 flex flex-wrap gap-3">
@@ -100,7 +119,15 @@ export default function AdminIndexNowPage() {
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-900 text-slate-300">
               <tr>
-                <th className="px-3 py-3">Envoyer</th>
+                <th className="px-3 py-3">
+                  <input
+                    ref={selectAllRef}
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={toggleAll}
+                    aria-label={allSelected ? 'Tout décocher' : 'Tout cocher'}
+                  />
+                </th>
                 <th className="px-3 py-3">URL</th>
                 <th className="px-3 py-3">Dernière modification</th>
                 <th className="px-3 py-3">Dernier envoi</th>
@@ -110,11 +137,11 @@ export default function AdminIndexNowPage() {
             <tbody>
               {pages.map((page) => (
                 <tr key={page.url} className="border-t border-slate-800">
-                  <td className="px-3 py-3"><input type="checkbox" checked={selected.has(page.url)} onChange={() => toggleUrl(page.url)} /></td>
+                  <td className="px-3 py-3"><input type="checkbox" checked={selected.has(page.url)} onChange={() => toggleUrl(page.url)} aria-label={`Envoyer ${page.url}`} /></td>
                   <td className="px-3 py-3 text-slate-200"><a className="underline" href={page.url} target="_blank">{page.url}</a></td>
-                  <td className="px-3 py-3 text-slate-300">{formatDate(page.lastModified)}</td>
+                  <td className="px-3 py-3 text-slate-300">{formatDate(page.lastModified, 'Non applicable')}</td>
                   <td className="px-3 py-3 text-slate-300">{formatDate(page.submittedAt)}</td>
-                  <td className="px-3 py-3">{page.needsSubmission ? <span className="text-amber-300">À envoyer</span> : <span className="text-emerald-300">Déjà envoyé</span>}</td>
+                  <td className="px-3 py-3"><span className={page.needsSubmission ? 'text-amber-300' : 'text-emerald-300'}>{statusLabel(page)}</span></td>
                 </tr>
               ))}
             </tbody>

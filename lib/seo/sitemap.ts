@@ -16,8 +16,9 @@ export const getLocalizedSitemap = async (locale: Locale): Promise<MetadataRoute
   ]);
 
   const staticPages: MetadataRoute.Sitemap = staticPathsByLocale[locale].map((path) => ({
-    url: absoluteUrl(path),
-    lastModified: new Date()
+    // Static pages do not have a CMS timestamp. A generated timestamp would
+    // incorrectly flag them as changed every time this sitemap is requested.
+    url: absoluteUrl(path)
   }));
 
   const postPages: MetadataRoute.Sitemap = posts.map((post) => ({
@@ -25,10 +26,17 @@ export const getLocalizedSitemap = async (locale: Locale): Promise<MetadataRoute
     lastModified: new Date(post.updatedAt ?? post.publishedAt)
   }));
 
-  const categoryPages: MetadataRoute.Sitemap = categories.map((category) => ({
-    url: absoluteUrl(getCategoryPath(locale, category.slug)),
-    lastModified: new Date()
-  }));
+  const categoryPages: MetadataRoute.Sitemap = categories.map((category) => {
+    const newestPost = posts
+      .filter((post) => post.categorySlug === category.slug)
+      .map((post) => post.updatedAt ?? post.publishedAt)
+      .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0];
+
+    return {
+      url: absoluteUrl(getCategoryPath(locale, category.slug)),
+      ...(newestPost ? { lastModified: new Date(newestPost) } : {})
+    };
+  });
 
   return [...staticPages, ...postPages, ...categoryPages];
 };
