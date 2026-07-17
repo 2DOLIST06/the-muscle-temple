@@ -6,9 +6,10 @@ import { getLocalizedSitemap } from '@/lib/seo/sitemap';
 
 export interface IndexNowPage {
   url: string;
-  lastModified: string;
+  lastModified: string | null;
   submittedAt: string | null;
   needsSubmission: boolean;
+  submissionReason: 'never-submitted' | 'modified' | 'unchanged';
 }
 
 interface Store {
@@ -64,13 +65,14 @@ export const getConfiguredIndexNowKey = () => process.env.INDEXNOW_KEY?.trim() |
 
 export const getIndexNowPages = async (): Promise<IndexNowPage[]> => {
   const [enEntries, frEntries, store] = await Promise.all([getLocalizedSitemap('en'), getLocalizedSitemap('fr'), readStore()]);
-  const byUrl = new Map<string, string>();
+  const byUrl = new Map<string, string | null>();
 
   for (const entry of [...enEntries, ...frEntries]) {
     if (!entry.url) continue;
-    const lastModified = new Date(entry.lastModified ?? new Date()).toISOString();
+    const lastModified = entry.lastModified ? new Date(entry.lastModified).toISOString() : null;
     const previous = byUrl.get(entry.url);
-    if (!previous || new Date(lastModified).getTime() > new Date(previous).getTime()) byUrl.set(entry.url, lastModified);
+    if (lastModified && (!previous || new Date(lastModified).getTime() > new Date(previous).getTime())) byUrl.set(entry.url, lastModified);
+    else if (!byUrl.has(entry.url)) byUrl.set(entry.url, null);
   }
 
   return [...byUrl.entries()]
@@ -78,11 +80,16 @@ export const getIndexNowPages = async (): Promise<IndexNowPage[]> => {
     .map(([url, lastModified]) => {
       const submission = store.submissions[url];
       const submittedAt = submission?.submittedAt ?? null;
+      const isModified = Boolean(
+        submission && lastModified && new Date(lastModified).getTime() > new Date(submission.lastModified).getTime()
+      );
+      const needsSubmission = !submission || isModified;
       return {
         url,
         lastModified,
         submittedAt,
-        needsSubmission: !submission || new Date(lastModified).getTime() > new Date(submission.lastModified).getTime()
+        needsSubmission,
+        submissionReason: !submission ? 'never-submitted' : isModified ? 'modified' : 'unchanged'
       };
     });
 };
@@ -125,7 +132,7 @@ export const submitIndexNowUrls = async (urls: string[]) => {
 
   const submittedAt = new Date().toISOString();
   const store = await readStore();
-  for (const page of selected) store.submissions[page.url] = { submittedAt, lastModified: page.lastModified };
+  for (const page of selected) store.submissions[page.url] = { submittedAt, lastModified: page.lastModified ?? submittedAt };
   await writeStore(store);
   return { submitted: selected.map((page) => ({ ...page, submittedAt, needsSubmission: false })) };
 };
