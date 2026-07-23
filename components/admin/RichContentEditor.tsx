@@ -52,7 +52,9 @@ const getSelectionElement = () => {
   return node?.nodeType === Node.ELEMENT_NODE ? (node as Element) : node?.parentElement;
 };
 
-const selectionHasLink = () => Boolean(getSelectionElement()?.closest('a'));
+const getSelectedLink = () => getSelectionElement()?.closest('a') as HTMLAnchorElement | null;
+
+const selectionHasLink = () => Boolean(getSelectedLink());
 
 const getSelectedImage = () => {
   const closest = getSelectionElement()?.closest('img, figure');
@@ -147,15 +149,28 @@ export function RichContentEditor({
     refreshActiveFormats();
   };
 
-  const addLink = () => {
+  const addOrEditLink = () => {
     saveSelection();
     const selectedText = document.getSelection()?.toString().trim();
-    const url = window.prompt('URL du lien (https://...)');
-    if (!url) return;
+    const selectedLink = getSelectedLink();
+    const currentUrl = selectedLink?.getAttribute('href') ?? '';
+    const url = window.prompt('URL du lien (https://...)', currentUrl);
+    if (url === null) return;
+
+    const nextUrl = url.trim();
     restoreSelection();
-    if (selectedText) document.execCommand('createLink', false, url);
-    else document.execCommand('insertHTML', false, `<a href="${url}">${url}</a>`);
+
+    if (selectedLink && ref.current?.contains(selectedLink)) {
+      if (nextUrl) selectedLink.setAttribute('href', nextUrl);
+      else selectedLink.replaceWith(...Array.from(selectedLink.childNodes));
+    } else if (nextUrl) {
+      const safeUrl = escapeHtmlAttribute(nextUrl);
+      if (selectedText) document.execCommand('createLink', false, nextUrl);
+      else document.execCommand('insertHTML', false, `<a href="${safeUrl}">${safeUrl}</a>`);
+    }
+
     emit();
+    saveSelection();
     refreshActiveFormats();
   };
 
@@ -269,7 +284,7 @@ export function RichContentEditor({
 
         <button type="button" className={buttonClass()} onClick={() => exec('insertHorizontalRule')}>Ligne</button>
         <button type="button" className={buttonClass()} onClick={insertMacroCalculator}>Calculatrice macros</button>
-        <button type="button" className={buttonClass(activeFormats.link)} onClick={addLink}>Lien</button>
+        <button type="button" className={buttonClass(activeFormats.link)} onClick={addOrEditLink}>{activeFormats.link ? 'Modifier lien' : 'Lien'}</button>
         <button type="button" className={buttonClass()} onClick={() => exec('unlink')}>Retirer lien</button>
         <button type="button" className={buttonClass()} onClick={addImageByUrl}>Image URL</button>
         <button type="button" className={buttonClass()} onClick={() => { saveSelection(); fileInputRef.current?.click(); }}>Image fichier</button>
@@ -295,7 +310,7 @@ export function RichContentEditor({
         ref={ref}
         contentEditable
         suppressContentEditableWarning
-        className="min-h-[520px] w-full bg-white p-8 text-base leading-8 text-slate-900 outline-none [&_blockquote]:border-l-4 [&_blockquote]:border-slate-300 [&_blockquote]:pl-4 [&_figcaption]:mt-2 [&_figcaption]:text-center [&_figcaption]:text-sm [&_figcaption]:text-slate-500 [&_figure]:my-6 [&_h1]:text-3xl [&_h1]:font-bold [&_h2]:text-2xl [&_h2]:font-bold [&_h3]:text-xl [&_h3]:font-semibold [&_h4]:text-lg [&_h4]:font-semibold [&_img]:max-w-full [&_img]:rounded-xl [&_ol]:list-decimal [&_ol]:pl-6 [&_pre]:rounded-lg [&_pre]:bg-slate-100 [&_pre]:p-4 [&_ul]:list-disc [&_ul]:pl-6"
+        className="min-h-[520px] w-full bg-white p-8 text-base leading-8 text-slate-900 outline-none [&_a]:rounded [&_a]:bg-brand-100 [&_a]:px-0.5 [&_a]:font-medium [&_a]:text-brand-800 [&_a]:underline [&_a]:decoration-brand-500 [&_a]:decoration-2 [&_a]:underline-offset-4 [&_blockquote]:border-l-4 [&_blockquote]:border-slate-300 [&_blockquote]:pl-4 [&_figcaption]:mt-2 [&_figcaption]:text-center [&_figcaption]:text-sm [&_figcaption]:text-slate-500 [&_figure]:my-6 [&_h1]:text-3xl [&_h1]:font-bold [&_h2]:text-2xl [&_h2]:font-bold [&_h3]:text-xl [&_h3]:font-semibold [&_h4]:text-lg [&_h4]:font-semibold [&_img]:max-w-full [&_img]:rounded-xl [&_ol]:list-decimal [&_ol]:pl-6 [&_pre]:rounded-lg [&_pre]:bg-slate-100 [&_pre]:p-4 [&_ul]:list-disc [&_ul]:pl-6"
         onBlur={saveSelection}
         onInput={() => {
           emit();
