@@ -283,6 +283,26 @@ async function fetchCollection<T>(path: string): Promise<T[]> {
   }
 }
 
+async function fetchAllPages<T extends { id: string }>(path: string, limit = 50): Promise<T[]> {
+  const items: T[] = [];
+  const seenIds = new Set<string>();
+  let page = 1;
+
+  while (true) {
+    const separator = path.includes('?') ? '&' : '?';
+    const pageItems = await fetchCollection<T>(`${path}${separator}page=${page}&limit=${limit}`);
+    const newItems = pageItems.filter((item) => !seenIds.has(item.id));
+
+    newItems.forEach((item) => seenIds.add(item.id));
+    items.push(...newItems);
+
+    if (pageItems.length < limit || newItems.length === 0) break;
+    page += 1;
+  }
+
+  return items;
+}
+
 async function fetchPostBySlug(slug: string, locale: Locale = 'en'): Promise<ApiPost | null> {
   try {
     const response = await fetch(buildPublicApiUrl(`/api/posts/${slug}?locale=${locale}`), {
@@ -314,7 +334,7 @@ async function fetchPostBySlug(slug: string, locale: Locale = 'en'): Promise<Api
 
 export const contentRepository = {
   async getAllPostsByLocale(locale: Locale): Promise<Post[]> {
-    const apiPosts = await fetchCollection<ApiPost>(`/api/posts?locale=${locale}&limit=50`);
+    const apiPosts = await fetchAllPages<ApiPost>(`/api/posts?locale=${locale}`);
     const publishedPosts = apiPosts
       .filter((post) => {
         const status = post.status?.toUpperCase();
@@ -377,18 +397,20 @@ export const contentRepository = {
     return this.getCategoryBySlugAndLocale(slug, 'en');
   },
   async getPostsByCategoryAndLocale(slug: string, locale: Locale): Promise<Post[]> {
-    const apiPosts = await fetchCollection<ApiPost>(`/api/categories/${slug}/posts?locale=${locale}`);
-    const postsFromCategoryEndpoint = apiPosts
-      .filter((post) => {
-        const status = post.status?.toUpperCase();
-        return (!status || status === 'PUBLISHED') && post.isActive !== false;
-      })
-      .map(toPost);
-
-    if (postsFromCategoryEndpoint.length > 0) return sortByDateDesc(postsFromCategoryEndpoint);
-
     const allPosts = await this.getAllPostsByLocale(locale);
-    return sortByDateDesc(allPosts.filter((post) => post.categorySlug === slug));
+    const categoryPosts = allPosts.filter((post) => post.categorySlug === slug);
+
+    if (categoryPosts.length > 0) return categoryPosts;
+
+    const apiPosts = await fetchCollection<ApiPost>(`/api/categories/${slug}/posts?locale=${locale}`);
+    return sortByDateDesc(
+      apiPosts
+        .filter((post) => {
+          const status = post.status?.toUpperCase();
+          return (!status || status === 'PUBLISHED') && post.isActive !== false;
+        })
+        .map(toPost)
+    );
   },
   async getPostsByCategory(slug: string): Promise<Post[]> {
     return this.getPostsByCategoryAndLocale(slug, 'en');
