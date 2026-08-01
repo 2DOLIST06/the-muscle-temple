@@ -106,6 +106,12 @@ type PostTranslationExport = {
   post: Omit<PostModel, 'id' | 'translations'>;
 };
 
+type PostCreationExport = {
+  schema: 'the-muscle-temple.post-creation';
+  version: 1;
+  post: Omit<PostModel, 'id' | 'translations'>;
+};
+
 const exportablePostFields = [
   'slug',
   'title',
@@ -145,16 +151,23 @@ type SavePostResponse = {
 
 const serializePost = (value: PostModel) => JSON.stringify(value);
 
-const buildTranslationExport = (post: PostModel): PostTranslationExport => {
-  const exportedPost = Object.fromEntries(exportablePostFields.map((field) => [field, post[field]])) as Omit<PostModel, 'id' | 'translations'>;
+const getExportablePost = (post: PostModel) =>
+  Object.fromEntries(exportablePostFields.map((field) => [field, post[field]])) as Omit<PostModel, 'id' | 'translations'>;
 
+const buildCreationExport = (post: PostModel): PostCreationExport => ({
+  schema: 'the-muscle-temple.post-creation',
+  version: 1,
+  post: getExportablePost(post)
+});
+
+const buildTranslationExport = (post: PostModel): PostTranslationExport => {
   return {
     schema: 'the-muscle-temple.post-translation',
     version: 1,
     exportedAt: new Date().toISOString(),
     instructions:
       'Traduire uniquement les valeurs textuelles (slug, title, h1, chapoHtml, contentJson.html, faqJson, heroImageAlt, metaTitle, metaDescription, tagsJson, jsonLd, attributs alt/figcaption dans le HTML). Conserver la structure JSON, les clés, les IDs techniques, les URLs des images, les balises HTML et les booléens.',
-    post: exportedPost
+    post: getExportablePost(post)
   };
 };
 
@@ -178,6 +191,16 @@ const normalizeImportedPost = (payload: unknown): Partial<PostModel> => {
   if (next.tagsJson !== undefined && !Array.isArray(next.tagsJson)) throw new Error('tagsJson importé doit être un tableau.');
 
   return next;
+};
+
+const normalizeCreationImport = (payload: unknown): Partial<PostModel> => {
+  const imported = normalizeImportedPost(payload);
+
+  if (imported.jsonLd !== undefined && typeof imported.jsonLd !== 'string') {
+    imported.jsonLd = JSON.stringify(imported.jsonLd, null, 2);
+  }
+
+  return imported;
 };
 
 const getPostPath = (locale: Locale, slug: string) => (slug.trim() ? getArticlePath(locale, slug.trim()) : '');
@@ -230,7 +253,7 @@ const normalizeInitialPost = (initialPost?: InitialPost): PostModel => {
   };
 };
 
-export function PostEditorForm({ initialPost }: { initialPost?: InitialPost }) {
+export function PostEditorForm({ initialPost, enableCreationImport = false }: { initialPost?: InitialPost; enableCreationImport?: boolean }) {
   const [post, setPost] = useState<PostModel>(() => normalizeInitialPost(initialPost));
   const [authors, setAuthors] = useState<AuthorOption[]>([]);
   const [categories, setCategories] = useState<CategoryOption[]>([]);
@@ -243,6 +266,9 @@ export function PostEditorForm({ initialPost }: { initialPost?: InitialPost }) {
   const [translationImport, setTranslationImport] = useState('');
   const [translationToolNotice, setTranslationToolNotice] = useState('');
   const importFileRef = useRef<HTMLInputElement | null>(null);
+  const [creationImport, setCreationImport] = useState('');
+  const [creationImportNotice, setCreationImportNotice] = useState('');
+  const creationImportFileRef = useRef<HTMLInputElement | null>(null);
   const [savedSnapshot, setSavedSnapshot] = useState(() => serializePost(normalizeInitialPost(initialPost)));
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -424,6 +450,49 @@ export function PostEditorForm({ initialPost }: { initialPost?: InitialPost }) {
     }
   };
 
+  const applyCreationImport = (rawValue = creationImport) => {
+    try {
+      const importedFields = normalizeCreationImport(JSON.parse(rawValue));
+      const nextPost: PostModel = { ...post, ...importedFields };
+
+      if (importedFields.contentJson !== undefined) {
+        nextPost.contentHtml = importedFields.contentJson.html;
+      } else if (importedFields.contentHtml !== undefined) {
+        nextPost.contentJson = { type: 'doc', html: importedFields.contentHtml };
+      }
+
+      if (importedFields.coverImageUrl === undefined && importedFields.heroImageUrl !== undefined) {
+        nextPost.coverImageUrl = importedFields.heroImageUrl;
+      }
+
+      setPost(nextPost);
+      setCreationImportNotice('JSON importé : les champs présents ont été appliqués au formulaire. Vérifiez-les avant d’enregistrer.');
+      setError('');
+    } catch (e) {
+      setCreationImportNotice('');
+      setError(e instanceof Error ? e.message : 'Import JSON invalide.');
+    }
+  };
+
+  const copyCreationStructure = async () => {
+    await navigator.clipboard.writeText(JSON.stringify(buildCreationExport(post), null, 2));
+    setCreationImportNotice('Structure JSON complète copiée dans le presse-papiers.');
+    setError('');
+  };
+
+  const downloadCreationStructure = () => {
+    const value = JSON.stringify(buildCreationExport(post), null, 2);
+    const blob = new Blob([value], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `article-${post.slug || 'nouveau'}-structure.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    setCreationImportNotice('Structure JSON complète téléchargée.');
+    setError('');
+  };
+
   const save = async () => {
     try {
       setSaving(true);
@@ -570,6 +639,52 @@ export function PostEditorForm({ initialPost }: { initialPost?: InitialPost }) {
       </div>
 
       <aside className="space-y-3">
+        {enableCreationImport ? (
+          <section className="space-y-2 rounded border border-brand-600 bg-brand-950/20 p-3">
+            <p className={labelClass}>Importer un article en JSON</p>
+            <p className="text-xs text-slate-300">
+              Importez un objet article complet ou partiel. Seuls les champs présents dans le JSON remplacent les valeurs du formulaire ; les champs absents restent inchangés.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <button type="button" className={secondaryButtonClass} onClick={copyCreationStructure}>
+                Copier la structure
+              </button>
+              <button type="button" className={secondaryButtonClass} onClick={downloadCreationStructure}>
+                Télécharger la structure
+              </button>
+            </div>
+            <p className="text-xs text-slate-400">L’export contient tous les champs et leurs valeurs actuelles. Il peut être complété puis réimporté ci-dessous.</p>
+            <textarea
+              className={`${fieldClass} min-h-32 font-mono text-xs`}
+              placeholder='{"title":"Mon article","slug":"mon-article",...}'
+              value={creationImport}
+              onChange={(e) => setCreationImport(e.target.value)}
+            />
+            <div className="flex flex-wrap gap-2">
+              <button type="button" className={secondaryButtonClass} onClick={() => applyCreationImport()} disabled={!creationImport.trim()}>
+                Remplir depuis le JSON
+              </button>
+              <button type="button" className={secondaryButtonClass} onClick={() => creationImportFileRef.current?.click()}>
+                Choisir un fichier JSON
+              </button>
+              <input
+                ref={creationImportFileRef}
+                type="file"
+                accept="application/json,.json"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  e.currentTarget.value = '';
+                  if (!file) return;
+                  const value = await file.text();
+                  setCreationImport(value);
+                  applyCreationImport(value);
+                }}
+              />
+            </div>
+            {creationImportNotice ? <p className="text-xs text-emerald-300">{creationImportNotice}</p> : null}
+          </section>
+        ) : null}
         <input className={fieldClass} placeholder="slug" value={post.slug} onChange={(e) => setPost({ ...post, slug: e.target.value })} />
         <div className="space-y-2">
           <p className={labelClass}>Langue</p>
