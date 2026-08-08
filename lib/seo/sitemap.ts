@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { contentRepository } from '@/lib/content/repository';
 import { siteConfig } from '@/lib/constants';
-import { absoluteUrl, canonicalSiteUrl, getArticlePath, getCategoryPath } from '@/lib/i18n/routing';
+import { absoluteUrl, canonicalSiteUrl, getArticlePath, getCategoryPath, isLegalPath } from '@/lib/i18n/routing';
 import type { Locale } from '@/lib/i18n/routing';
 
 const staticPathsByLocale: Record<Locale, string[]> = {
@@ -38,7 +38,10 @@ export const getLocalizedSitemap = async (locale: Locale): Promise<MetadataRoute
     };
   });
 
-  return [...staticPages, ...postPages, ...categoryPages];
+  // Legal documents must remain accessible from the footer, but must never be
+  // submitted for indexing. Keep this final guard in case a CMS entry is ever
+  // configured with the same canonical path as one of the legal pages.
+  return [...staticPages, ...postPages, ...categoryPages].filter((entry) => !isLegalPath(new URL(entry.url).pathname));
 };
 
 const escapeXml = (value: string) =>

@@ -61,6 +61,8 @@ export const getLegalPageKeyFromPath = (pathname: string): LegalPageKey | undefi
   )?.[0];
 };
 
+export const isLegalPath = (pathname: string) => getLegalPageKeyFromPath(pathname) !== undefined;
+
 export const getPathLocale = getLocaleFromPathname;
 
 export const absoluteUrl = (pathOrUrl: string) => {
