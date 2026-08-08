@@ -1,12 +1,23 @@
 import type { MetadataRoute } from 'next';
 import { contentRepository } from '@/lib/content/repository';
 import { siteConfig } from '@/lib/constants';
-import { absoluteUrl, canonicalSiteUrl, getArticlePath, getCategoryPath } from '@/lib/i18n/routing';
+import { absoluteUrl, canonicalSiteUrl, getArticlePath, getCategoryPath, legalPagePaths } from '@/lib/i18n/routing';
 import type { Locale } from '@/lib/i18n/routing';
 
 const staticPathsByLocale: Record<Locale, string[]> = {
   en: ['/', '/articles', '/categories', '/about', '/contact', '/macro-calculator'],
   fr: ['/fr', '/fr/articles', '/fr/categories', '/fr/about', '/fr/contact', '/fr/calculateur-macros']
+};
+
+const legalPathnames = new Set<string>(Object.values(legalPagePaths).flatMap(({ en, fr }) => [en, fr]));
+
+export const isLegalSitemapUrl = (url: string) => {
+  try {
+    const pathname = new URL(url, siteConfig.baseUrl).pathname.replace(/\/$/, '') || '/';
+    return legalPathnames.has(pathname);
+  } catch {
+    return false;
+  }
 };
 
 export const getLocalizedSitemap = async (locale: Locale): Promise<MetadataRoute.Sitemap> => {
@@ -38,7 +49,7 @@ export const getLocalizedSitemap = async (locale: Locale): Promise<MetadataRoute
     };
   });
 
-  return [...staticPages, ...postPages, ...categoryPages];
+  return [...staticPages, ...postPages, ...categoryPages].filter((entry) => !isLegalSitemapUrl(entry.url));
 };
 
 const escapeXml = (value: string) =>
