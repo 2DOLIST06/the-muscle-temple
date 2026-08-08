@@ -41,24 +41,27 @@ export const getAuthorPath = (locale: Locale, slug: string) => `${getAuthorsPath
 export const getMacroCalculatorPath = (locale: Locale) => (locale === 'fr' ? '/fr/calculateur-macros' : '/macro-calculator');
 export const getGymPath = (locale: Locale, slug: string) => `${locale === 'fr' ? '/fr/salles' : '/gyms'}/${cleanSlug(slug)}`;
 
-export type LegalPageKey = 'terms' | 'medical' | 'affiliate' | 'privacy' | 'cookies' | 'legal';
-
-export const legalPaths: Record<LegalPageKey, Record<Locale, string>> = {
+export const legalPagePaths = {
   terms: { en: '/terms', fr: '/fr/conditions-utilisation' },
-  medical: { en: '/medical-disclaimer', fr: '/fr/avertissement-medical' },
-  affiliate: { en: '/affiliate-disclosure', fr: '/fr/affiliation' },
+  medicalDisclaimer: { en: '/medical-disclaimer', fr: '/fr/avertissement-medical' },
+  affiliateDisclosure: { en: '/affiliate-disclosure', fr: '/fr/affiliation' },
   privacy: { en: '/privacy', fr: '/fr/confidentialite' },
   cookies: { en: '/cookies', fr: '/fr/cookies' },
   legal: { en: '/legal', fr: '/fr/mentions-legales' }
-};
+} as const satisfies Record<string, Record<Locale, string>>;
 
-export const getLegalPath = (key: LegalPageKey, locale: Locale) => legalPaths[key][locale];
+// Keep the public name used by the dynamic legal-page route. Both names point
+// to the same source of truth so routing, metadata and sitemap exclusions
+// cannot drift apart.
+export const legalPaths = legalPagePaths;
 
-export const getLegalPageKeyFromPath = (pathname: string): LegalPageKey | undefined => {
-  const normalized = ensurePathname(pathname).replace(/\/$/, '') || '/';
-  return (Object.entries(legalPaths) as Array<[LegalPageKey, Record<Locale, string>]>).find(([, paths]) =>
-    Object.values(paths).includes(normalized)
-  )?.[0];
+export type LegalPageKey = keyof typeof legalPagePaths;
+
+export const getLegalPagePath = (key: LegalPageKey, locale: Locale) => legalPagePaths[key][locale];
+
+export const getLegalPageAlternate = (pathname: string, targetLocale: Locale) => {
+  const entry = Object.values(legalPagePaths).find(({ en, fr }) => pathname === en || pathname === fr);
+  return entry?.[targetLocale];
 };
 
 export const getPathLocale = getLocaleFromPathname;
