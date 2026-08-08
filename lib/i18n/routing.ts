@@ -41,6 +41,26 @@ export const getAuthorPath = (locale: Locale, slug: string) => `${getAuthorsPath
 export const getMacroCalculatorPath = (locale: Locale) => (locale === 'fr' ? '/fr/calculateur-macros' : '/macro-calculator');
 export const getGymPath = (locale: Locale, slug: string) => `${locale === 'fr' ? '/fr/salles' : '/gyms'}/${cleanSlug(slug)}`;
 
+export type LegalPageKey = 'terms' | 'medical' | 'affiliate' | 'privacy' | 'cookies' | 'legal';
+
+export const legalPaths: Record<LegalPageKey, Record<Locale, string>> = {
+  terms: { en: '/terms', fr: '/fr/conditions-utilisation' },
+  medical: { en: '/medical-disclaimer', fr: '/fr/avertissement-medical' },
+  affiliate: { en: '/affiliate-disclosure', fr: '/fr/affiliation' },
+  privacy: { en: '/privacy', fr: '/fr/confidentialite' },
+  cookies: { en: '/cookies', fr: '/fr/cookies' },
+  legal: { en: '/legal', fr: '/fr/mentions-legales' }
+};
+
+export const getLegalPath = (key: LegalPageKey, locale: Locale) => legalPaths[key][locale];
+
+export const getLegalPageKeyFromPath = (pathname: string): LegalPageKey | undefined => {
+  const normalized = ensurePathname(pathname).replace(/\/$/, '') || '/';
+  return (Object.entries(legalPaths) as Array<[LegalPageKey, Record<Locale, string>]>).find(([, paths]) =>
+    Object.values(paths).includes(normalized)
+  )?.[0];
+};
+
 export const getPathLocale = getLocaleFromPathname;
 
 export const absoluteUrl = (pathOrUrl: string) => {
