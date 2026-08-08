@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
-import { GoogleTagManager } from '@next/third-parties/google';
 import './globals.css';
 import { AppLayoutBoundary } from './AppLayoutBoundary';
 import { siteConfig } from '@/lib/constants';
@@ -19,7 +18,6 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
 
   return (
     <html lang={locale}>
-      <GoogleTagManager gtmId="GTM-PGQQXCNN" />
       <body>
         <AppLayoutBoundary>{children}</AppLayoutBoundary>
       </body>
