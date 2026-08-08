@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .legal-content h2 { @apply mb-3 text-2xl font-semibold tracking-tight text-slate-950; }
+  .legal-content h3 { @apply mb-2 mt-5 text-lg font-semibold text-slate-900; }
+  .legal-content p + p { @apply mt-3; }
+  .legal-content ul { @apply mt-3 list-disc space-y-1 pl-6; }
+  .legal-content a { @apply font-medium text-slate-950 underline decoration-slate-400 underline-offset-2 hover:decoration-slate-900; }
+}
+
 :root {
   color-scheme: light;
 }

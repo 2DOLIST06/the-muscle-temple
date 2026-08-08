@@ -9,6 +9,7 @@ import { RichContentRenderer } from '@/components/blog/RichContentRenderer';
 import { TableOfContents } from '@/components/blog/TableOfContents';
 import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
 import { Container } from '@/components/ui/Container';
+import { AffiliateDisclosureNotice } from '@/components/legal/AffiliateDisclosureNotice';
 import { extractHeadingsFromHtml } from '@/lib/content/headings';
 import { formatDate } from '@/lib/content/presenters';
 import { contentRepository } from '@/lib/content/repository';
@@ -115,6 +116,8 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
         <div className="relative mt-8 h-72 overflow-hidden rounded-2xl md:h-[420px]">
           <Image src={post.coverImage} alt={post.title} fill className="object-cover" priority />
         </div>
+
+        <div className="mt-8"><AffiliateDisclosureNotice locale="fr" /></div>
 
         <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
           <div className="space-y-8">
