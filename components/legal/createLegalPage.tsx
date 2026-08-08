@@ -13,6 +13,7 @@ export function createLegalPage(pageKey: LegalPageKey, locale: Locale) {
     description: locale === 'fr' ? `${title} de BodyTrainingGuide.` : `${title} for BodyTrainingGuide.`,
     path: getLegalPath(pageKey, locale),
     locale,
+    // buildMetadata translates this to an explicit `noindex, follow` directive.
     noIndex: true,
     hreflang: [
       { hreflang: 'en', href: absoluteUrl(enPath) },
