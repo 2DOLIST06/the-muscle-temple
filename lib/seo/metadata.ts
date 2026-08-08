@@ -20,7 +20,7 @@ export const buildMetadata = (input: SeoInput): Metadata => {
       canonical,
       ...(languages && Object.keys(languages).length > 0 ? { languages } : {})
     },
-    robots: input.noIndex ? { index: false, follow: false } : { index: true, follow: true },
+    robots: input.noIndex ? { index: false, follow: true } : { index: true, follow: true },
     openGraph: {
       type: input.type ?? 'website',
       url: canonical,
