@@ -41,6 +41,24 @@ export const getAuthorPath = (locale: Locale, slug: string) => `${getAuthorsPath
 export const getMacroCalculatorPath = (locale: Locale) => (locale === 'fr' ? '/fr/calculateur-macros' : '/macro-calculator');
 export const getGymPath = (locale: Locale, slug: string) => `${locale === 'fr' ? '/fr/salles' : '/gyms'}/${cleanSlug(slug)}`;
 
+export const legalPagePaths = {
+  terms: { en: '/terms', fr: '/fr/conditions-utilisation' },
+  medicalDisclaimer: { en: '/medical-disclaimer', fr: '/fr/avertissement-medical' },
+  affiliateDisclosure: { en: '/affiliate-disclosure', fr: '/fr/affiliation' },
+  privacy: { en: '/privacy', fr: '/fr/confidentialite' },
+  cookies: { en: '/cookies', fr: '/fr/cookies' },
+  legal: { en: '/legal', fr: '/fr/mentions-legales' }
+} as const satisfies Record<string, Record<Locale, string>>;
+
+export type LegalPageKey = keyof typeof legalPagePaths;
+
+export const getLegalPagePath = (key: LegalPageKey, locale: Locale) => legalPagePaths[key][locale];
+
+export const getLegalPageAlternate = (pathname: string, targetLocale: Locale) => {
+  const entry = Object.values(legalPagePaths).find(({ en, fr }) => pathname === en || pathname === fr);
+  return entry?.[targetLocale];
+};
+
 export const getPathLocale = getLocaleFromPathname;
 
 export const absoluteUrl = (pathOrUrl: string) => {
