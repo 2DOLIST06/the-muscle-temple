@@ -1,0 +1,15 @@
+{
+  "name": "Body Training Guide",
+  "short_name": "BTG",
+  "icons": [
+    {
+      "src": "/logo-BTG.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "theme_color": "#162a63",
+  "background_color": "#ffffff",
+  "display": "standalone"
+}

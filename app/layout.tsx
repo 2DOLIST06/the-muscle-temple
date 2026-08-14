@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { headers } from 'next/headers';
 import './globals.css';
 import { AppLayoutBoundary } from './AppLayoutBoundary';
@@ -12,6 +12,13 @@ export const metadata: Metadata = buildMetadata({
   path: '/',
   locale: 'en'
 });
+
+metadata.manifest = '/site.webmanifest';
+export const viewport: Viewport = { themeColor: '#162a63' };
+
+metadata.icons = {
+  icon: [{ url: '/logo-BTG.svg', type: 'image/svg+xml' }]
+};
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const locale = ((await headers()).get('x-body-training-guide-locale') === 'fr' ? 'fr' : 'en') satisfies Locale;
