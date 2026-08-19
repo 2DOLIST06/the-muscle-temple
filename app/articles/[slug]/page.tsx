@@ -97,7 +97,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
 
         <div className="mb-5 flex flex-wrap gap-3">
           <Link href={translation?.path ?? '/fr/articles'} className="rounded border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700">
-            Lire en français
+            Read in French
           </Link>
           {isAdminAuthenticated ? (
             <Link href={`/admin/posts/${encodeURIComponent(post.id)}/edit`} className="rounded bg-slate-900 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-700">
