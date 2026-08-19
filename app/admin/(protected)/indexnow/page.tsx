@@ -12,6 +12,8 @@ interface IndexNowPageRow {
   submissionReason: 'never-submitted' | 'modified' | 'unchanged';
 }
 
+type ModificationSortDirection = 'desc' | 'asc';
+
 const formatDate = (value: string | null, emptyLabel = 'Jamais') =>
   value ? new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) : emptyLabel;
 
@@ -29,12 +31,26 @@ export default function AdminIndexNowPage() {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [modificationSortDirection, setModificationSortDirection] = useState<ModificationSortDirection>('desc');
   const selectAllRef = useRef<HTMLInputElement>(null);
 
   const selectedCount = selected.size;
   const pendingCount = useMemo(() => pages.filter((page) => page.needsSubmission).length, [pages]);
   const allSelected = pages.length > 0 && selectedCount === pages.length;
   const partiallySelected = selectedCount > 0 && !allSelected;
+  const sortedPages = useMemo(
+    () =>
+      [...pages].sort((firstPage, secondPage) => {
+        const firstDate = firstPage.lastModified ? new Date(firstPage.lastModified).getTime() : null;
+        const secondDate = secondPage.lastModified ? new Date(secondPage.lastModified).getTime() : null;
+
+        if (firstDate === null) return secondDate === null ? 0 : 1;
+        if (secondDate === null) return -1;
+
+        return modificationSortDirection === 'desc' ? secondDate - firstDate : firstDate - secondDate;
+      }),
+    [modificationSortDirection, pages],
+  );
 
   useEffect(() => {
     if (selectAllRef.current) selectAllRef.current.indeterminate = partiallySelected;
@@ -129,13 +145,25 @@ export default function AdminIndexNowPage() {
                   />
                 </th>
                 <th className="px-3 py-3">URL</th>
-                <th className="px-3 py-3">Dernière modification</th>
+                <th className="px-3 py-3" aria-sort={modificationSortDirection === 'desc' ? 'descending' : 'ascending'}>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-2 hover:text-white"
+                    onClick={() => setModificationSortDirection((direction) => (direction === 'desc' ? 'asc' : 'desc'))}
+                  >
+                    Dernière modification
+                    <span aria-hidden="true">{modificationSortDirection === 'desc' ? '↓' : '↑'}</span>
+                    <span className="sr-only">
+                      {modificationSortDirection === 'desc' ? '(plus récentes en premier)' : '(plus anciennes en premier)'}
+                    </span>
+                  </button>
+                </th>
                 <th className="px-3 py-3">Dernier envoi</th>
                 <th className="px-3 py-3">État</th>
               </tr>
             </thead>
             <tbody>
-              {pages.map((page) => (
+              {sortedPages.map((page) => (
                 <tr key={page.url} className="border-t border-slate-800">
                   <td className="px-3 py-3"><input type="checkbox" checked={selected.has(page.url)} onChange={() => toggleUrl(page.url)} aria-label={`Envoyer ${page.url}`} /></td>
                   <td className="px-3 py-3 text-slate-200"><a className="underline" href={page.url} target="_blank">{page.url}</a></td>
