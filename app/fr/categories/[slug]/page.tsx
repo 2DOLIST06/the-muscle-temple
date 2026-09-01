@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { PostCard } from '@/components/blog/PostCard';
 import { Container } from '@/components/ui/Container';
-import { withStrengthTrainingLongCopy } from '@/lib/content/category-copy';
+import { withLocalizedCategoryLongCopy } from '@/lib/content/category-copy';
 import { contentRepository } from '@/lib/content/repository';
 import { absoluteUrl, getCategoryPath } from '@/lib/i18n/routing';
 import { buildMetadata } from '@/lib/seo/metadata';
@@ -15,7 +15,7 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const rawCategory = await contentRepository.getCategoryBySlugAndLocale(slug, 'fr');
-  const category = rawCategory ? withStrengthTrainingLongCopy(rawCategory, 'fr') : undefined;
+  const category = rawCategory ? withLocalizedCategoryLongCopy(rawCategory, 'fr') : undefined;
   const path = getCategoryPath('fr', slug);
 
   if (!category) {
@@ -44,7 +44,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function FrenchCategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const rawCategory = await contentRepository.getCategoryBySlugAndLocale(slug, 'fr');
-  const category = rawCategory ? withStrengthTrainingLongCopy(rawCategory, 'fr') : undefined;
+  const category = rawCategory ? withLocalizedCategoryLongCopy(rawCategory, 'fr') : undefined;
 
   if (!category) notFound();
 

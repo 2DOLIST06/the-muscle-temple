@@ -4,7 +4,7 @@ import { NewsletterCta } from '@/components/blog/NewsletterCta';
 import { PostCard } from '@/components/blog/PostCard';
 import { SectionHeading } from '@/components/blog/SectionHeading';
 import { Container } from '@/components/ui/Container';
-import { withStrengthTrainingShortCopy } from '@/lib/content/category-copy';
+import { withLocalizedCategoryShortCopy } from '@/lib/content/category-copy';
 import { contentRepository } from '@/lib/content/repository';
 import { buildMetadata } from '@/lib/seo/metadata';
 
@@ -43,7 +43,7 @@ export default async function FrenchHomePage() {
   ]);
   const displayablePosts = recentPosts.length > 0 ? recentPosts : featuredPosts;
   const primaryPosts = displayablePosts.length >= 3 ? displayablePosts.slice(0, 3) : displayablePosts;
-  const normalizedCategories = categories.map((category) => withStrengthTrainingShortCopy(category, locale));
+  const normalizedCategories = categories.map((category) => withLocalizedCategoryShortCopy(category, locale));
 
   return (
     <>

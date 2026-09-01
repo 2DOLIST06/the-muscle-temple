@@ -89,10 +89,12 @@ export const getNavigation = (locale: Locale) =>
     ? [
         { label: 'Accueil', href: getHomePath('fr') },
         { label: 'Musculation', href: getCategoryPath('fr', 'musculation') },
+        { label: 'Nutrition', href: getCategoryPath('fr', 'nutrition') },
         { label: 'Calculateur macros', href: getMacroCalculatorPath('fr') }
       ]
     : [
         { label: 'Home', href: getHomePath('en') },
         { label: 'Strength training', href: getCategoryPath('en', 'musculation') },
+        { label: 'Nutrition', href: getCategoryPath('en', 'nutrition') },
         { label: 'Macro calculator', href: getMacroCalculatorPath('en') }
       ];
