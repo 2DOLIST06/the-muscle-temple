@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { CategoryCard } from '@/components/blog/CategoryCard';
 import { Container } from '@/components/ui/Container';
-import { withStrengthTrainingShortCopy } from '@/lib/content/category-copy';
+import { withLocalizedCategoryShortCopy } from '@/lib/content/category-copy';
 import { contentRepository } from '@/lib/content/repository';
 import { buildMetadata } from '@/lib/seo/metadata';
 import { getPageSeo } from '@/lib/seo/pages';
@@ -22,7 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function CategoriesPage() {
   const categories = (await contentRepository.getAllCategoriesByLocale('en')).map((category) =>
-    withStrengthTrainingShortCopy(category, 'en')
+    withLocalizedCategoryShortCopy(category, 'en')
   );
 
   return (

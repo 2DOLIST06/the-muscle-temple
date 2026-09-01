@@ -17,6 +17,23 @@ const strengthTrainingCopy = {
   }
 } satisfies Record<Locale, { title: string; shortDescription: string; longDescription: string }>;
 
+const nutritionCopy = {
+  en: {
+    title: 'Nutrition',
+    shortDescription:
+      'Articles about sports nutrition, calories, macros, protein, dietary supplements, whey, creatine and nutrition tailored to strength training.',
+    longDescription:
+      'Articles about sports nutrition, calories, macros, protein, dietary supplements, whey, creatine and nutrition tailored to strength training.'
+  },
+  fr: {
+    title: 'Nutrition',
+    shortDescription:
+      'Articles sur la nutrition sportive, les calories, les macros, les protéines, les compléments alimentaires, la whey, la créatine et l’alimentation adaptée à la musculation.',
+    longDescription:
+      'Articles sur la nutrition sportive, les calories, les macros, les protéines, les compléments alimentaires, la whey, la créatine et l’alimentation adaptée à la musculation.'
+  }
+} satisfies Record<Locale, { title: string; shortDescription: string; longDescription: string }>;
+
 const strengthTrainingSlugs = new Set(['entrainement', 'musculation']);
 
 export const isStrengthTrainingCategory = (categoryOrSlug: Pick<Category, 'slug'> | string) => {
@@ -26,10 +43,15 @@ export const isStrengthTrainingCategory = (categoryOrSlug: Pick<Category, 'slug'
 
 export const getStrengthTrainingCategoryCopy = (locale: Locale) => strengthTrainingCopy[locale];
 
-export const withStrengthTrainingShortCopy = (category: Category, locale: Locale): Category => {
-  if (!isStrengthTrainingCategory(category)) return category;
+const getCategoryCopy = (category: Category, locale: Locale) => {
+  if (isStrengthTrainingCategory(category)) return strengthTrainingCopy[locale];
+  if (category.slug === 'nutrition') return nutritionCopy[locale];
+  return undefined;
+};
 
-  const copy = getStrengthTrainingCategoryCopy(locale);
+export const withLocalizedCategoryShortCopy = (category: Category, locale: Locale): Category => {
+  const copy = getCategoryCopy(category, locale);
+  if (!copy) return category;
   return {
     ...category,
     title: copy.title,
@@ -37,10 +59,9 @@ export const withStrengthTrainingShortCopy = (category: Category, locale: Locale
   };
 };
 
-export const withStrengthTrainingLongCopy = (category: Category, locale: Locale): Category => {
-  if (!isStrengthTrainingCategory(category)) return category;
-
-  const copy = getStrengthTrainingCategoryCopy(locale);
+export const withLocalizedCategoryLongCopy = (category: Category, locale: Locale): Category => {
+  const copy = getCategoryCopy(category, locale);
+  if (!copy) return category;
   return {
     ...category,
     title: copy.title,
