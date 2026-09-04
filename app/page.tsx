@@ -58,17 +58,6 @@ export default async function HomePage() {
         </Container>
       </section>
 
-      <section className="py-14">
-        <Container>
-          <div className="max-w-3xl">
-            <h2 className="text-2xl font-bold tracking-tight text-slate-900">Strength training guides built around a simple method</h2>
-            <p className="mt-4 text-base leading-7 text-slate-600">
-              Body Training Guide brings together practical articles about strength training, exercises, muscle groups, nutrition and recovery. The goal is to help you understand what to train, how to structure your workouts and how to progress without adding unnecessary complexity.
-            </p>
-          </div>
-        </Container>
-      </section>
-
       {primaryPosts.length > 0 ? (
         <section className="py-14">
           <Container>
@@ -81,6 +70,17 @@ export default async function HomePage() {
           </Container>
         </section>
       ) : null}
+
+      <section className="py-14">
+        <Container>
+          <div className="max-w-3xl">
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900">Strength training guides built around a simple method</h2>
+            <p className="mt-4 text-base leading-7 text-slate-600">
+              Body Training Guide brings together practical articles about strength training, exercises, muscle groups, nutrition and recovery. The goal is to help you understand what to train, how to structure your workouts and how to progress without adding unnecessary complexity.
+            </p>
+          </div>
+        </Container>
+      </section>
 
       <section id="categories" className="py-14">
         <Container>
