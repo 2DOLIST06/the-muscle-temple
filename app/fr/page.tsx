@@ -58,17 +58,6 @@ export default async function FrenchHomePage() {
         </Container>
       </section>
 
-      <section className="py-14">
-        <Container>
-          <div className="max-w-3xl">
-            <h2 className="text-2xl font-bold tracking-tight text-slate-900">Guides de musculation pour progresser avec une méthode simple</h2>
-            <p className="mt-4 text-base leading-7 text-slate-600">
-              Body Training Guide regroupe des articles sur la musculation, les exercices, les groupes musculaires, la nutrition et la récupération. L’objectif est d’aider à comprendre quoi travailler, comment organiser ses séances et comment progresser sans ajouter de complexité inutile.
-            </p>
-          </div>
-        </Container>
-      </section>
-
       {primaryPosts.length > 0 ? (
         <section className="py-14">
           <Container>
@@ -81,6 +70,17 @@ export default async function FrenchHomePage() {
           </Container>
         </section>
       ) : null}
+
+      <section className="py-14">
+        <Container>
+          <div className="max-w-3xl">
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900">Guides de musculation pour progresser avec une méthode simple</h2>
+            <p className="mt-4 text-base leading-7 text-slate-600">
+              Body Training Guide regroupe des articles sur la musculation, les exercices, les groupes musculaires, la nutrition et la récupération. L’objectif est d’aider à comprendre quoi travailler, comment organiser ses séances et comment progresser sans ajouter de complexité inutile.
+            </p>
+          </div>
+        </Container>
+      </section>
 
       <section id="categories" className="py-14">
         <Container>
