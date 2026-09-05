@@ -5,6 +5,7 @@ import { NewsletterCta } from '@/components/blog/NewsletterCta';
 import { PostCard } from '@/components/blog/PostCard';
 import { SectionHeading } from '@/components/blog/SectionHeading';
 import { Container } from '@/components/ui/Container';
+import { HomeHero } from '@/components/home/HomeHero';
 import { withLocalizedCategoryShortCopy } from '@/lib/content/category-copy';
 import { contentRepository } from '@/lib/content/repository';
 import { buildMetadata } from '@/lib/seo/metadata';
@@ -49,18 +50,10 @@ export default async function FrenchHomePage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
-      <section className="border-b border-slate-200 bg-slate-50 py-16">
-        <Container>
-          <p className="text-sm font-semibold uppercase tracking-widest text-brand-700">Body Training Guide</p>
-          <h1 className="mt-3 max-w-3xl text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
-            Construisez un physique fort avec une méthode claire.
-          </h1>
-          <p className="mt-5 max-w-2xl text-base text-slate-600">{homeDescription}</p>
-        </Container>
-      </section>
+      <HomeHero locale="fr" />
 
       {primaryPosts.length > 0 ? (
-        <section className="py-14">
+        <section className="py-16 sm:py-20">
           <Container>
             <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
               <SectionHeading>{displayablePosts.length >= 3 ? 'Articles à la une' : 'Derniers articles'}</SectionHeading>
@@ -77,18 +70,18 @@ export default async function FrenchHomePage() {
         </section>
       ) : null}
 
-      <section className="py-14">
+      <section className="border-y border-slate-200 bg-slate-50 py-16 sm:py-20">
         <Container>
-          <div className="max-w-3xl">
+          <div className="grid max-w-5xl gap-5 md:grid-cols-[0.8fr_1.2fr] md:gap-12">
             <h2 className="text-2xl font-bold tracking-tight text-slate-900">Guides de musculation pour progresser avec une méthode simple</h2>
-            <p className="mt-4 text-base leading-7 text-slate-600">
+            <p className="text-base leading-7 text-slate-600 md:mt-1">
               Body Training Guide regroupe des articles sur la musculation, les exercices, les groupes musculaires, la nutrition et la récupération. L’objectif est d’aider à comprendre quoi travailler, comment organiser ses séances et comment progresser sans ajouter de complexité inutile.
             </p>
           </div>
         </Container>
       </section>
 
-      <section id="categories" className="py-14">
+      <section id="categories" className="py-16 sm:py-20">
         <Container>
           <SectionHeading>Catégories</SectionHeading>
           <div className="mt-6 grid gap-4 md:grid-cols-3">
@@ -99,7 +92,7 @@ export default async function FrenchHomePage() {
         </Container>
       </section>
 
-      <section className="py-14">
+      <section className="pb-16 pt-4 sm:pb-24">
         <Container>
           <NewsletterCta locale="fr" />
         </Container>

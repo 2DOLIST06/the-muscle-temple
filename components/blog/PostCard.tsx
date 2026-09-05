@@ -24,10 +24,10 @@ export function PostCard({ post, category, author, href }: PostCardProps) {
       : 'A guide to understand the basics of the topic and organize your training more effectively.');
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <article className="group overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl">
       <Link href={articleHref}>
         <div className="relative h-52 w-full">
-          <Image src={post.coverImage} alt={post.title} fill className="object-cover" />
+          <Image src={post.coverImage} alt={post.title} fill className="object-cover transition duration-500 group-hover:scale-105" />
         </div>
       </Link>
       <div className="p-5">
