@@ -4,6 +4,7 @@ import { PostCard } from '@/components/blog/PostCard';
 import { Container } from '@/components/ui/Container';
 import { withLocalizedCategoryShortCopy } from '@/lib/content/category-copy';
 import { contentRepository } from '@/lib/content/repository';
+import { postMatchesHeadingSearch } from '@/lib/content/search';
 import { buildMetadata } from '@/lib/seo/metadata';
 import { getPageSeo } from '@/lib/seo/pages';
 
@@ -25,9 +26,6 @@ interface ArticlesPageProps {
   searchParams: Promise<{ search?: string }>;
 }
 
-const normalizeSearchText = (value: string) =>
-  value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-
 export default async function ArticlesPage({ searchParams }: ArticlesPageProps) {
   const query = (await searchParams).search?.trim() ?? '';
   const [posts, authors, categories] = await Promise.all([
@@ -35,11 +33,7 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
     contentRepository.getAllAuthorsByLocale('en'),
     contentRepository.getAllCategoriesByLocale('en')
   ]);
-  const keywords = normalizeSearchText(query).split(/\s+/).filter(Boolean);
-  const filteredPosts = keywords.length === 0 ? posts : posts.filter((post) => {
-    const searchable = normalizeSearchText([post.title, post.excerpt, post.description, ...post.tags, ...post.sections.flatMap((section) => [section.heading, ...section.content])].join(' '));
-    return keywords.every((keyword) => searchable.includes(keyword));
-  });
+  const filteredPosts = query ? posts.filter((post) => postMatchesHeadingSearch(post, query, 'en')) : posts;
   const normalizedCategories = categories.map((category) => withLocalizedCategoryShortCopy(category, 'en'));
 
   return (
