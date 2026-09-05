@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { PostCard } from '@/components/blog/PostCard';
 import { Container } from '@/components/ui/Container';
@@ -56,7 +57,12 @@ export default async function FrenchCategoryPage({ params }: { params: Promise<{
   return (
     <Container>
       <section className="py-12">
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">{category.title}</h1>
+        <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">{category.title}</h1>
+          <Link href="/fr/articles" className="shrink-0 text-sm font-semibold text-brand-700 underline decoration-brand-300 decoration-2 underline-offset-4 transition hover:text-brand-900 hover:decoration-brand-700">
+            Voir les autres catégories
+          </Link>
+        </div>
         <p className="mt-2 max-w-2xl text-slate-600">{category.description}</p>
 
         <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">

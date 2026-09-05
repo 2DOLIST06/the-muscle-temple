@@ -62,7 +62,7 @@ export default async function FrenchHomePage() {
       {primaryPosts.length > 0 ? (
         <section className="py-14">
           <Container>
-            <div className="flex items-baseline justify-between gap-4">
+            <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
               <SectionHeading>{displayablePosts.length >= 3 ? 'Articles à la une' : 'Derniers articles'}</SectionHeading>
               <Link href="/fr/articles" className="shrink-0 text-sm font-semibold text-brand-700 underline decoration-brand-300 decoration-2 underline-offset-4 transition hover:text-brand-900 hover:decoration-brand-700">
                 Voir tous les articles
