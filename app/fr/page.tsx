@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { CategoryCard } from '@/components/blog/CategoryCard';
 import { NewsletterCta } from '@/components/blog/NewsletterCta';
 import { PostCard } from '@/components/blog/PostCard';
@@ -61,7 +62,12 @@ export default async function FrenchHomePage() {
       {primaryPosts.length > 0 ? (
         <section className="py-14">
           <Container>
-            <SectionHeading>{displayablePosts.length >= 3 ? 'Articles à la une' : 'Derniers articles'}</SectionHeading>
+            <div className="flex items-baseline justify-between gap-4">
+              <SectionHeading>{displayablePosts.length >= 3 ? 'Articles à la une' : 'Derniers articles'}</SectionHeading>
+              <Link href="/fr/articles" className="shrink-0 text-sm font-semibold text-brand-700 underline decoration-brand-300 decoration-2 underline-offset-4 transition hover:text-brand-900 hover:decoration-brand-700">
+                Voir tous les articles
+              </Link>
+            </div>
             <div className="mt-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {primaryPosts.map((post) => (
                 <PostCard key={post.id} post={post} author={authors.find((author) => author.slug === post.authorSlug)} category={normalizedCategories.find((category) => category.slug === post.categorySlug)} />
