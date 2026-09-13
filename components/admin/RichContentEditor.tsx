@@ -1,6 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { InternalLinkPicker } from '@/components/admin/InternalLinkPicker';
+import { InternalLinksSummary } from '@/components/admin/InternalLinksSummary';
+import { extractLinkOccurrences, getLinkGroupKey, groupLinkOccurrences, type InternalLinkTarget, type LinkGroup } from '@/lib/admin/internal-links';
+import type { Locale } from '@/lib/i18n/routing';
 
 export interface RichContentValue {
   type: 'doc';
@@ -72,24 +76,49 @@ const escapeHtmlAttribute = (value: string) =>
 export function RichContentEditor({
   value,
   onChange,
-  onUploadImage
+  onUploadImage,
+  locale = 'fr'
 }: {
   value: RichContentValue;
   onChange: (value: RichContentValue) => void;
   onUploadImage?: (file: File) => Promise<{ url: string; alt?: string }>;
+  locale?: Locale;
 }) {
   const ref = useRef<HTMLDivElement | null>(null);
   const savedSelection = useRef<Range | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const refreshFrameRef = useRef<number | null>(null);
+  const highlightTimerRef = useRef<number | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
   const [activeFormats, setActiveFormats] = useState<ActiveFormats>(emptyFormats);
+  const [hasTextSelection, setHasTextSelection] = useState(false);
+  const [internalLinkPickerOpen, setInternalLinkPickerOpen] = useState(false);
+  const [internalLinkError, setInternalLinkError] = useState('');
+  const [linkGroups, setLinkGroups] = useState<LinkGroup[]>([]);
+
+  const refreshLinkGroups = useCallback(() => {
+    if (refreshFrameRef.current !== null) window.cancelAnimationFrame(refreshFrameRef.current);
+    refreshFrameRef.current = window.requestAnimationFrame(() => {
+      refreshFrameRef.current = null;
+      setLinkGroups(ref.current ? groupLinkOccurrences(extractLinkOccurrences(ref.current)) : []);
+    });
+  }, []);
 
   useEffect(() => {
     if (ref.current && ref.current.innerHTML !== value.html) ref.current.innerHTML = value.html;
-  }, [value.html]);
+    refreshLinkGroups();
+  }, [refreshLinkGroups, value.html]);
 
-  const emit = useCallback(() => onChange({ type: 'doc', html: ref.current?.innerHTML ?? '' }), [onChange]);
+  useEffect(() => () => {
+    if (refreshFrameRef.current !== null) window.cancelAnimationFrame(refreshFrameRef.current);
+    if (highlightTimerRef.current !== null) window.clearTimeout(highlightTimerRef.current);
+  }, []);
+
+  const emit = useCallback(() => {
+    onChange({ type: 'doc', html: ref.current?.innerHTML ?? '' });
+    refreshLinkGroups();
+  }, [onChange, refreshLinkGroups]);
 
   const saveSelection = useCallback(() => {
     const selection = document.getSelection();
@@ -101,9 +130,15 @@ export function RichContentEditor({
   const restoreSelection = useCallback(() => {
     ref.current?.focus();
     const selection = document.getSelection();
-    if (!selection || !savedSelection.current) return;
-    selection.removeAllRanges();
-    selection.addRange(savedSelection.current);
+    const range = savedSelection.current;
+    if (!selection || !range || !range.startContainer.isConnected || !range.endContainer.isConnected || !ref.current?.contains(range.commonAncestorContainer)) return false;
+    try {
+      selection.removeAllRanges();
+      selection.addRange(range);
+      return true;
+    } catch {
+      return false;
+    }
   }, []);
 
   const refreshActiveFormats = useCallback(() => {
@@ -112,9 +147,12 @@ export function RichContentEditor({
     const selection = document.getSelection();
     const anchorNode = selection?.anchorNode ?? null;
     if (!anchorNode || !ref.current?.contains(anchorNode)) {
+      setHasTextSelection(false);
       setActiveFormats((current) => ({ ...current, block: current.block || 'p' }));
       return;
     }
+
+    setHasTextSelection(Boolean(selection && !selection.isCollapsed && selection.toString().length > 0));
 
     let block = 'p';
     const formatBlock = String(document.queryCommandValue('formatBlock') || '').toLowerCase();
@@ -173,6 +211,61 @@ export function RichContentEditor({
     saveSelection();
     refreshActiveFormats();
   };
+
+  const openInternalLinkPicker = () => {
+    saveSelection();
+    const range = savedSelection.current;
+    if (!range || range.collapsed || !ref.current?.contains(range.commonAncestorContainer) || !document.getSelection()?.toString()) return;
+    setInternalLinkError('');
+    setInternalLinkPickerOpen(true);
+  };
+
+  const applyInternalLink = (target: InternalLinkTarget) => {
+    if (!restoreSelection()) {
+      setInternalLinkPickerOpen(false);
+      setInternalLinkError('La sélection n’est plus disponible. Sélectionnez à nouveau le texte à lier.');
+      return;
+    }
+    const selection = document.getSelection();
+    if (!selection || selection.isCollapsed || !selection.toString() || !ref.current?.contains(selection.getRangeAt(0).commonAncestorContainer)) {
+      setInternalLinkPickerOpen(false);
+      setInternalLinkError('La sélection n’est plus disponible. Sélectionnez à nouveau le texte à lier.');
+      return;
+    }
+    document.execCommand('createLink', false, target.url);
+    const linked = getSelectedLink();
+    linked?.removeAttribute('target');
+    emit();
+    saveSelection();
+    refreshActiveFormats();
+    setInternalLinkPickerOpen(false);
+    setInternalLinkError('');
+  };
+
+  const goToLink = useCallback((group: LinkGroup, occurrenceIndex: number) => {
+    const links = ref.current ? Array.from(ref.current.querySelectorAll<HTMLAnchorElement>('a[href]')).filter((link) => {
+      const href = link.getAttribute('href');
+      return href !== null && getLinkGroupKey(link.textContent ?? '', href) === group.key;
+    }) : [];
+    const link = links[occurrenceIndex];
+    if (!link || !ref.current) {
+      refreshLinkGroups();
+      return;
+    }
+    ref.current.focus();
+    const range = document.createRange();
+    range.selectNodeContents(link);
+    const selection = document.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    savedSelection.current = range.cloneRange();
+    link.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    ref.current.querySelectorAll('.internal-link-target-highlight').forEach((element) => element.classList.remove('internal-link-target-highlight'));
+    link.classList.add('internal-link-target-highlight');
+    if (highlightTimerRef.current !== null) window.clearTimeout(highlightTimerRef.current);
+    highlightTimerRef.current = window.setTimeout(() => link.classList.remove('internal-link-target-highlight'), 2000);
+    refreshActiveFormats();
+  }, [refreshActiveFormats, refreshLinkGroups]);
 
   const insertImage = (url: string, alt = '') => {
     const safeUrl = escapeHtmlAttribute(url.trim());
@@ -285,6 +378,7 @@ export function RichContentEditor({
         <button type="button" className={buttonClass()} onClick={() => exec('insertHorizontalRule')}>Ligne</button>
         <button type="button" className={buttonClass()} onClick={insertMacroCalculator}>Calculatrice macros</button>
         <button type="button" className={buttonClass(activeFormats.link)} onClick={addOrEditLink}>{activeFormats.link ? 'Modifier lien' : 'Lien'}</button>
+        <button type="button" disabled={!hasTextSelection} className={`${buttonClass()} disabled:cursor-not-allowed disabled:opacity-40`} onMouseDown={(event) => event.preventDefault()} onClick={openInternalLinkPicker}>Lien interne</button>
         <button type="button" className={buttonClass()} onClick={() => exec('unlink')}>Retirer lien</button>
         <button type="button" className={buttonClass()} onClick={addImageByUrl}>Image URL</button>
         <button type="button" className={buttonClass()} onClick={() => { saveSelection(); fileInputRef.current?.click(); }}>Image fichier</button>
@@ -326,11 +420,14 @@ export function RichContentEditor({
           refreshActiveFormats();
         }}
       />
+      {internalLinkError ? <p className="border-t border-amber-800 bg-amber-950/60 px-3 py-2 text-xs text-amber-100">{internalLinkError}</p> : null}
       {uploadError ? <p className="border-t border-red-900 bg-red-950/70 px-3 py-2 text-xs text-red-100">{uploadError}</p> : null}
       <div className="flex items-center justify-between gap-3 border-t border-slate-700 bg-slate-900/70 p-2 text-xs text-slate-300">
         <span>{uploading ? 'Upload image en cours…' : `${contentHtml.length} caractères HTML`}</span>
         <span>Format courant : {activeFormats.block.toUpperCase()}{activeFormats.link ? ' · lien' : ''}</span>
       </div>
+      <div className="mt-4"><InternalLinksSummary groups={linkGroups} onGoToLink={goToLink} /></div>
+      {internalLinkPickerOpen ? <InternalLinkPicker initialLocale={locale} onClose={() => setInternalLinkPickerOpen(false)} onSelect={applyInternalLink} /> : null}
     </div>
   );
 }

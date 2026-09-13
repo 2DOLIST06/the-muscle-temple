@@ -112,3 +112,14 @@ a {
 .rich-content figcaption {
   @apply mt-2 text-center text-sm text-slate-500;
 }
+@keyframes internal-link-highlight-pulse {
+  0%, 100% { outline-color: rgb(251 191 36); }
+  50% { outline-color: rgb(245 158 11); }
+}
+
+.internal-link-target-highlight {
+  outline: 4px solid rgb(251 191 36);
+  outline-offset: 3px;
+  background-color: rgb(254 240 138) !important;
+  animation: internal-link-highlight-pulse 700ms ease-in-out infinite;
+}

@@ -608,7 +608,7 @@ export function PostEditorForm({ initialPost, enableCreationImport = false }: { 
         <input className={fieldClass} placeholder="Titre" value={post.title} onChange={(e) => setPost({ ...post, title: e.target.value })} />
         <input className={fieldClass} placeholder="H1" value={post.h1} onChange={(e) => setPost({ ...post, h1: e.target.value })} />
         <textarea className={fieldClass} placeholder="Chapo HTML" value={post.chapoHtml} onChange={(e) => setPost({ ...post, chapoHtml: e.target.value })} />
-        <RichContentEditor value={post.contentJson} onChange={(v) => setPost({ ...post, contentJson: v, contentHtml: v.html })} onUploadImage={uploadEditorImage} />
+        <RichContentEditor value={post.contentJson} onChange={(v) => setPost({ ...post, contentJson: v, contentHtml: v.html })} onUploadImage={uploadEditorImage} locale={post.locale} />
         <section className="rounded border border-slate-700 p-3">
           <button
             type="button"
