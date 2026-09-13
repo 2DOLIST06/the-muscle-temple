@@ -43,7 +43,7 @@ export function Header() {
   );
 
   return (
-    <header className="sticky top-0 z-50 border-b-2 border-slate-300 bg-white shadow-[0_4px_20px_rgba(15,23,42,0.10)]">
+    <header data-site-header className="sticky top-0 z-50 border-b-2 border-slate-300 bg-white shadow-[0_4px_20px_rgba(15,23,42,0.10)]">
       <Container>
         <div className="flex min-h-28 items-center justify-between gap-6 py-3 lg:grid lg:grid-cols-[auto_minmax(320px,1fr)_auto]">
           <Link href={locale === 'fr' ? '/fr' : '/'} className="group flex shrink-0 items-center gap-3" aria-label={locale === 'fr' ? 'Body Training Guide — Accueil' : 'Body Training Guide — Home'}>
