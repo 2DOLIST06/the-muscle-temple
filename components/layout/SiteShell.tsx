@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState, type CSSProperties } from 'react';
 import { Footer } from '@/components/layout/Footer';
 import { Header } from '@/components/layout/Header';
 
@@ -9,10 +9,28 @@ export function SiteShell({ children }: Readonly<{ children: React.ReactNode }>)
   const pathname = usePathname();
   const isProtectedAdminPage = pathname?.startsWith('/admin') && pathname !== '/admin/login';
   const [isHeaderHidden, setIsHeaderHidden] = useState(false);
+  const [headerHeight, setHeaderHeight] = useState(0);
 
   useEffect(() => {
     setIsHeaderHidden(window.localStorage.getItem('admin-header-hidden') === 'true');
   }, []);
+
+  useLayoutEffect(() => {
+    if (!isProtectedAdminPage || isHeaderHidden) {
+      setHeaderHeight(0);
+      return;
+    }
+
+    const header = document.querySelector<HTMLElement>('[data-site-header]');
+    if (!header) return;
+
+    const updateHeaderHeight = () => setHeaderHeight(header.getBoundingClientRect().height);
+    updateHeaderHeight();
+
+    const observer = new ResizeObserver(updateHeaderHeight);
+    observer.observe(header);
+    return () => observer.disconnect();
+  }, [isHeaderHidden, isProtectedAdminPage]);
 
   const toggleHeader = () => {
     setIsHeaderHidden((hidden) => {
@@ -23,7 +41,10 @@ export function SiteShell({ children }: Readonly<{ children: React.ReactNode }>)
   };
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div
+      className="flex min-h-screen flex-col"
+      style={{ '--admin-sticky-top': `${headerHeight}px` } as CSSProperties}
+    >
       {!isProtectedAdminPage || !isHeaderHidden ? <Header /> : null}
       {isProtectedAdminPage ? (
         <button
