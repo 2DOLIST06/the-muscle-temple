@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { getArticlesPath, getNavigation, getPathLocale } from '@/lib/i18n/routing';
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
 import { Container } from '@/components/ui/Container';
@@ -15,8 +15,83 @@ export function Header() {
   const navigation = getNavigation(locale);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const [desktopHeaderState, setDesktopHeaderState] = useState<'full' | 'navigation' | 'hidden'>('full');
+  const headerTopRef = useRef<HTMLDivElement>(null);
+  const [headerTopHeight, setHeaderTopHeight] = useState(0);
 
   useEffect(() => setIsMenuOpen(false), [pathname]);
+
+  useLayoutEffect(() => {
+    const headerTop = headerTopRef.current;
+    if (!headerTop) return;
+
+    const updateHeight = () => setHeaderTopHeight(headerTop.getBoundingClientRect().height);
+    updateHeight();
+
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(headerTop);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const desktop = window.matchMedia('(min-width: 1024px)');
+    let previousScrollY = window.scrollY;
+    let direction: 'up' | 'down' | null = null;
+    let distanceInDirection = 0;
+    let animationFrame = 0;
+
+    const updateHeader = () => {
+      animationFrame = 0;
+      if (!desktop.matches) {
+        setDesktopHeaderState('full');
+        previousScrollY = window.scrollY;
+        return;
+      }
+
+      const scrollY = Math.max(window.scrollY, 0);
+      const delta = scrollY - previousScrollY;
+      previousScrollY = scrollY;
+
+      if (scrollY <= 8) {
+        direction = null;
+        distanceInDirection = 0;
+        setDesktopHeaderState('full');
+        return;
+      }
+
+      if (Math.abs(delta) < 1) return;
+      const nextDirection = delta > 0 ? 'down' : 'up';
+      if (nextDirection !== direction) {
+        direction = nextDirection;
+        distanceInDirection = 0;
+      }
+      distanceInDirection += Math.abs(delta);
+
+      // A small threshold prevents trackpad jitter from repeatedly toggling the header.
+      if (distanceInDirection >= 12) {
+        setDesktopHeaderState(nextDirection === 'down' ? 'hidden' : 'navigation');
+        distanceInDirection = 0;
+      }
+    };
+
+    const onScroll = () => {
+      if (!animationFrame) animationFrame = window.requestAnimationFrame(updateHeader);
+    };
+    const onBreakpointChange = () => {
+      previousScrollY = window.scrollY;
+      direction = null;
+      distanceInDirection = 0;
+      setDesktopHeaderState('full');
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    desktop.addEventListener('change', onBreakpointChange);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      desktop.removeEventListener('change', onBreakpointChange);
+      if (animationFrame) window.cancelAnimationFrame(animationFrame);
+    };
+  }, []);
 
   const isActive = (href: string) => href === (pathname ?? '/') || (href !== '/' && href !== '/fr' && pathname?.startsWith(`${href}/`));
   const submitSearch = (event: FormEvent<HTMLFormElement>) => {
@@ -43,9 +118,15 @@ export function Header() {
   );
 
   return (
-    <header data-site-header className="sticky top-0 z-50 border-b-2 border-slate-300 bg-white shadow-[0_4px_20px_rgba(15,23,42,0.10)]">
+    <header
+      data-site-header
+      data-desktop-state={desktopHeaderState}
+      className="site-header sticky top-0 z-50 border-b-2 border-slate-300 bg-white shadow-[0_4px_20px_rgba(15,23,42,0.10)]"
+      style={{ '--header-top-height': `${headerTopHeight}px` } as CSSProperties}
+      onFocusCapture={() => setDesktopHeaderState('full')}
+    >
       <Container>
-        <div className="flex min-h-28 items-center justify-between gap-6 py-3 lg:grid lg:grid-cols-[auto_minmax(320px,1fr)_auto]">
+        <div ref={headerTopRef} className="flex min-h-28 items-center justify-between gap-6 py-3 lg:grid lg:grid-cols-[auto_minmax(320px,1fr)_auto]">
           <Link href={locale === 'fr' ? '/fr' : '/'} className="group flex shrink-0 items-center gap-3" aria-label={locale === 'fr' ? 'Body Training Guide — Accueil' : 'Body Training Guide — Home'}>
             <span className="relative h-24 w-24 overflow-hidden rounded-full bg-white ring-2 ring-slate-300 transition group-hover:ring-brand-500/60 lg:h-28 lg:w-28">
               <Image src="/logo-BTG.svg" alt="" fill priority sizes="(min-width: 1024px) 112px, 96px" className="object-cover" />
