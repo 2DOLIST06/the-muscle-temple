@@ -79,7 +79,7 @@ export function FoodNutritionTool({ locale = 'fr' }: { locale?: 'en' | 'fr' }) {
     setLoading('search'); setError(''); setProduct(null); setResults(null);
     try {
       const response = await searchFoods(cleanQuery, controller.signal);
-      setResults(response.products ?? []);
+      setResults(response);
     } catch (requestError) {
       if (!(requestError instanceof DOMException && requestError.name === 'AbortError')) setError(errorMessage(requestError, locale));
     } finally {

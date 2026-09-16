@@ -20,10 +20,10 @@ const isApiEnvelope = <T>(payload: unknown): payload is ApiEnvelope<T> =>
   typeof payload === 'object' && payload !== null && 'data' in payload;
 
 async function readResponse<T>(response: Response): Promise<T> {
-  const payload = await response.json().catch(() => null) as (ApiEnvelope<T> | T | { code?: string } | null);
+  const payload = await response.json().catch(() => null) as (ApiEnvelope<T> | { code?: string } | null);
   if (response.ok) {
     if (isApiEnvelope<T>(payload)) return payload.data;
-    return payload as T;
+    throw new NutritionApiError('NETWORK_ERROR');
   }
 
   const code = payload && typeof payload === 'object' && 'code' in payload ? payload.code : undefined;
