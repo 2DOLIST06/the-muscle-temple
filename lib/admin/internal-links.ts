@@ -5,6 +5,7 @@ import {
   getAuthorsPath,
   getCategoriesPath,
   getCategoryPath,
+  getFoodNutritionCalculatorPath,
   getHomePath,
   getMacroCalculatorPath,
   localizePath,
@@ -89,7 +90,8 @@ export const getStaticInternalLinkTargets = (locale: Locale): InternalLinkTarget
     { id: `${locale}-authors`, title: french ? 'Auteurs' : 'Authors', type: 'static', locale, url: getAuthorsPath(locale), slug: 'authors' },
     { id: `${locale}-about`, title: french ? 'À propos' : 'About', type: 'static', locale, url: localizePath('/about', locale), slug: 'about' },
     ...(locale === 'en' ? [{ id: 'en-contact', title: 'Contact', type: 'static' as const, locale, url: localizePath('/contact', locale), slug: 'contact' }] : []),
-    { id: `${locale}-macro-calculator`, title: french ? 'Calculateur de macros' : 'Macro calculator', type: 'static', locale, url: getMacroCalculatorPath(locale), slug: french ? 'calculateur-macros' : 'macro-calculator' }
+    { id: `${locale}-macro-calculator`, title: french ? 'Calculateur de macros' : 'Macro calculator', type: 'static', locale, url: getMacroCalculatorPath(locale), slug: french ? 'calculateur-macros' : 'macro-calculator' },
+    { id: `${locale}-food-nutrition-calculator`, title: french ? 'Calories et macros des aliments' : 'Food calorie and macro calculator', type: 'static', locale, url: getFoodNutritionCalculatorPath(locale), slug: french ? 'calculateur-calories-macros-aliments' : 'food-calorie-macro-calculator' }
   ];
 };
 
