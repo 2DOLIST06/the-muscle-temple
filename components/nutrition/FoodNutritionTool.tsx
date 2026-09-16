@@ -14,11 +14,11 @@ const fieldClass = 'mt-2 min-h-11 w-full rounded-xl border border-slate-300 bg-w
 const primaryButton = 'inline-flex min-h-11 items-center justify-center rounded-full bg-brand-700 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-brand-500 disabled:cursor-wait disabled:opacity-60 focus:outline-none focus:ring-4 focus:ring-brand-50';
 
 const nutrientLabels = {
-  fr: [['calories', 'Calories', 'kcal'], ['proteins', 'Protéines', 'g'], ['carbohydrates', 'Glucides', 'g'], ['fat', 'Lipides', 'g'], ['sugars', 'Sucres', 'g'], ['fiber', 'Fibres', 'g'], ['saturatedFat', 'Graisses saturées', 'g'], ['salt', 'Sel', 'g']],
-  en: [['calories', 'Calories', 'kcal'], ['proteins', 'Protein', 'g'], ['carbohydrates', 'Carbs', 'g'], ['fat', 'Fat', 'g'], ['sugars', 'Sugars', 'g'], ['fiber', 'Fiber', 'g'], ['saturatedFat', 'Saturated fat', 'g'], ['salt', 'Salt', 'g']]
+  fr: [['caloriesKcal', 'Calories', 'kcal'], ['proteinG', 'Protéines', 'g'], ['carbohydratesG', 'Glucides', 'g'], ['fatG', 'Lipides', 'g'], ['sugarsG', 'Sucres', 'g'], ['fiberG', 'Fibres', 'g'], ['saturatedFatG', 'Graisses saturées', 'g'], ['saltG', 'Sel', 'g']],
+  en: [['caloriesKcal', 'Calories', 'kcal'], ['proteinG', 'Protein', 'g'], ['carbohydratesG', 'Carbs', 'g'], ['fatG', 'Fat', 'g'], ['sugarsG', 'Sugars', 'g'], ['fiberG', 'Fiber', 'g'], ['saturatedFatG', 'Saturated fat', 'g'], ['saltG', 'Salt', 'g']]
 } satisfies Record<'en' | 'fr', Array<[keyof NutrientValues, string, string]>>;
 
-const formatValue = (value: number | null, unit: string, locale: 'en' | 'fr') => value == null ? '—' : `${new Intl.NumberFormat(locale === 'fr' ? 'fr-FR' : 'en-US', { maximumFractionDigits: value < 10 ? 1 : 0 }).format(value)} ${unit}`;
+const formatValue = (value: number | null, unit: string, locale: 'en' | 'fr') => value == null ? '—' : `${new Intl.NumberFormat(locale === 'fr' ? 'fr-FR' : 'en-US', { maximumFractionDigits: 4 }).format(value)} ${unit}`;
 
 function errorMessage(error: unknown, locale: 'en' | 'fr') {
   const english = locale === 'en';
@@ -93,8 +93,9 @@ export function FoodNutritionTool({ locale = 'fr' }: { locale?: 'en' | 'fr' }) {
 
   const closeScanner = () => { setScannerOpen(false); requestAnimationFrame(() => scanButtonRef.current?.focus()); };
   const scanDetected = (code: string) => { setScannerOpen(false); setBarcode(code); void loadProduct(code); };
-  const unit = product?.basis === '100ml' ? 'ml' : 'g';
-  const portion = useMemo(() => product?.nutrients ? scaleNutrients(product.nutrients, Number.isFinite(quantity) ? quantity : 0) : null, [product, quantity]);
+  const unit = product?.nutritionBasis?.unit ?? 'g';
+  const basisAmount = product?.nutritionBasis?.amount ?? 100;
+  const portion = useMemo(() => product?.nutrition ? scaleNutrients(product.nutrition, Number.isFinite(quantity) ? quantity : 0, basisAmount) : null, [basisAmount, product, quantity]);
 
   return (
     <section className="my-8 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 lg:p-8" aria-labelledby="food-tool-title">
@@ -139,8 +140,8 @@ export function FoodNutritionTool({ locale = 'fr' }: { locale?: 'en' | 'fr' }) {
         {results.length === 0 ? <p className="mt-3 rounded-xl bg-slate-50 p-4 text-slate-700">{english ? 'No products found. Try a more specific name or a brand.' : 'Aucun produit trouvé. Essayez avec un nom plus précis ou une marque.'}</p> : (
           <ul className="mt-4 grid gap-3 sm:grid-cols-2">{results.map((item) => <li key={item.barcode}>
             <button type="button" onClick={() => void loadProduct(item.barcode)} className="flex min-h-24 w-full items-center gap-4 rounded-2xl border border-slate-200 p-3 text-left transition hover:border-brand-500 hover:bg-brand-50 focus:outline-none focus:ring-4 focus:ring-brand-50">
-              {item.imageUrl ? <Image src={item.imageUrl} alt="" width={80} height={80} unoptimized className="h-20 w-20 shrink-0 rounded-xl bg-slate-100 object-contain" /> : <span className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xs text-slate-500">{english ? 'No image' : 'Sans image'}</span>}
-              <span><strong className="block text-slate-950">{item.name || (english ? 'Name unavailable' : 'Nom non renseigné')}</strong>{item.brand ? <span className="mt-1 block text-sm text-slate-600">{item.brand}</span> : null}{item.quantity ? <span className="block text-sm text-slate-500">{item.quantity}</span> : null}</span>
+              {item.image ? <Image src={item.image} alt="" width={80} height={80} unoptimized className="h-20 w-20 shrink-0 rounded-xl bg-slate-100 object-contain" /> : <span className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xs text-slate-500">{english ? 'No image' : 'Sans image'}</span>}
+              <span><strong className="block text-slate-950">{item.name || (english ? 'Name unavailable' : 'Nom non renseigné')}</strong>{item.brand ? <span className="mt-1 block text-sm text-slate-600">{item.brand}</span> : null}{item.quantityLabel ? <span className="block text-sm text-slate-500">{item.quantityLabel}</span> : null}</span>
             </button>
           </li>)}</ul>
         )}
@@ -148,11 +149,11 @@ export function FoodNutritionTool({ locale = 'fr' }: { locale?: 'en' | 'fr' }) {
 
       {product ? <section className="mt-8 rounded-3xl border border-slate-200 bg-slate-50 p-5 sm:p-6" aria-labelledby="product-title">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-          {product.imageUrl ? <Image src={product.imageUrl} alt={english ? `Product ${product.name || product.barcode}` : `Produit ${product.name || product.barcode}`} width={144} height={144} unoptimized className="h-36 w-36 rounded-2xl bg-white object-contain" /> : <div className="flex h-32 w-32 items-center justify-center rounded-2xl bg-white text-sm text-slate-500">{english ? 'Image unavailable' : 'Image indisponible'}</div>}
-          <div><p className="text-xs font-bold uppercase tracking-widest text-brand-700">{english ? 'Product found' : 'Produit trouvé'}</p><h3 id="product-title" className="mt-2 text-2xl font-bold text-slate-950">{product.name || (english ? 'Name unavailable' : 'Nom non renseigné')}</h3>{product.brand ? <p className="mt-1 text-slate-700">{product.brand}</p> : null}{product.quantity ? <p className="text-sm text-slate-500">{product.quantity}</p> : null}</div>
+          {product.image ? <Image src={product.image} alt={english ? `Product ${product.name || product.barcode}` : `Produit ${product.name || product.barcode}`} width={144} height={144} unoptimized className="h-36 w-36 rounded-2xl bg-white object-contain" /> : <div className="flex h-32 w-32 items-center justify-center rounded-2xl bg-white text-sm text-slate-500">{english ? 'Image unavailable' : 'Image indisponible'}</div>}
+          <div><p className="text-xs font-bold uppercase tracking-widest text-brand-700">{english ? 'Product found' : 'Produit trouvé'}</p><h3 id="product-title" className="mt-2 text-2xl font-bold text-slate-950">{product.name || (english ? 'Name unavailable' : 'Nom non renseigné')}</h3>{product.brand ? <p className="mt-1 text-slate-700">{product.brand}</p> : null}{product.quantityLabel ? <p className="text-sm text-slate-500">{product.quantityLabel}</p> : null}</div>
         </div>
-        {!product.nutrients || !product.basis ? <p className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 font-medium text-amber-950">{english ? 'Nutrition information is unavailable for this product.' : 'Les informations nutritionnelles de ce produit ne sont pas disponibles.'}</p> : <>
-          <div className="mt-7"><h4 className="mb-4 text-lg font-bold text-slate-950">{english ? 'Per' : 'Pour'} 100 {unit}</h4><NutrientGrid values={product.nutrients} locale={locale} /></div>
+        {!product.nutritionAvailable || !product.nutrition || !product.nutritionBasis ? <p className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 font-medium text-amber-950">{english ? 'Nutrition information is unavailable for this product.' : 'Les informations nutritionnelles de ce produit ne sont pas disponibles.'}</p> : <>
+          <div className="mt-7"><h4 className="mb-4 text-lg font-bold text-slate-950">{english ? 'Per' : 'Pour'} {basisAmount} {unit}</h4><NutrientGrid values={product.nutrition} locale={locale} /></div>
           <div className="mt-7 max-w-sm"><label htmlFor="food-quantity" className="text-sm font-semibold text-slate-800">{english ? 'Amount consumed' : 'Quantité consommée'}</label><div className="relative"><input id="food-quantity" type="number" min="0" max="10000" step="1" value={quantity} onChange={(event) => setQuantity(event.target.valueAsNumber)} className={`${fieldClass} pr-14 text-lg font-semibold`} /><span className="pointer-events-none absolute bottom-2.5 right-4 font-semibold text-slate-500">{unit}</span></div></div>
           {portion ? <div className="mt-7 rounded-2xl border border-brand-200 bg-brand-50 p-4 sm:p-5"><h4 className="mb-4 text-lg font-bold text-slate-950">{english ? 'For your serving of' : 'Pour votre portion de'} {Number.isFinite(quantity) ? quantity : 0} {unit}</h4><NutrientGrid values={portion} locale={locale} /></div> : null}
         </>}

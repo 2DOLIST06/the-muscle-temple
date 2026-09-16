@@ -1,27 +1,37 @@
-export type NutritionBasis = '100g' | '100ml';
+export type NutritionBasis = {
+  unit: 'g' | 'ml';
+  amount: number;
+};
 
+/** Nutrition values as returned by the public nutrition API. */
 export type NutrientValues = {
-  calories: number | null;
-  proteins: number | null;
-  carbohydrates: number | null;
-  fat: number | null;
-  sugars: number | null;
-  fiber: number | null;
-  saturatedFat: number | null;
-  salt: number | null;
+  caloriesKcal: number | null;
+  energyKj: number | null;
+  proteinG: number | null;
+  carbohydratesG: number | null;
+  fatG: number | null;
+  saturatedFatG: number | null;
+  sugarsG: number | null;
+  fiberG: number | null;
+  saltG: number | null;
+  sodiumG: number | null;
 };
 
 export type FoodSummary = {
   barcode: string;
   name: string | null;
   brand: string | null;
-  quantity: string | null;
-  imageUrl: string | null;
+  image: string | null;
+  quantityLabel: string | null;
 };
 
 export type FoodProduct = FoodSummary & {
-  basis: NutritionBasis | null;
-  nutrients: NutrientValues | null;
+  source: string;
+  sourceUrl: string | null;
+  servingSize: string | null;
+  nutritionBasis: NutritionBasis | null;
+  nutritionAvailable: boolean;
+  nutrition: NutrientValues | null;
 };
 
 export type FoodSearchResponse = { products: FoodSummary[] };
