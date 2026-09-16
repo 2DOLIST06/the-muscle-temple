@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { getFoodByBarcode, searchFoods } from '@/lib/nutrition/api';
+import { classifyUniversalSearch } from '@/lib/nutrition/barcode';
 import { scaleNutrients } from '@/lib/nutrition/calculations';
 import { NutritionApiError, type FoodProduct, type FoodSummary, type NutrientValues } from '@/lib/nutrition/types';
 import { PhotoBarcodeInput } from './PhotoBarcodeInput';
@@ -40,7 +41,6 @@ function NutrientGrid({ values, locale }: { values: NutrientValues; locale: 'en'
 
 export function FoodNutritionTool({ locale = 'fr' }: { locale?: 'en' | 'fr' }) {
   const english = locale === 'en';
-  const [barcode, setBarcode] = useState('');
   const [query, setQuery] = useState('');
   const [scannerOpen, setScannerOpen] = useState(false);
   const [loading, setLoading] = useState<'product' | 'search' | null>(null);
@@ -72,18 +72,14 @@ export function FoodNutritionTool({ locale = 'fr' }: { locale?: 'en' | 'fr' }) {
     }
   };
 
-  const submitBarcode = (event: FormEvent) => { event.preventDefault(); void loadProduct(barcode); };
-  const submitSearch = async (event: FormEvent) => {
-    event.preventDefault();
-    const cleanQuery = query.trim();
-    if (!cleanQuery) { setError(english ? 'Enter the name of a food or product.' : 'Saisissez le nom d’un aliment ou d’un produit.'); return; }
+  const runTextSearch = async (cleanQuery: string) => {
     controllerRef.current?.abort();
     const controller = new AbortController();
     controllerRef.current = controller;
     setLoading('search'); setError(''); setProduct(null); setResults(null);
     try {
       const response = await searchFoods(cleanQuery, controller.signal);
-      setResults(response.products ?? []);
+      setResults(response);
     } catch (requestError) {
       if (!(requestError instanceof DOMException && requestError.name === 'AbortError')) setError(errorMessage(requestError, locale));
     } finally {
@@ -91,8 +87,23 @@ export function FoodNutritionTool({ locale = 'fr' }: { locale?: 'en' | 'fr' }) {
     }
   };
 
+  const submitSearch = (event: FormEvent) => {
+    event.preventDefault();
+    const input = classifyUniversalSearch(query);
+    if (input.kind === 'empty') {
+      setError(english ? 'Enter a food name or barcode.' : 'Saisissez un nom d’aliment ou un code-barres.');
+    } else if (input.kind === 'invalid-barcode') {
+      setError(english ? 'This barcode is invalid. Enter a valid EAN-13, EAN-8, UPC-A, or UPC-E.' : 'Ce code-barres n’est pas valide. Saisissez un code EAN-13, EAN-8, UPC-A ou UPC-E valide.');
+    } else if (input.kind === 'barcode') {
+      setQuery(input.value);
+      void loadProduct(input.value);
+    } else {
+      void runTextSearch(input.value);
+    }
+  };
+
   const closeScanner = () => { setScannerOpen(false); requestAnimationFrame(() => scanButtonRef.current?.focus()); };
-  const scanDetected = (code: string) => { setScannerOpen(false); setBarcode(code); void loadProduct(code); };
+  const scanDetected = (code: string) => { setScannerOpen(false); setQuery(code); void loadProduct(code); };
   const unit = product?.nutritionBasis?.unit ?? 'g';
   const basisAmount = product?.nutritionBasis?.amount ?? 100;
   const portion = useMemo(() => product?.nutrition ? scaleNutrients(product.nutrition, Number.isFinite(quantity) ? quantity : 0, basisAmount) : null, [basisAmount, product, quantity]);
@@ -102,7 +113,15 @@ export function FoodNutritionTool({ locale = 'fr' }: { locale?: 'en' | 'fr' }) {
       <h2 id="food-tool-title" className="text-2xl font-bold tracking-tight text-slate-950">{english ? 'Find a food' : 'Trouver un aliment'}</h2>
       <p className="mt-2 text-slate-600">{english ? 'Scan a product, search by name, or enter its barcode.' : 'Scannez un produit, recherchez son nom ou utilisez son code-barres.'}</p>
 
-      <div className="mt-6 rounded-2xl bg-brand-50 p-4 sm:p-5">
+      <form onSubmit={submitSearch} className="mt-6 rounded-2xl border border-slate-200 p-5" role="search">
+        <label htmlFor="food-search" className="text-sm font-semibold text-slate-800">{english ? 'Food or barcode' : 'Aliment ou code-barres'}</label>
+        <div className="sm:flex sm:items-end sm:gap-3">
+          <input id="food-search" type="search" autoComplete="off" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={english ? 'Search for a food or enter a barcode' : 'Rechercher un aliment ou saisir un code-barres'} className={fieldClass} />
+          <button type="submit" disabled={loading !== null} className={`${primaryButton} mt-3 w-full sm:w-auto`}>{loading ? (english ? 'Searching…' : 'Recherche…') : (english ? 'Search' : 'Rechercher')}</button>
+        </div>
+      </form>
+
+      <div className="mt-5 rounded-2xl bg-brand-50 p-4 sm:p-5">
         <button ref={scanButtonRef} type="button" onClick={() => { setError(''); setScannerOpen(true); }} disabled={scannerOpen} className={`${primaryButton} w-full py-3 text-base sm:w-auto`}>
           <span aria-hidden="true" className="mr-2 text-lg">▣</span> {english ? 'Scan a barcode' : 'Scanner un code-barres'}
         </button>
@@ -110,25 +129,7 @@ export function FoodNutritionTool({ locale = 'fr' }: { locale?: 'en' | 'fr' }) {
       </div>
       {scannerOpen ? <div className="mt-4"><BarcodeScanner onDetected={scanDetected} onClose={closeScanner} locale={locale} /></div> : null}
 
-      <div className="mt-6 grid gap-5 lg:grid-cols-2">
-        <form onSubmit={submitSearch} className="rounded-2xl border border-slate-200 p-5" role="search">
-          <label htmlFor="food-name" className="text-sm font-semibold text-slate-800">{english ? 'Search for a food or product' : 'Rechercher un aliment ou un produit'}</label>
-          <div className="sm:flex sm:items-end sm:gap-3">
-            <input id="food-name" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={english ? 'e.g., skyr, Greek yogurt…' : 'Ex. Skyr, yaourt grec…'} className={fieldClass} />
-            <button type="submit" disabled={loading !== null} className={`${primaryButton} mt-3 w-full sm:w-auto`}>{loading === 'search' ? (english ? 'Searching…' : 'Recherche…') : (english ? 'Search' : 'Rechercher')}</button>
-          </div>
-        </form>
-        <div className="rounded-2xl border border-slate-200 p-5">
-          <form onSubmit={submitBarcode}>
-            <label htmlFor="food-barcode" className="text-sm font-semibold text-slate-800">{english ? 'Enter a barcode' : 'Saisir un code-barres'}</label>
-            <div className="sm:flex sm:items-end sm:gap-3">
-              <input id="food-barcode" type="text" inputMode="numeric" autoComplete="off" value={barcode} onChange={(event) => setBarcode(event.target.value)} placeholder={english ? 'e.g., 3017620422003' : 'Ex. 3017620422003'} className={fieldClass} />
-              <button type="submit" disabled={loading !== null} className={`${primaryButton} mt-3 w-full sm:w-auto`}>{loading === 'product' ? (english ? 'Loading…' : 'Chargement…') : (english ? 'Submit' : 'Valider')}</button>
-            </div>
-          </form>
-          <div className="mt-5 border-t border-slate-200 pt-5"><PhotoBarcodeInput locale={locale} disabled={loading !== null} onDetected={(code) => { setBarcode(code); void loadProduct(code); }} /></div>
-        </div>
-      </div>
+      <div className="mt-5 rounded-2xl border border-slate-200 p-5"><PhotoBarcodeInput locale={locale} disabled={loading !== null} onDetected={(code) => { setQuery(code); void loadProduct(code); }} /></div>
 
       <div className="mt-6 min-h-12" aria-live="polite" aria-busy={loading !== null}>
         {loading ? <p className="flex items-center gap-3 rounded-xl bg-slate-50 p-4 text-sm font-semibold text-slate-700"><span className="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-brand-700" aria-hidden="true" />{loading === 'search' ? (english ? 'Searching for products…' : 'Recherche des produits…') : (english ? `Looking up product${detectedCode ? ` ${detectedCode}` : ''}…` : `Recherche du produit${detectedCode ? ` ${detectedCode}` : ''}…`)}</p> : null}

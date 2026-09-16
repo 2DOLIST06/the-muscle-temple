@@ -23,18 +23,19 @@ export type FoodSummary = {
   brand: string | null;
   image: string | null;
   quantityLabel: string | null;
+  source: string;
+  sourceUrl: string | null;
 };
 
 export type FoodProduct = FoodSummary & {
-  source: string;
-  sourceUrl: string | null;
   servingSize: string | null;
   nutritionBasis: NutritionBasis | null;
   nutritionAvailable: boolean;
   nutrition: NutrientValues | null;
 };
 
-export type FoodSearchResponse = { products: FoodSummary[] };
+/** The API client unwraps the backend `{ data: [...] }` envelope before returning. */
+export type FoodSearchResponse = FoodSummary[];
 
 export type NutritionErrorCode =
   | 'PRODUCT_NOT_FOUND'
