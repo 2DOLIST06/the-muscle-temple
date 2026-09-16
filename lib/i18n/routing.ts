@@ -39,7 +39,8 @@ export const getArticlePath = (locale: Locale, slug: string) => `${getArticlesPa
 export const getCategoryPath = (locale: Locale, slug: string) => `${getCategoriesPath(locale)}/${cleanSlug(slug)}`;
 export const getAuthorPath = (locale: Locale, slug: string) => `${getAuthorsPath(locale)}/${cleanSlug(slug)}`;
 export const getMacroCalculatorPath = (locale: Locale) => (locale === 'fr' ? '/fr/calculateur-macros' : '/macro-calculator');
-export const getFoodNutritionCalculatorPath = () => '/fr/calculateur-calories-macros-aliments';
+export const getFoodNutritionCalculatorPath = (locale: Locale) =>
+  locale === 'fr' ? '/fr/calculateur-calories-macros-aliments' : '/food-calorie-macro-calculator';
 export const getGymPath = (locale: Locale, slug: string) => `${locale === 'fr' ? '/fr/salles' : '/gyms'}/${cleanSlug(slug)}`;
 
 export type LegalPageKey = 'terms' | 'medical' | 'affiliate' | 'privacy' | 'cookies' | 'legal';
@@ -92,11 +93,12 @@ export const getNavigation = (locale: Locale) =>
         { label: 'Musculation', href: getCategoryPath('fr', 'musculation') },
         { label: 'Nutrition', href: getCategoryPath('fr', 'nutrition') },
         { label: 'Calculateur macros', href: getMacroCalculatorPath('fr') },
-        { label: 'Calories des aliments', href: getFoodNutritionCalculatorPath() }
+        { label: 'Calories des aliments', href: getFoodNutritionCalculatorPath('fr') }
       ]
     : [
         { label: 'Home', href: getHomePath('en') },
         { label: 'Strength training', href: getCategoryPath('en', 'musculation') },
         { label: 'Nutrition', href: getCategoryPath('en', 'nutrition') },
-        { label: 'Macro calculator', href: getMacroCalculatorPath('en') }
+        { label: 'Macro calculator', href: getMacroCalculatorPath('en') },
+        { label: 'Food calories & macros', href: getFoodNutritionCalculatorPath('en') }
       ];

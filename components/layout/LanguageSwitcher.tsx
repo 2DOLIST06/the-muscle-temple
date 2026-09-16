@@ -21,7 +21,9 @@ const buildGenericTarget = (pathname: string, targetLocale: Locale) => {
   if (legalPageKey) return getLegalPath(legalPageKey, targetLocale);
   const basePath = stripLocalePrefix(pathname);
   if (isMacroCalculatorPath(basePath)) return getMacroCalculatorPath(targetLocale);
-  if (pathname === getFoodNutritionCalculatorPath()) return targetLocale === 'fr' ? getFoodNutritionCalculatorPath() : getMacroCalculatorPath('en');
+  if (pathname === getFoodNutritionCalculatorPath('fr') || pathname === getFoodNutritionCalculatorPath('en')) {
+    return getFoodNutritionCalculatorPath(targetLocale);
+  }
   const targetBasePath = isArticleDetailPath(basePath) ? getArticlesPath('en') : basePath;
   return localizePath(targetBasePath, targetLocale);
 };
