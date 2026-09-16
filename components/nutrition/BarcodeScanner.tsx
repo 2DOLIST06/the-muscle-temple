@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 type ScannerProps = {
   onDetected: (barcode: string) => void;
   onClose: () => void;
+  locale?: 'en' | 'fr';
 };
 
 type BarcodeResult = { rawValue: string };
@@ -16,7 +17,8 @@ type BarcodeDetectorConstructor = {
 
 const supportedFormats = ['ean_13', 'ean_8', 'upc_a', 'upc_e'];
 
-export function BarcodeScanner({ onDetected, onClose }: ScannerProps) {
+export function BarcodeScanner({ onDetected, onClose, locale = 'fr' }: ScannerProps) {
+  const english = locale === 'en';
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const controlsRef = useRef<{ stop(): void } | null>(null);
@@ -102,17 +104,17 @@ export function BarcodeScanner({ onDetected, onClose }: ScannerProps) {
   return (
     <div className="rounded-2xl border border-slate-300 bg-slate-950 p-4 text-white" role="dialog" aria-modal="true" aria-labelledby="scanner-title">
       <div className="flex items-center justify-between gap-4">
-        <h3 id="scanner-title" className="font-bold">Scanner un code-barres</h3>
-        <button type="button" onClick={close} className="rounded-full border border-white/40 px-4 py-2 text-sm font-semibold hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-amber-400">Fermer le scanner</button>
+        <h3 id="scanner-title" className="font-bold">{english ? 'Scan a barcode' : 'Scanner un code-barres'}</h3>
+        <button type="button" onClick={close} className="rounded-full border border-white/40 px-4 py-2 text-sm font-semibold hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-amber-400">{english ? 'Close scanner' : 'Fermer le scanner'}</button>
       </div>
-      {status === 'opening' ? <p className="py-10 text-center text-sm" aria-live="polite">Ouverture de la caméra…</p> : null}
+      {status === 'opening' ? <p className="py-10 text-center text-sm" aria-live="polite">{english ? 'Opening camera…' : 'Ouverture de la caméra…'}</p> : null}
       <div className={status === 'active' ? 'relative mt-4 overflow-hidden rounded-xl bg-black' : 'hidden'}>
-        <video ref={videoRef} muted playsInline className="aspect-[4/3] w-full object-cover" aria-label="Aperçu de la caméra" />
+        <video ref={videoRef} muted playsInline className="aspect-[4/3] w-full object-cover" aria-label={english ? 'Camera preview' : 'Aperçu de la caméra'} />
         <div className="pointer-events-none absolute inset-[18%_8%] rounded-xl border-2 border-amber-400 shadow-[0_0_0_999px_rgba(0,0,0,.3)]" aria-hidden="true" />
-        <p className="absolute inset-x-0 bottom-3 text-center text-sm font-semibold drop-shadow">Placez le code-barres dans le cadre</p>
+        <p className="absolute inset-x-0 bottom-3 text-center text-sm font-semibold drop-shadow">{english ? 'Place the barcode inside the frame' : 'Placez le code-barres dans le cadre'}</p>
       </div>
-      {status === 'denied' ? <p className="mt-4 rounded-xl bg-red-50 p-4 text-sm font-medium text-red-900" role="alert">L’accès à la caméra a été refusé. Vous pouvez saisir le code-barres manuellement ou importer une photo.</p> : null}
-      {status === 'unavailable' ? <p className="mt-4 rounded-xl bg-amber-50 p-4 text-sm font-medium text-amber-950" role="alert">La caméra n’est pas disponible. Saisissez le code-barres manuellement ou importez une photo.</p> : null}
+      {status === 'denied' ? <p className="mt-4 rounded-xl bg-red-50 p-4 text-sm font-medium text-red-900" role="alert">{english ? 'Camera access was denied. Enter the barcode manually or upload a photo instead.' : 'L’accès à la caméra a été refusé. Vous pouvez saisir le code-barres manuellement ou importer une photo.'}</p> : null}
+      {status === 'unavailable' ? <p className="mt-4 rounded-xl bg-amber-50 p-4 text-sm font-medium text-amber-950" role="alert">{english ? 'The camera is unavailable. Enter the barcode manually or upload a photo instead.' : 'La caméra n’est pas disponible. Saisissez le code-barres manuellement ou importez une photo.'}</p> : null}
     </div>
   );
 }

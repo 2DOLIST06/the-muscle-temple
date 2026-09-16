@@ -13,6 +13,11 @@ export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata({
     title: `${pageTitle} | Body Training Guide`, description: pageDescription, path: pagePath,
     canonicalUrl: `https://www.bodytrainingguide.com${pagePath}`, locale: 'fr',
+    hreflang: [
+      { hreflang: 'en', href: 'https://www.bodytrainingguide.com/food-calorie-macro-calculator' },
+      { hreflang: 'fr', href: `https://www.bodytrainingguide.com${pagePath}` },
+      { hreflang: 'x-default', href: 'https://www.bodytrainingguide.com/food-calorie-macro-calculator' }
+    ],
     keywords: ['calories aliments', 'macros aliments', 'scanner code-barres nutrition', 'calculateur nutritionnel']
   });
 }
@@ -34,7 +39,7 @@ export default function FoodNutritionCalculatorPage() {
         <aside className="rounded-3xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-950"><h2 className="text-base font-bold">Simple et confidentiel</h2><ul className="mt-3 list-disc space-y-2 pl-5"><li>La caméra ne s’ouvre qu’à votre demande.</li><li>Les photos sont analysées sur votre appareil.</li><li>Le calcul de portion ne déclenche aucune nouvelle requête.</li></ul></aside>
       </section>
 
-      <FoodNutritionTool />
+      <FoodNutritionTool locale="fr" />
 
       <section className="mt-12 grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-10">
