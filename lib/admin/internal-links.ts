@@ -3,7 +3,6 @@ import {
   getArticlesPath,
   getAuthorPath,
   getAuthorsPath,
-  getCategoriesPath,
   getCategoryPath,
   getHomePath,
   getMacroCalculatorPath,
@@ -85,10 +84,9 @@ export const getStaticInternalLinkTargets = (locale: Locale): InternalLinkTarget
   return [
     { id: `${locale}-home`, title: french ? 'Accueil' : 'Home', type: 'static', locale, url: getHomePath(locale), slug: '' },
     { id: `${locale}-articles`, title: french ? 'Articles' : 'Articles', type: 'static', locale, url: getArticlesPath(locale), slug: 'articles' },
-    { id: `${locale}-categories`, title: french ? 'Catégories' : 'Categories', type: 'static', locale, url: getCategoriesPath(locale), slug: 'categories' },
     { id: `${locale}-authors`, title: french ? 'Auteurs' : 'Authors', type: 'static', locale, url: getAuthorsPath(locale), slug: 'authors' },
     { id: `${locale}-about`, title: french ? 'À propos' : 'About', type: 'static', locale, url: localizePath('/about', locale), slug: 'about' },
-    ...(locale === 'en' ? [{ id: 'en-contact', title: 'Contact', type: 'static' as const, locale, url: localizePath('/contact', locale), slug: 'contact' }] : []),
+    { id: `${locale}-contact`, title: 'Contact', type: 'static', locale, url: localizePath('/contact', locale), slug: 'contact' },
     { id: `${locale}-macro-calculator`, title: french ? 'Calculateur de macros' : 'Macro calculator', type: 'static', locale, url: getMacroCalculatorPath(locale), slug: french ? 'calculateur-macros' : 'macro-calculator' }
   ];
 };
