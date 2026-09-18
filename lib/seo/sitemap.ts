@@ -5,8 +5,8 @@ import { absoluteUrl, canonicalSiteUrl, getArticlePath, getCategoryPath, isLegal
 import type { Locale } from '@/lib/i18n/routing';
 
 const staticPathsByLocale: Record<Locale, string[]> = {
-  en: ['/', '/articles', '/categories', '/about', '/contact', '/macro-calculator', '/food-calorie-macro-calculator'],
-  fr: ['/fr', '/fr/articles', '/fr/categories', '/fr/about', '/fr/contact', '/fr/calculateur-macros', '/fr/calculateur-calories-macros-aliments']
+  en: ['/', '/articles', '/about', '/contact', '/macro-calculator', '/food-calorie-macro-calculator'],
+  fr: ['/fr', '/fr/articles', '/fr/about', '/fr/contact', '/fr/calculateur-macros', '/fr/calculateur-calories-macros-aliments']
 };
 
 export const getLocalizedSitemap = async (locale: Locale): Promise<MetadataRoute.Sitemap> => {

@@ -10,6 +10,11 @@ export function Footer() {
   const pathname = usePathname();
   const locale = getPathLocale(pathname ?? '/');
   const navigation = getNavigation(locale);
+  const footerNavigation = [
+    ...navigation,
+    { label: locale === 'fr' ? 'À propos' : 'About', href: locale === 'fr' ? '/fr/about' : '/about' },
+    { label: 'Contact', href: locale === 'fr' ? '/fr/contact' : '/contact' }
+  ];
   const legalLinks: Array<{ key: LegalPageKey; label: string }> = locale === 'fr'
     ? [
         { key: 'terms', label: "Conditions d’utilisation" },
@@ -49,7 +54,7 @@ export function Footer() {
           <div>
             <h3 className="font-semibold text-slate-900">Navigation</h3>
             <ul className="mt-2 space-y-2 text-sm text-slate-600">
-              {navigation.map((item) => (
+              {footerNavigation.map((item) => (
                 <li key={item.href}>
                   <Link href={item.href}>{item.label}</Link>
                 </li>
