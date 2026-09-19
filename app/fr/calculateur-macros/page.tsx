@@ -9,18 +9,6 @@ const pageTitle = 'Calculateur de macros musculation : calories, protéines, glu
 const pageDescription = 'Calculez vos macros pour la musculation selon votre poids, taille, âge, activité et objectif : maintien, prise de muscle, prise de masse ou sèche.';
 const pagePath = '/fr/calculateur-macros';
 
-const calculatorJsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'WebApplication',
-  name: 'Calculateur de macros musculation',
-  url: 'https://www.bodytrainingguide.com/fr/calculateur-macros',
-  applicationCategory: 'HealthApplication',
-  operatingSystem: 'Web',
-  inLanguage: 'fr',
-  description: pageDescription,
-  offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' }
-};
-
 const faqJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
@@ -71,7 +59,6 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function FrenchMacroCalculatorPage() {
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(calculatorJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
       <Container>
         <main className="py-10">

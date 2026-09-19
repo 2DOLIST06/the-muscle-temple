@@ -9,18 +9,6 @@ const pageTitle = 'Macro Calculator for Strength Training: Calories, Protein, Ca
 const pageDescription = 'Calculate your strength training macros from your body weight, height, age, activity level and goal: maintenance, lean muscle gain, bulking or cutting.';
 const pagePath = '/macro-calculator';
 
-const calculatorJsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'WebApplication',
-  name: 'Macro Calculator for Strength Training',
-  url: 'https://www.bodytrainingguide.com/macro-calculator',
-  applicationCategory: 'HealthApplication',
-  operatingSystem: 'Web',
-  inLanguage: 'en',
-  description: pageDescription,
-  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' }
-};
-
 const faqJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
@@ -71,7 +59,6 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function MacroCalculatorPage() {
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(calculatorJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
       <Container>
         <main className="py-10">
