@@ -26,21 +26,8 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
-const applicationJsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'WebApplication',
-  name: pageTitle,
-  url: `https://www.bodytrainingguide.com${pagePath}`,
-  applicationCategory: 'HealthApplication',
-  operatingSystem: 'Web',
-  inLanguage: 'en',
-  description: pageDescription,
-  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' }
-};
-
 export default function FoodCalorieMacroCalculatorPage() {
   return <>
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(applicationJsonLd) }} />
     <Container><main className="py-10">
       <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Food calories & macros', href: pagePath }]} />
       <section className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
