@@ -104,6 +104,16 @@ export default function FrenchMacroCalculatorPage() {
                   <li>Sélectionnez votre objectif : maintien, prise de muscle progressive, prise de masse ou sèche.</li>
                   <li>Utilisez les calories et les macros obtenues pendant 2 à 4 semaines, puis ajustez selon les résultats.</li>
                 </ol>
+                 <p className="mt-4 leading-8 text-slate-700">
+                 Une fois vos objectifs quotidiens définis, utilisez notre{' '}
+                 <Link
+                   href="/fr/calculateur-calories-macros-aliments"
+                   className="font-semibold text-brand-700 underline decoration-brand-300 underline-offset-4 hover:text-brand-800"
+                 >
+                   calculateur de calories et macros des aliments
+                 </Link>{' '}
+                 pour connaître les calories, protéines, glucides et lipides correspondant aux quantités réellement consommées.
+               </p>
               </section>
 
               <section>
