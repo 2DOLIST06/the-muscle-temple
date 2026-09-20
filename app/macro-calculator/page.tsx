@@ -104,6 +104,16 @@ export default function MacroCalculatorPage() {
                   <li>Select your goal: maintenance, lean muscle gain, bulking or cutting.</li>
                   <li>Use the calories and macros for 2 to 4 weeks, then adjust based on results.</li>
                 </ol>
+                 <p className="mt-4 leading-8 text-slate-700">
+                 Once your daily targets are set, use our{' '}
+                 <Link
+                   href="/food-calorie-macro-calculator"
+                   className="font-semibold text-brand-700 underline decoration-brand-300 underline-offset-4 hover:text-brand-800"
+                 >
+                   food calorie and macro calculator
+                 </Link>{' '}
+                 to calculate the calories, protein, carbs and fat in the amounts of food you actually consume.
+               </p>
               </section>
 
               <section>
