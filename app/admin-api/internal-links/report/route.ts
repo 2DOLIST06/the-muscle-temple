@@ -28,6 +28,39 @@ const contentFrom = (post: UnknownRecord) => {
   return text(contentJson?.html) || text(post.contentHtml) || text(post.contentMarkdown) || text(post.content);
 };
 
+const collectStrings = (value: unknown): string[] => {
+  if (typeof value === 'string') return [value];
+  if (Array.isArray(value)) return value.flatMap(collectStrings);
+  if (isRecord(value)) return Object.entries(value)
+    .filter(([key]) => !['id', 'type', 'href', 'src', 'url'].includes(key))
+    .flatMap(([, nestedValue]) => collectStrings(nestedValue));
+  return [];
+};
+
+const searchTextFrom = (post: UnknownRecord) => [
+  post.title,
+  post.h1,
+  post.excerpt,
+  post.chapoHtml,
+  post.content,
+  post.contentHtml,
+  post.contentMarkdown,
+  post.contentJson,
+  post.faqJson,
+  post.tagsJson,
+  post.metaTitle,
+  post.metaDescription
+].flatMap(collectStrings).join('\n');
+
+const extractDetail = (payload: unknown): UnknownRecord | undefined => {
+  if (!isRecord(payload)) return undefined;
+  for (const key of ['data', 'post', 'item', 'doc']) {
+    const value = payload[key];
+    if (isRecord(value)) return extractDetail(value) ?? value;
+  }
+  return typeof payload.id === 'string' || typeof payload.slug === 'string' ? payload : undefined;
+};
+
 const toPost = (post: UnknownRecord): InternalLinkReportPost | undefined => {
   const id = text(post.id);
   const slug = text(post.slug);
@@ -39,7 +72,8 @@ const toPost = (post: UnknownRecord): InternalLinkReportPost | undefined => {
     locale: text(post.locale) === 'fr' ? 'fr' : 'en',
     status: text(post.status) || 'DRAFT',
     contentHtml: contentFrom(post),
-    chapoHtml: text(post.chapoHtml) || text(post.excerpt)
+    chapoHtml: text(post.chapoHtml) || text(post.excerpt),
+    searchText: searchTextFrom(post)
   };
 };
 
@@ -52,13 +86,13 @@ export async function GET() {
     if (!listResponse.ok) return NextResponse.json(await listResponse.json().catch(() => ({})), { status: listResponse.status });
     const summaries = extractItems(await listResponse.json());
     const detailed = await Promise.all(summaries.map(async (summary) => {
-      if (contentFrom(summary)) return summary;
       const id = text(summary.id);
       if (!id) return summary;
       const response = await fetch(buildApiUrl(`/admin-api/posts/${encodeURIComponent(id)}`), { headers: authHeaders, cache: 'no-store' });
       if (!response.ok) return summary;
       const payload = await response.json().catch(() => ({}));
-      return isRecord(payload) && isRecord(payload.data) ? payload.data : isRecord(payload) ? payload : summary;
+      const detail = extractDetail(payload);
+      return detail ? { ...summary, ...detail } : summary;
     }));
     const posts = detailed.flatMap((post) => toPost(post) ?? []);
     const pages = buildInternalLinkReport(posts);

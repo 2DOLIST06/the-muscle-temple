@@ -102,8 +102,8 @@ export function InternalLinkDashboard() {
         </div>
 
         <div className="mt-3 rounded-xl border border-slate-800 bg-slate-900 p-4">
-          <label htmlFor="content-search" className="block text-sm font-semibold text-slate-200">Repérer un mot dans les articles</label>
-          <p className="mt-1 text-xs text-slate-400">Saisissez un mot ou une expression : les articles qui le contiennent seront mis en évidence en rouge.</p>
+          <label htmlFor="content-search" className="block text-sm font-semibold text-slate-200">Repérer un mot dans le texte complet des articles</label>
+          <p className="mt-1 text-xs text-slate-400">La recherche analyse le titre, le chapô, tous les paragraphes, intertitres et FAQ. Les articles qui contiennent le mot ou l’expression seront mis en évidence en rouge.</p>
           <input id="content-search" type="text" value={contentSearch} onChange={(event) => setContentSearch(event.target.value)} placeholder="Ex. : créatine" className="mt-3 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500" />
           {normalizedContentSearch ? <p className="mt-2 text-xs font-medium text-red-300" aria-live="polite">{highlightedPageIds.size} article{highlightedPageIds.size > 1 ? 's' : ''} contenant « {contentSearch.trim()} » dans la liste affichée.</p> : null}
         </div>

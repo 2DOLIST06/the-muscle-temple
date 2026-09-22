@@ -8,6 +8,7 @@ export interface InternalLinkReportPost {
   status: string;
   contentHtml: string;
   chapoHtml: string;
+  searchText: string;
 }
 
 export interface InternalLinkEdge {
@@ -86,7 +87,7 @@ export const buildInternalLinkReport = (posts: InternalLinkReportPost[]): Intern
     locale: post.locale,
     status: post.status,
     path: getArticlePath(post.locale, post.slug),
-    contentText: cleanText(`${post.title}\n${post.chapoHtml}\n${post.contentHtml}`),
+    contentText: cleanText(post.searchText),
     incoming: [] as InternalLinkEdge[],
     outgoing: [] as InternalLinkEdge[]
   }));
