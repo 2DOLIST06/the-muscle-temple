@@ -10,7 +10,7 @@ export default function AdminDashboardPage() {
         et publier vos contenus.
       </p>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2">
+      <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <Link href="/admin/posts/new" className="rounded-xl border border-slate-700 bg-slate-900 p-5 hover:bg-slate-800">
           <p className="font-semibold">Créer un nouvel article</p>
           <p className="mt-2 text-sm text-slate-400">Éditeur complet avec sections, tags, SEO avancé et image.</p>
@@ -18,6 +18,10 @@ export default function AdminDashboardPage() {
         <Link href="/admin/posts" className="rounded-xl border border-slate-700 bg-slate-900 p-5 hover:bg-slate-800">
           <p className="font-semibold">Gérer les articles</p>
           <p className="mt-2 text-sm text-slate-400">Modifier un brouillon, republier ou revoir les métadonnées.</p>
+        </Link>
+        <Link href="/admin/internal-links" className="rounded-xl border border-slate-700 bg-slate-900 p-5 hover:bg-slate-800">
+          <p className="font-semibold">Analyser le maillage interne</p>
+          <p className="mt-2 text-sm text-slate-400">Voir les liens entrants, sortants, leurs ancres et les pages isolées.</p>
         </Link>
       </div>
     </section>
