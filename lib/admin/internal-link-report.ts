@@ -8,6 +8,7 @@ export interface InternalLinkReportPost {
   status: string;
   contentHtml: string;
   chapoHtml: string;
+  searchText: string;
 }
 
 export interface InternalLinkEdge {
@@ -28,6 +29,7 @@ export interface InternalLinkPageReport {
   locale: Locale;
   status: string;
   path: string;
+  contentText: string;
   incoming: InternalLinkEdge[];
   outgoing: InternalLinkEdge[];
 }
@@ -85,6 +87,7 @@ export const buildInternalLinkReport = (posts: InternalLinkReportPost[]): Intern
     locale: post.locale,
     status: post.status,
     path: getArticlePath(post.locale, post.slug),
+    contentText: cleanText(post.searchText),
     incoming: [] as InternalLinkEdge[],
     outgoing: [] as InternalLinkEdge[]
   }));

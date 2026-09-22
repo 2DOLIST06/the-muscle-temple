@@ -15,6 +15,7 @@ interface ReportPayload {
 
 type Filter = 'all' | 'orphan' | 'weak-incoming' | 'weak-outgoing' | 'broken';
 const countClass = (count: number, warning: number) => count === 0 ? 'bg-red-500/15 text-red-300 ring-red-500/30' : count < warning ? 'bg-amber-500/15 text-amber-200 ring-amber-500/30' : 'bg-emerald-500/15 text-emerald-300 ring-emerald-500/30';
+const normalizeText = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase();
 
 function LinkList({ links, direction }: { links: InternalLinkPageReport['incoming']; direction: 'incoming' | 'outgoing' }) {
   if (!links.length) return <p className="text-sm text-slate-500">Aucun lien.</p>;
@@ -42,6 +43,7 @@ export function InternalLinkDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
+  const [contentSearch, setContentSearch] = useState('');
   const [locale, setLocale] = useState<'all' | Locale>('all');
   const [filter, setFilter] = useState<Filter>('all');
   const [expanded, setExpanded] = useState<string>();
@@ -71,6 +73,13 @@ export function InternalLinkDashboard() {
     return true;
   }), [filter, locale, report, search]);
 
+  const normalizedContentSearch = normalizeText(contentSearch.trim());
+  const highlightedPageIds = useMemo(() => new Set(
+    normalizedContentSearch
+      ? pages.filter((page) => normalizeText(page.contentText).includes(normalizedContentSearch)).map((page) => page.id)
+      : []
+  ), [normalizedContentSearch, pages]);
+
   return (
     <section>
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -92,14 +101,22 @@ export function InternalLinkDashboard() {
           <select value={filter} onChange={(event) => setFilter(event.target.value as Filter)} className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"><option value="all">Toutes les pages</option><option value="orphan">Sans lien entrant</option><option value="weak-incoming">Moins de 3 entrants</option><option value="weak-outgoing">Moins de 3 sortants</option><option value="broken">Cibles inconnues</option></select>
         </div>
 
+        <div className="mt-3 rounded-xl border border-slate-800 bg-slate-900 p-4">
+          <label htmlFor="content-search" className="block text-sm font-semibold text-slate-200">Repérer un mot dans le texte complet des articles</label>
+          <p className="mt-1 text-xs text-slate-400">La recherche analyse le titre, le chapô, tous les paragraphes, intertitres et FAQ. Les articles qui contiennent le mot ou l’expression seront mis en évidence en rouge.</p>
+          <input id="content-search" type="text" value={contentSearch} onChange={(event) => setContentSearch(event.target.value)} placeholder="Ex. : créatine" className="mt-3 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500" />
+          {normalizedContentSearch ? <p className="mt-2 text-xs font-medium text-red-300" aria-live="polite">{highlightedPageIds.size} article{highlightedPageIds.size > 1 ? 's' : ''} contenant « {contentSearch.trim()} » dans la liste affichée.</p> : null}
+        </div>
+
         <p className="mt-3 text-xs text-slate-500">{pages.length} résultat{pages.length > 1 ? 's' : ''} · Les pages les moins liées apparaissent en premier.</p>
         <div className="mt-3 overflow-hidden rounded-xl border border-slate-800">
           <div className="hidden grid-cols-[minmax(260px,1fr)_120px_120px_120px] bg-slate-900 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400 md:grid"><span>Page</span><span>Entrants</span><span>Sortants</span><span></span></div>
           {pages.map((page) => {
             const open = expanded === page.id;
-            return <div key={page.id} className="border-t border-slate-800 first:border-t-0">
-              <button onClick={() => setExpanded(open ? undefined : page.id)} className="grid w-full gap-3 bg-slate-950 px-4 py-4 text-left hover:bg-slate-900 md:grid-cols-[minmax(260px,1fr)_120px_120px_120px] md:items-center">
-                <span className="min-w-0"><span className="block truncate font-semibold">{page.title}</span><span className="mt-1 block truncate text-xs text-slate-500">{page.path} · {page.locale.toUpperCase()}</span></span>
+            const highlighted = highlightedPageIds.has(page.id);
+            return <div key={page.id} className={`border-t first:border-t-0 ${highlighted ? 'border-red-500/50' : 'border-slate-800'}`}>
+              <button onClick={() => setExpanded(open ? undefined : page.id)} className={`grid w-full gap-3 px-4 py-4 text-left md:grid-cols-[minmax(260px,1fr)_120px_120px_120px] md:items-center ${highlighted ? 'bg-red-950/60 ring-1 ring-inset ring-red-500/50 hover:bg-red-950/80' : 'bg-slate-950 hover:bg-slate-900'}`}>
+                <span className="min-w-0"><span className="flex min-w-0 items-center gap-2"><span className={`block truncate font-semibold ${highlighted ? 'text-red-200' : ''}`}>{page.title}</span>{highlighted ? <span className="shrink-0 rounded bg-red-500/20 px-2 py-0.5 text-[11px] font-semibold text-red-200 ring-1 ring-red-500/40">Mot trouvé</span> : null}</span><span className={`mt-1 block truncate text-xs ${highlighted ? 'text-red-300/70' : 'text-slate-500'}`}>{page.path} · {page.locale.toUpperCase()}</span></span>
                 <span><span className={`inline-flex min-w-9 justify-center rounded-full px-2 py-1 text-xs font-bold ring-1 ${countClass(page.incoming.length, 3)}`}>{page.incoming.length}</span><span className="ml-2 text-xs text-slate-500 md:hidden">entrants</span></span>
                 <span><span className={`inline-flex min-w-9 justify-center rounded-full px-2 py-1 text-xs font-bold ring-1 ${countClass(page.outgoing.length, 3)}`}>{page.outgoing.length}</span><span className="ml-2 text-xs text-slate-500 md:hidden">sortants</span></span>
                 <span className="text-sm font-medium text-brand-300">{open ? 'Masquer' : 'Voir les liens'}</span>
