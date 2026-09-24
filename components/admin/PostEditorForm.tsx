@@ -17,6 +17,7 @@ type PostModel = {
   id?: string;
   slug: string;
   title: string;
+  excerpt: string;
   h1: string;
   chapoHtml: string;
   contentHtml: string;
@@ -65,6 +66,7 @@ type CategoryOption = {
 const empty: PostModel = {
   slug: '',
   title: '',
+  excerpt: '',
   h1: '',
   chapoHtml: '',
   contentHtml: '',
@@ -97,6 +99,7 @@ const labelClass = 'block text-sm font-medium text-slate-200';
 const checkboxClass = 'h-4 w-4 rounded border-slate-500 bg-white text-brand-700 accent-brand-700';
 const secondaryButtonClass =
   'rounded border border-slate-600 px-3 py-2 text-sm font-medium text-slate-100 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60';
+const MAX_EXCERPT_LENGTH = 280;
 
 type PostTranslationExport = {
   schema: 'the-muscle-temple.post-translation';
@@ -115,6 +118,7 @@ type PostCreationExport = {
 const exportablePostFields = [
   'slug',
   'title',
+  'excerpt',
   'h1',
   'chapoHtml',
   'contentHtml',
@@ -498,6 +502,7 @@ export function PostEditorForm({ initialPost, enableCreationImport = false }: { 
       setSaving(true);
       setError('');
       const normalizedTitle = post.title.trim();
+      const normalizedExcerpt = post.excerpt.trim();
       const normalizedSlug = post.slug.trim();
       const normalizedContent = (post.contentJson.html || post.contentHtml || '').trim();
       const normalizedAuthorId = post.authorId.trim();
@@ -513,6 +518,10 @@ export function PostEditorForm({ initialPost, enableCreationImport = false }: { 
         setError('Le contenu doit contenir au moins 10 caractères.');
         return;
       }
+      if (normalizedExcerpt.length > MAX_EXCERPT_LENGTH) {
+        setError(`L’extrait doit contenir au maximum ${MAX_EXCERPT_LENGTH} caractères (${normalizedExcerpt.length} actuellement).`);
+        return;
+      }
       if (!normalizedAuthorId) {
         setError('Veuillez sélectionner un auteur.');
         return;
@@ -524,6 +533,7 @@ export function PostEditorForm({ initialPost, enableCreationImport = false }: { 
       const payload = {
         slug: normalizedSlug || undefined,
         title: normalizedTitle,
+        excerpt: normalizedExcerpt,
         locale: post.locale,
         translationGroupId: post.translationGroupId || null,
         contentMarkdown: normalizedContent,
@@ -556,6 +566,7 @@ export function PostEditorForm({ initialPost, enableCreationImport = false }: { 
           ...post,
           slug: normalizedSlug,
           title: normalizedTitle,
+          excerpt: normalizedExcerpt,
           h1: post.h1 || normalizedTitle,
           chapoHtml: post.chapoHtml,
           contentHtml: post.contentJson.html,
@@ -607,6 +618,22 @@ export function PostEditorForm({ initialPost, enableCreationImport = false }: { 
       <div className="space-y-4">
         <input className={fieldClass} placeholder="Titre" value={post.title} onChange={(e) => setPost({ ...post, title: e.target.value })} />
         <input className={fieldClass} placeholder="H1" value={post.h1} onChange={(e) => setPost({ ...post, h1: e.target.value })} />
+        <div>
+          <label className={labelClass} htmlFor="post-excerpt">
+            Extrait
+          </label>
+          <textarea
+            id="post-excerpt"
+            className={`${fieldClass} mt-1`}
+            maxLength={MAX_EXCERPT_LENGTH}
+            placeholder="Résumé affiché dans les listes d’articles"
+            value={post.excerpt}
+            onChange={(e) => setPost({ ...post, excerpt: e.target.value })}
+          />
+          <p className={`mt-1 text-right text-xs ${post.excerpt.length >= MAX_EXCERPT_LENGTH ? 'text-amber-400' : 'text-slate-400'}`}>
+            {post.excerpt.length} / {MAX_EXCERPT_LENGTH} caractères
+          </p>
+        </div>
         <textarea className={fieldClass} placeholder="Chapo HTML" value={post.chapoHtml} onChange={(e) => setPost({ ...post, chapoHtml: e.target.value })} />
         <RichContentEditor value={post.contentJson} onChange={(v) => setPost({ ...post, contentJson: v, contentHtml: v.html })} onUploadImage={uploadEditorImage} locale={post.locale} />
         <section className="rounded border border-slate-700 p-3">
