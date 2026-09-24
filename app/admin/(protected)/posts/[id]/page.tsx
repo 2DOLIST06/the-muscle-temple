@@ -13,6 +13,7 @@ type ApiPost = Record<string, unknown> & {
   id?: string;
   slug?: string;
   title?: string;
+  excerpt?: string | null;
   h1?: string | null;
   chapoHtml?: string | null;
   contentHtml?: string | null;
@@ -53,6 +54,7 @@ type EditorInitialPost = {
   id?: string;
   slug?: string;
   title?: string;
+  excerpt?: string;
   h1?: string;
   chapoHtml?: string;
   contentHtml?: string;
@@ -160,6 +162,7 @@ const apiPostToEditorInitialPost = (post: ApiPost): EditorInitialPost => {
     id: post.id,
     slug: post.slug ?? '',
     title: post.title ?? '',
+    excerpt: post.excerpt ?? '',
     h1: post.h1 ?? post.title ?? '',
     chapoHtml: post.chapoHtml ?? '',
     contentHtml: contentJson.html,
