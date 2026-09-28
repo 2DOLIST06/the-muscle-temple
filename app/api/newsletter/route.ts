@@ -4,7 +4,9 @@ import type { NewsletterSubscriptionResponse } from '@/lib/newsletter';
 
 interface NewsletterRequestBody {
   email?: unknown;
+  language?: unknown;
   source?: unknown;
+  consent?: unknown;
 }
 
 const getPayloadMessage = (payload: unknown) => {
@@ -21,10 +23,16 @@ const getPayloadMessage = (payload: unknown) => {
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as NewsletterRequestBody;
   const email = typeof body.email === 'string' ? body.email.trim() : '';
+  const language = body.language === 'fr' ? 'fr' : body.language === 'en' ? 'en' : undefined;
   const source = typeof body.source === 'string' ? body.source.trim() : undefined;
+  const consent = body.consent === true;
 
   if (!email) {
     return NextResponse.json({ message: 'Veuillez saisir une adresse e-mail.' }, { status: 400 });
+  }
+
+  if (!language || !consent) {
+    return NextResponse.json({ message: 'La langue et le consentement explicite sont requis.' }, { status: 400 });
   }
 
   if (source && source.length > 120) {
@@ -37,7 +45,7 @@ export async function POST(request: Request) {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ email, source }),
+      body: JSON.stringify({ email, language, source, consent }),
       cache: 'no-store'
     });
 

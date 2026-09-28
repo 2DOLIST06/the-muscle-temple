@@ -1,119 +1,85 @@
 'use client';
 
-import type { FormEvent } from 'react';
-import { useState } from 'react';
-import { subscribeToNewsletter } from '@/lib/newsletter';
+import Link from 'next/link';
+import { useId, useState, type FormEvent } from 'react';
 import type { Locale } from '@/lib/i18n/routing';
+import { getPreferencesToken, subscribeToNewsletter } from '@/lib/newsletter';
 
-interface NewsletterCtaProps {
-  source?: string;
+interface NewsletterSignupProps {
+  source?: 'footer' | 'article' | 'page' | string;
   locale?: Locale;
+  compact?: boolean;
 }
 
-export function NewsletterCta({ source = 'home', locale = 'fr' }: NewsletterCtaProps) {
+export function NewsletterSignup({ source = 'page', locale = 'fr', compact = false }: NewsletterSignupProps) {
+  const emailId = useId();
+  const consentId = useId();
   const [email, setEmail] = useState('');
+  const [consent, setConsent] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  const copy = locale === 'fr'
-    ? {
-        title: 'Newsletter Body Training Guide',
-        text: 'Recevez un résumé hebdomadaire des derniers contenus sur l’entraînement, la nutrition et la récupération.',
-        label: 'Adresse e-mail',
-        placeholder: 'Votre email',
-        button: 'S’inscrire',
-        submitting: 'Inscription…',
-        emptyEmail: 'Veuillez saisir une adresse e-mail.',
-        invalidEmail: 'Veuillez saisir une adresse e-mail valide.',
-        alreadySubscribed: 'Cette adresse est déjà inscrite à la newsletter.',
-        success: 'Inscription newsletter reçue.',
-        error: 'Erreur pendant l’inscription newsletter.'
-      }
-    : {
-        title: 'Body Training Guide Newsletter',
-        text: 'Get a weekly summary of the latest training, nutrition and recovery content.',
-        label: 'Email address',
-        placeholder: 'Your email',
-        button: 'Subscribe',
-        submitting: 'Subscribing…',
-        emptyEmail: 'Please enter an email address.',
-        invalidEmail: 'Please enter a valid email address.',
-        alreadySubscribed: 'This address is already subscribed to the newsletter.',
-        success: 'Newsletter subscription received.',
-        error: 'Error during newsletter signup.'
-      };
-
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    const normalizedEmail = email.trim();
-
-    if (!normalizedEmail) {
-      setSuccessMessage(null);
-      setErrorMessage(copy.emptyEmail);
-      return;
-    }
-
-    if (!event.currentTarget.checkValidity()) {
-      setSuccessMessage(null);
-      setErrorMessage(copy.invalidEmail);
-      return;
-    }
-
-    setIsSubmitting(true);
-    setSuccessMessage(null);
-    setErrorMessage(null);
-
-    try {
-      const payload = await subscribeToNewsletter(normalizedEmail, source);
-
-      if (payload.data?.alreadySubscribed) {
-        setSuccessMessage(copy.alreadySubscribed);
-      } else {
-        setSuccessMessage(payload.message || copy.success);
-      }
-
-      setEmail('');
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : copy.error);
-    } finally {
-      setIsSubmitting(false);
-    }
+  const [success, setSuccess] = useState<{ message: string; token?: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const copy = locale === 'fr' ? {
+    title: 'Recevez nos nouveaux contenus',
+    text: 'Recevez les nouveaux articles, guides et outils Body Training Guide selon vos centres d’intérêt.',
+    label: 'Adresse email', placeholder: 'Adresse email', button: 'S’inscrire', loading: 'Inscription…',
+    consent: 'J’accepte de recevoir la newsletter Body Training Guide par email.',
+    consentError: 'Veuillez donner votre consentement pour vous inscrire.',
+    success: 'Votre inscription a bien été prise en compte.', customize: 'Personnalisez ce que vous souhaitez recevoir.',
+    preferences: 'Modifier mes préférences', error: 'L’inscription est momentanément indisponible.'
+  } : {
+    title: 'Get our latest content',
+    text: 'Get new Body Training Guide articles, guides and tools based on your interests.',
+    label: 'Email address', placeholder: 'Email address', button: 'Subscribe', loading: 'Subscribing…',
+    consent: 'I agree to receive the Body Training Guide newsletter by email.',
+    consentError: 'Please provide your consent to subscribe.',
+    success: 'Your subscription has been confirmed.', customize: 'Choose what you would like to receive.',
+    preferences: 'Edit my preferences', error: 'Newsletter signup is temporarily unavailable.'
   };
 
-  return (
-    <section className="rounded-2xl bg-brand-700 px-6 py-10 text-white">
-      <h2 className="text-2xl font-bold">{copy.title}</h2>
-      <p className="mt-2 max-w-2xl text-sm text-blue-100">
-        {copy.text}
-      </p>
-      <form className="mt-6 flex flex-col gap-3 sm:flex-row" onSubmit={handleSubmit} noValidate>
-        <label className="sr-only" htmlFor="newsletter-email">
-          {copy.label}
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!consent) { setError(copy.consentError); return; }
+    if (!event.currentTarget.checkValidity()) { event.currentTarget.reportValidity(); return; }
+    setIsSubmitting(true); setError(null);
+    try {
+      const payload = await subscribeToNewsletter(email, locale, source, consent);
+      setSuccess({ message: payload.message || copy.success, token: getPreferencesToken(payload) });
+      setEmail(''); setConsent(false);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : copy.error);
+    } finally { setIsSubmitting(false); }
+  };
+
+  const content = success ? (
+    <div className="space-y-3" aria-live="polite">
+      <p className="font-semibold">{copy.success}</p>
+      <p className={compact ? 'text-sm text-slate-600' : 'text-sm text-blue-100'}>{copy.customize}</p>
+      {success.token ? (
+        <Link href={`${locale === 'fr' ? '/fr' : ''}/newsletter/preferences/${encodeURIComponent(success.token)}`} className="inline-flex rounded-lg bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
+          {copy.preferences}
+        </Link>
+      ) : null}
+    </div>
+  ) : (
+    <>
+      <form className="mt-5 space-y-3" onSubmit={submit} noValidate>
+        <div className={compact ? 'space-y-3' : 'flex flex-col gap-3 sm:flex-row'}>
+          <label className="sr-only" htmlFor={emailId}>{copy.label}</label>
+          <input id={emailId} type="email" required placeholder={copy.placeholder} value={email} onChange={(e) => setEmail(e.target.value)} disabled={isSubmitting} className="min-w-0 w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-500 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 disabled:opacity-60" />
+          <button disabled={isSubmitting} className="shrink-0 rounded-lg bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60">{isSubmitting ? copy.loading : copy.button}</button>
+        </div>
+        <label htmlFor={consentId} className="flex cursor-pointer items-start gap-3 text-sm leading-5">
+          <input id={consentId} type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-brand-700" />
+          <span>{copy.consent}</span>
         </label>
-        <input
-          id="newsletter-email"
-          type="email"
-          required
-          placeholder={copy.placeholder}
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          disabled={isSubmitting}
-          className="w-full rounded-lg border border-blue-300 bg-white/95 px-4 py-3 text-slate-900 disabled:cursor-not-allowed disabled:opacity-70"
-        />
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="rounded-lg bg-slate-900 px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
-        >
-          {isSubmitting ? copy.submitting : copy.button}
-        </button>
       </form>
-      <div className="mt-3 text-sm" aria-live="polite">
-        {successMessage ? <p className="text-blue-50">{successMessage}</p> : null}
-        {errorMessage ? <p className="font-medium text-red-100">{errorMessage}</p> : null}
-      </div>
-    </section>
+      {error ? <p className={`mt-3 text-sm font-medium ${compact ? 'text-red-700' : 'text-red-100'}`} role="alert">{error}</p> : null}
+    </>
   );
+
+  if (compact) return <div><h3 className="font-semibold text-slate-900">{copy.title}</h3><p className="mt-2 text-sm text-slate-600">{copy.text}</p>{content}</div>;
+  return <section className="rounded-2xl bg-brand-700 px-6 py-10 text-white"><h2 className="text-2xl font-bold">{copy.title}</h2><p className="mt-2 max-w-2xl text-sm text-blue-100">{copy.text}</p>{content}</section>;
 }
+
+export const NewsletterCta = NewsletterSignup;
