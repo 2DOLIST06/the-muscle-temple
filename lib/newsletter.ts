@@ -63,9 +63,21 @@ export async function subscribeToNewsletter(
   const response = await fetch(buildPublicApiUrl('/api/newsletter/subscribe'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: email.trim(), language, source, consent })
+    body: JSON.stringify({
+      email: email.trim(),
+      language,
+      source,
+      consent,
+      consentTextVersion: 'v1'
+    })
   });
-  return parseResponse(response, language === 'fr' ? 'Erreur pendant l’inscription newsletter.' : 'Newsletter signup failed.');
+
+  return parseResponse(
+    response,
+    language === 'fr'
+      ? 'Erreur pendant l’inscription newsletter.'
+      : 'Newsletter signup failed.'
+  );
 }
 
 export async function getNewsletterPreferences(token: string, locale: Locale): Promise<NewsletterPreferences> {
