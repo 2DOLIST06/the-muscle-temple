@@ -42,7 +42,7 @@ export const getMacroCalculatorPath = (locale: Locale) => (locale === 'fr' ? '/f
 export const getFoodNutritionCalculatorPath = (locale: Locale) =>
   locale === 'fr' ? '/fr/calculateur-calories-macros-aliments' : '/food-calorie-macro-calculator';
 export const getNewsletterPreferencesPath = (locale: Locale, token: string) =>
-  `${locale === 'fr' ? '/fr' : ''}/newsletter/preferences/${encodeURIComponent(token)}`;
+  `${locale === 'fr' ? '/fr' : ''}/newsletter/preferences?token=${encodeURIComponent(token)}`;
 export const getGymPath = (locale: Locale, slug: string) => `${locale === 'fr' ? '/fr/salles' : '/gyms'}/${cleanSlug(slug)}`;
 
 export type LegalPageKey = 'terms' | 'medical' | 'affiliate' | 'privacy' | 'cookies' | 'legal';
