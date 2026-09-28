@@ -61,8 +61,20 @@ export function NewsletterPreferencesForm({ token, locale, requestUnsubscribe = 
   };
   useEffect(() => { void load(); }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const toggle = <T extends NewsletterTopic | NewsletterGoal>(key: 'topics' | 'goals', value: T) => {
-    setPreferences((current) => current ? { ...current, [key]: current[key].includes(value as never) ? current[key].filter((item) => item !== value) : [...current[key], value] } as NewsletterPreferences : current);
+  const toggleTopic = (topic: NewsletterTopic) => {
+    setPreferences((current) => current ? {
+      ...current,
+      topics: { ...current.topics, [topic]: !current.topics[topic] }
+    } : current);
+  };
+
+  const toggleGoal = (goal: NewsletterGoal) => {
+    setPreferences((current) => current ? {
+      ...current,
+      goals: current.goals.includes(goal)
+        ? current.goals.filter((item) => item !== goal)
+        : [...current.goals, goal]
+    } : current);
   };
 
   const save = async () => {
@@ -84,8 +96,8 @@ export function NewsletterPreferencesForm({ token, locale, requestUnsubscribe = 
 
   const optionClass = 'flex min-h-14 cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-800 transition hover:border-brand-300 has-[:checked]:border-brand-600 has-[:checked]:bg-blue-50';
   return <div className="space-y-8">
-    <fieldset><legend className="text-xl font-bold text-slate-900">{copy.topics}</legend><div className="mt-4 grid gap-3 sm:grid-cols-2">{NEWSLETTER_TOPICS.map((item, i) => <label className={optionClass} key={item}><input type="checkbox" checked={preferences.topics.includes(item)} onChange={() => toggle('topics', item)} className="h-5 w-5 shrink-0 accent-brand-700" /><span>{copy.topicsLabels[i]}</span></label>)}</div></fieldset>
-    <fieldset><legend className="text-xl font-bold text-slate-900">{copy.goals}</legend><div className="mt-4 grid gap-3 sm:grid-cols-2">{NEWSLETTER_GOALS.map((item, i) => <label className={optionClass} key={item}><input type="checkbox" checked={preferences.goals.includes(item)} onChange={() => toggle('goals', item)} className="h-5 w-5 shrink-0 accent-brand-700" /><span>{copy.goalsLabels[i]}</span></label>)}</div></fieldset>
+    <fieldset><legend className="text-xl font-bold text-slate-900">{copy.topics}</legend><div className="mt-4 grid gap-3 sm:grid-cols-2">{NEWSLETTER_TOPICS.map((item, i) => <label className={optionClass} key={item}><input type="checkbox" checked={preferences.topics[item]} onChange={() => toggleTopic(item)} className="h-5 w-5 shrink-0 accent-brand-700" /><span>{copy.topicsLabels[i]}</span></label>)}</div></fieldset>
+    <fieldset><legend className="text-xl font-bold text-slate-900">{copy.goals}</legend><div className="mt-4 grid gap-3 sm:grid-cols-2">{NEWSLETTER_GOALS.map((item, i) => <label className={optionClass} key={item}><input type="checkbox" checked={preferences.goals.includes(item)} onChange={() => toggleGoal(item)} className="h-5 w-5 shrink-0 accent-brand-700" /><span>{copy.goalsLabels[i]}</span></label>)}</div></fieldset>
     <fieldset><legend className="text-xl font-bold text-slate-900">{copy.frequency}</legend><div className="mt-4 space-y-3">{NEWSLETTER_FREQUENCIES.map((item, i) => <label className={optionClass} key={item}><input type="radio" name="frequency" checked={preferences.frequency === item} onChange={() => setPreferences({ ...preferences, frequency: item as NewsletterFrequency })} className="h-5 w-5 shrink-0 accent-brand-700" /><span>{copy.frequencyLabels[i]}</span></label>)}</div></fieldset>
     <div><button type="button" onClick={() => void save()} disabled={status?.type === 'saving'} className="w-full rounded-lg bg-brand-700 px-6 py-3 font-semibold text-white transition hover:bg-brand-800 disabled:opacity-60 sm:w-auto">{status?.type === 'saving' ? copy.saving : copy.save}</button>{status ? <p className={`mt-3 text-sm font-medium ${status.type === 'error' ? 'text-red-700' : status.type === 'success' ? 'text-emerald-700' : 'text-slate-600'}`} role="status">{status.message}</p> : null}</div>
     <section className="border-t border-slate-200 pt-7"><h2 className="font-semibold text-slate-900">{copy.unsubscribe}</h2><p className="mt-1 text-sm text-slate-600">{copy.unsubscribeText}</p>{confirmingUnsubscribe ? <div className="mt-4 flex flex-col gap-3 sm:flex-row"><button onClick={() => void unsubscribe()} disabled={status?.type === 'saving'} className="rounded-lg border border-red-600 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60">{copy.confirm}</button><button onClick={() => setConfirmingUnsubscribe(false)} disabled={status?.type === 'saving'} className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-700 disabled:opacity-60">{copy.cancel}</button></div> : <button onClick={() => setConfirmingUnsubscribe(true)} className="mt-3 text-sm font-semibold text-red-700 underline underline-offset-4">{copy.unsubscribe}</button>}</section>

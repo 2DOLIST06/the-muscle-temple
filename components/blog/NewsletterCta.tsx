@@ -1,9 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import { useId, useState, type FormEvent } from 'react';
-import { getNewsletterPreferencesPath, type Locale } from '@/lib/i18n/routing';
-import { getPreferencesToken, subscribeToNewsletter } from '@/lib/newsletter';
+import type { Locale } from '@/lib/i18n/routing';
+import { subscribeToNewsletter } from '@/lib/newsletter';
 
 interface NewsletterSignupProps {
   source?: 'footer' | 'article' | 'page' | string;
@@ -17,7 +16,7 @@ export function NewsletterSignup({ source = 'page', locale = 'fr', compact = fal
   const [email, setEmail] = useState('');
   const [consent, setConsent] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [success, setSuccess] = useState<{ message: string; token?: string } | null>(null);
+  const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const copy = locale === 'fr' ? {
     title: 'Recevez nos nouveaux contenus',
@@ -25,16 +24,16 @@ export function NewsletterSignup({ source = 'page', locale = 'fr', compact = fal
     label: 'Adresse email', placeholder: 'Adresse email', button: 'S’inscrire', loading: 'Inscription…',
     consent: 'J’accepte de recevoir la newsletter Body Training Guide par email.',
     consentError: 'Veuillez donner votre consentement pour vous inscrire.',
-    success: 'Votre inscription a bien été prise en compte.', customize: 'Personnalisez ce que vous souhaitez recevoir.',
-    preferences: 'Modifier mes préférences', error: 'L’inscription est momentanément indisponible.'
+    success: 'Votre inscription a bien été prise en compte. Un email vous a été envoyé pour gérer vos préférences.',
+    error: 'L’inscription est momentanément indisponible.'
   } : {
     title: 'Get our latest content',
     text: 'Get new Body Training Guide articles, guides and tools based on your interests.',
     label: 'Email address', placeholder: 'Email address', button: 'Subscribe', loading: 'Subscribing…',
     consent: 'I agree to receive the Body Training Guide newsletter by email.',
     consentError: 'Please provide your consent to subscribe.',
-    success: 'Your subscription has been confirmed.', customize: 'Choose what you would like to receive.',
-    preferences: 'Edit my preferences', error: 'Newsletter signup is temporarily unavailable.'
+    success: 'Your subscription has been received. An email has been sent so you can manage your preferences.',
+    error: 'Newsletter signup is temporarily unavailable.'
   };
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -43,8 +42,8 @@ export function NewsletterSignup({ source = 'page', locale = 'fr', compact = fal
     if (!event.currentTarget.checkValidity()) { event.currentTarget.reportValidity(); return; }
     setIsSubmitting(true); setError(null);
     try {
-      const payload = await subscribeToNewsletter(email, locale, source, consent);
-      setSuccess({ message: payload.message || copy.success, token: getPreferencesToken(payload) });
+      await subscribeToNewsletter(email, locale, source, consent);
+      setSuccess(true);
       setEmail(''); setConsent(false);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : copy.error);
@@ -52,14 +51,8 @@ export function NewsletterSignup({ source = 'page', locale = 'fr', compact = fal
   };
 
   const content = success ? (
-    <div className="space-y-3" aria-live="polite">
+    <div aria-live="polite">
       <p className="font-semibold">{copy.success}</p>
-      <p className={compact ? 'text-sm text-slate-600' : 'text-sm text-blue-100'}>{copy.customize}</p>
-      {success.token ? (
-        <Link href={getNewsletterPreferencesPath(locale, success.token)} className="inline-flex rounded-lg bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
-          {copy.preferences}
-        </Link>
-      ) : null}
     </div>
   ) : (
     <>

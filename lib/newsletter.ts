@@ -18,27 +18,19 @@ export const NEWSLETTER_FREQUENCIES = ['immediate', 'weekly', 'monthly'] as cons
 export type NewsletterTopic = (typeof NEWSLETTER_TOPICS)[number];
 export type NewsletterGoal = (typeof NEWSLETTER_GOALS)[number];
 export type NewsletterFrequency = (typeof NEWSLETTER_FREQUENCIES)[number];
+export type NewsletterTopics = Record<NewsletterTopic, boolean>;
 
 export interface NewsletterPreferences {
-  topics: NewsletterTopic[];
+  language: Locale;
+  topics: NewsletterTopics;
   goals: NewsletterGoal[];
   frequency: NewsletterFrequency;
-  unsubscribed?: boolean;
+  unsubscribed: boolean;
 }
 
 export interface NewsletterSubscriptionResponse {
   message: string;
-  preferences_token?: string;
-  data?: {
-    id?: string;
-    email?: string;
-    alreadySubscribed?: boolean;
-    preferences_token?: string;
-  };
 }
-
-export const getPreferencesToken = (payload: NewsletterSubscriptionResponse) =>
-  payload.preferences_token ?? payload.data?.preferences_token;
 
 async function parseResponse<T>(response: Response, fallback: string): Promise<T> {
   const payload = await response.json().catch(() => null);
@@ -86,11 +78,11 @@ export async function getNewsletterPreferences(token: string, locale: Locale): P
     ? 'Impossible de charger ces préférences. Le lien est peut-être invalide, expiré ou désabonné.'
     : 'Could not load these preferences. The link may be invalid, expired, or unsubscribed.';
   const response = await requestNewsletter(buildPublicApiUrl(`/api/newsletter/preferences?token=${encodeURIComponent(token)}`), fallback, { cache: 'no-store' });
-  const payload = await parseResponse<NewsletterPreferences | { data: NewsletterPreferences }>(
+  const payload = await parseResponse<{ data: NewsletterPreferences }>(
     response,
     fallback
   );
-  return 'data' in payload ? payload.data : payload;
+  return payload.data;
 }
 
 export async function updateNewsletterPreferences(token: string, preferences: NewsletterPreferences, locale: Locale) {
@@ -98,7 +90,12 @@ export async function updateNewsletterPreferences(token: string, preferences: Ne
   const response = await requestNewsletter(buildPublicApiUrl('/api/newsletter/preferences'), fallback, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token, ...preferences })
+    body: JSON.stringify({
+      token,
+      topics: preferences.topics,
+      goals: preferences.goals,
+      frequency: preferences.frequency
+    })
   });
   return parseResponse<{ message?: string }>(response, fallback);
 }
