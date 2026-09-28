@@ -1,4 +1,5 @@
 import type { Locale } from '@/lib/i18n/routing';
+import { buildPublicApiUrl } from '@/lib/api/env';
 
 export const NEWSLETTER_TOPICS = [
   'new_articles',
@@ -59,7 +60,7 @@ export async function subscribeToNewsletter(
   source: string,
   consent: boolean
 ): Promise<NewsletterSubscriptionResponse> {
-  const response = await fetch('/api/newsletter/subscribe', {
+  const response = await fetch(buildPublicApiUrl('/api/newsletter'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email: email.trim(), language, source, consent })
