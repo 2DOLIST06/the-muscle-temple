@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useId, useState, type FormEvent } from 'react';
-import type { Locale } from '@/lib/i18n/routing';
+import { getNewsletterPreferencesPath, type Locale } from '@/lib/i18n/routing';
 import { getPreferencesToken, subscribeToNewsletter } from '@/lib/newsletter';
 
 interface NewsletterSignupProps {
@@ -56,7 +56,7 @@ export function NewsletterSignup({ source = 'page', locale = 'fr', compact = fal
       <p className="font-semibold">{copy.success}</p>
       <p className={compact ? 'text-sm text-slate-600' : 'text-sm text-blue-100'}>{copy.customize}</p>
       {success.token ? (
-        <Link href={`${locale === 'fr' ? '/fr' : ''}/newsletter/preferences/${encodeURIComponent(success.token)}`} className="inline-flex rounded-lg bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
+        <Link href={getNewsletterPreferencesPath(locale, success.token)} className="inline-flex rounded-lg bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
           {copy.preferences}
         </Link>
       ) : null}

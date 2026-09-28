@@ -7,7 +7,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: 'Token manquant.' }, { status: 400 });
   }
   try {
-    const response = await fetch(buildPublicApiUrl('/api/newsletter/unsubscribe/'), {
+    const response = await fetch(buildPublicApiUrl('/api/newsletter/unsubscribe'), {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: body.token.trim() }), cache: 'no-store'
     });
     const payload = await response.json().catch(() => ({ message: 'Réponse newsletter invalide.' }));

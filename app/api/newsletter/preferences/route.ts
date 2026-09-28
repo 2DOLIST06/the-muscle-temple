@@ -12,7 +12,7 @@ const proxy = async (request: Request, method: 'GET' | 'PUT') => {
   }
   if (!token) return NextResponse.json({ message: 'Token manquant.' }, { status: 400 });
 
-  const target = new URL(buildPublicApiUrl('/api/newsletter/preferences/'));
+  const target = new URL(buildPublicApiUrl('/api/newsletter/preferences'));
   target.searchParams.set('token', token);
   try {
     const response = await fetch(target, {

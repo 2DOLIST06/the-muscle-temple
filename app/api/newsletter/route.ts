@@ -7,6 +7,7 @@ interface NewsletterRequestBody {
   language?: unknown;
   source?: unknown;
   consent?: unknown;
+  consentTextVersion?: unknown;
 }
 
 const getPayloadMessage = (payload: unknown) => {
@@ -40,12 +41,12 @@ export async function POST(request: Request) {
   }
 
   try {
-    const response = await fetch(buildPublicApiUrl('/api/newsletter'), {
+    const response = await fetch(buildPublicApiUrl('/api/newsletter/subscribe'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ email, language, source, consent }),
+      body: JSON.stringify({ email, language, source, consent, consentTextVersion: body.consentTextVersion }),
       cache: 'no-store'
     });
 

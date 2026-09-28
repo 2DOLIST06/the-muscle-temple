@@ -40,18 +40,18 @@ export interface NewsletterSubscriptionResponse {
 export const getPreferencesToken = (payload: NewsletterSubscriptionResponse) =>
   payload.preferences_token ?? payload.data?.preferences_token;
 
-const getErrorMessage = (payload: unknown) => {
-  if (!payload || typeof payload !== 'object') return undefined;
-  const candidate = payload as { message?: unknown; error?: unknown; detail?: unknown };
-  return [candidate.message, candidate.error, candidate.detail].find(
-    (value): value is string => typeof value === 'string' && Boolean(value.trim())
-  );
-};
-
 async function parseResponse<T>(response: Response, fallback: string): Promise<T> {
   const payload = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(getErrorMessage(payload) ?? fallback);
+  if (!response.ok) throw new Error(fallback);
   return payload as T;
+}
+
+async function requestNewsletter(url: string, fallback: string, init?: RequestInit) {
+  try {
+    return await fetch(url, init);
+  } catch {
+    throw new Error(fallback);
+  }
 }
 
 export async function subscribeToNewsletter(
@@ -60,7 +60,10 @@ export async function subscribeToNewsletter(
   source: string,
   consent: boolean
 ): Promise<NewsletterSubscriptionResponse> {
-  const response = await fetch(buildPublicApiUrl('/api/newsletter/subscribe'), {
+  const fallback = language === 'fr'
+    ? 'L’inscription est momentanément indisponible. Vérifiez votre connexion et réessayez.'
+    : 'Newsletter signup is temporarily unavailable. Check your connection and try again.';
+  const response = await requestNewsletter(buildPublicApiUrl('/api/newsletter/subscribe'), fallback, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -74,35 +77,38 @@ export async function subscribeToNewsletter(
 
   return parseResponse(
     response,
-    language === 'fr'
-      ? 'Erreur pendant l’inscription newsletter.'
-      : 'Newsletter signup failed.'
+    fallback
   );
 }
 
 export async function getNewsletterPreferences(token: string, locale: Locale): Promise<NewsletterPreferences> {
-  const response = await fetch(`/api/newsletter/preferences?token=${encodeURIComponent(token)}`, { cache: 'no-store' });
+  const fallback = locale === 'fr'
+    ? 'Impossible de charger ces préférences. Le lien est peut-être invalide, expiré ou désabonné.'
+    : 'Could not load these preferences. The link may be invalid, expired, or unsubscribed.';
+  const response = await requestNewsletter(buildPublicApiUrl(`/api/newsletter/preferences?token=${encodeURIComponent(token)}`), fallback, { cache: 'no-store' });
   const payload = await parseResponse<NewsletterPreferences | { data: NewsletterPreferences }>(
     response,
-    locale === 'fr' ? 'Préférences indisponibles.' : 'Preferences are unavailable.'
+    fallback
   );
   return 'data' in payload ? payload.data : payload;
 }
 
 export async function updateNewsletterPreferences(token: string, preferences: NewsletterPreferences, locale: Locale) {
-  const response = await fetch('/api/newsletter/preferences', {
+  const fallback = locale === 'fr' ? 'Enregistrement impossible. Vérifiez votre connexion ou votre lien.' : 'Could not save preferences. Check your connection or link.';
+  const response = await requestNewsletter(buildPublicApiUrl('/api/newsletter/preferences'), fallback, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ token, ...preferences })
   });
-  return parseResponse<{ message?: string }>(response, locale === 'fr' ? 'Enregistrement impossible.' : 'Could not save preferences.');
+  return parseResponse<{ message?: string }>(response, fallback);
 }
 
 export async function unsubscribeFromNewsletter(token: string, locale: Locale) {
-  const response = await fetch('/api/newsletter/unsubscribe', {
+  const fallback = locale === 'fr' ? 'Désinscription impossible. Vérifiez votre connexion ou votre lien.' : 'Could not unsubscribe. Check your connection or link.';
+  const response = await requestNewsletter(buildPublicApiUrl('/api/newsletter/unsubscribe'), fallback, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ token })
   });
-  return parseResponse<{ message?: string }>(response, locale === 'fr' ? 'Désinscription impossible.' : 'Could not unsubscribe.');
+  return parseResponse<{ message?: string }>(response, fallback);
 }
