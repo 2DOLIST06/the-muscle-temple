@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Container } from '@/components/ui/Container';
+import { NewsletterSignup } from '@/components/blog/NewsletterCta';
 import { siteConfig } from '@/lib/constants';
 import { getLegalPath, getNavigation, getPathLocale, type LegalPageKey } from '@/lib/i18n/routing';
 
@@ -61,10 +62,7 @@ export function Footer() {
               ))}
             </ul>
           </div>
-          <div>
-            <h3 className="font-semibold text-slate-900">Newsletter</h3>
-            <p className="mt-2 text-sm text-slate-600">{locale === 'fr' ? 'Recevez nos contenus sur l’entraînement, la nutrition et la récupération.' : 'Get practical training, nutrition and recovery content.'}</p>
-          </div>
+          <NewsletterSignup locale={locale} source="footer" compact />
         </div>
       </Container>
     </footer>
