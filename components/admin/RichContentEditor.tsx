@@ -504,7 +504,7 @@ export function RichContentEditor({
             )}
           </div>
           {affiliateError ? <p className="mt-3 text-sm text-red-300">{affiliateError}</p> : null}
-          <button type="button" className="mt-4 rounded bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-500" onClick={insertAffiliateBlock}>Insérer à la position du curseur</button>
+          <button type="button" className="mt-4 rounded bg-brand-700 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-500" onClick={insertAffiliateBlock}>Insérer à la position du curseur</button>
         </div>
       ) : null}
 
