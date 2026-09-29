@@ -29,16 +29,14 @@ type AffiliateBlockDraft = {
   kind: 'link' | 'banner';
   url: string;
   label: string;
-  imageUrl: string;
-  imageAlt: string;
+  bannerHtml: string;
 };
 
 const emptyAffiliateBlock: AffiliateBlockDraft = {
   kind: 'link',
   url: '',
   label: '',
-  imageUrl: '',
-  imageAlt: ''
+  bannerHtml: ''
 };
 
 const emptyFormats: ActiveFormats = {
@@ -351,29 +349,37 @@ export function RichContentEditor({
       }
     };
 
-    const destination = affiliateBlock.url.trim();
-    const imageUrl = affiliateBlock.imageUrl.trim();
-    if (!isHttpUrl(destination)) {
-      setAffiliateError('Saisissez une URL d’affiliation complète commençant par http:// ou https://.');
-      return;
-    }
-    if (affiliateBlock.kind === 'banner' && !isHttpUrl(imageUrl)) {
-      setAffiliateError('Saisissez une URL d’image complète commençant par http:// ou https://.');
-      return;
-    }
+    let blockHtml: string;
+    if (affiliateBlock.kind === 'banner') {
+      const parsed = new DOMParser().parseFromString(affiliateBlock.bannerHtml, 'text/html');
+      const suppliedLink = parsed.body.querySelector('a[href]');
+      const suppliedImage = suppliedLink?.querySelector('img[src]');
+      const destination = suppliedLink?.getAttribute('href')?.trim() ?? '';
+      const imageUrl = suppliedImage?.getAttribute('src')?.trim() ?? '';
+      if (!suppliedLink || !suppliedImage || !isHttpUrl(destination) || !isHttpUrl(imageUrl)) {
+        setAffiliateError('Collez le code HTML complet de la bannière : il doit contenir un lien et une image avec des URL http(s).');
+        return;
+      }
 
-    const safeDestination = escapeHtmlAttribute(destination);
-    const safeLabel = escapeHtmlAttribute(affiliateBlock.label.trim() || 'Voir l’offre');
-    const content = affiliateBlock.kind === 'banner'
-      ? `<img src="${escapeHtmlAttribute(imageUrl)}" alt="${escapeHtmlAttribute(affiliateBlock.imageAlt.trim())}" />`
-      : `<span>${safeLabel}</span>`;
+      const optionalImageAttributes = ['alt', 'title', 'width', 'height']
+        .flatMap((name) => {
+          const attribute = suppliedImage.getAttribute(name);
+          return attribute === null ? [] : [` ${name}="${escapeHtmlAttribute(attribute)}"`];
+        })
+        .join('');
+      blockHtml = `<aside class="affiliate-block affiliate-block--banner" data-affiliate-block="banner" contenteditable="false"><a href="${escapeHtmlAttribute(destination)}" target="_blank" rel="sponsored nofollow noopener noreferrer"><img src="${escapeHtmlAttribute(imageUrl)}"${optionalImageAttributes} /></a></aside><p><br></p>`;
+    } else {
+      const destination = affiliateBlock.url.trim();
+      if (!isHttpUrl(destination)) {
+        setAffiliateError('Saisissez une URL d’affiliation complète commençant par http:// ou https://.');
+        return;
+      }
+      const safeLabel = escapeHtmlAttribute(affiliateBlock.label.trim() || 'Voir l’offre');
+      blockHtml = `<aside class="affiliate-block affiliate-block--link" data-affiliate-block="link" contenteditable="false"><span class="affiliate-block__disclosure">Lien affilié</span><a href="${escapeHtmlAttribute(destination)}" target="_blank" rel="sponsored nofollow noopener noreferrer" aria-label="${safeLabel}"><span>${safeLabel}</span></a></aside><p><br></p>`;
+    }
 
     restoreSelection();
-    document.execCommand(
-      'insertHTML',
-      false,
-      `<aside class="affiliate-block affiliate-block--${affiliateBlock.kind}" data-affiliate-block="${affiliateBlock.kind}" contenteditable="false"><span class="affiliate-block__disclosure">Lien affilié</span><a href="${safeDestination}" target="_blank" rel="sponsored nofollow noopener noreferrer" referrerpolicy="no-referrer-when-downgrade" aria-label="${safeLabel}">${content}</a></aside><p><br></p>`
-    );
+    document.execCommand('insertHTML', false, blockHtml);
     emit();
     saveSelection();
     setAffiliateBlock(null);
@@ -485,22 +491,20 @@ export function RichContentEditor({
                 <option value="banner">Bannière image</option>
               </select>
             </label>
-            <label className="text-sm">Lien d’affiliation
-              <input type="url" className="mt-1 w-full rounded border border-slate-600 bg-white p-2 text-slate-950" placeholder="https://..." value={affiliateBlock.url} onChange={(event) => setAffiliateBlock({ ...affiliateBlock, url: event.target.value })} />
-            </label>
             {affiliateBlock.kind === 'link' ? (
-              <label className="text-sm md:col-span-2">Texte du bouton
-                <input className="mt-1 w-full rounded border border-slate-600 bg-white p-2 text-slate-950" placeholder="Voir l’offre" value={affiliateBlock.label} onChange={(event) => setAffiliateBlock({ ...affiliateBlock, label: event.target.value })} />
-              </label>
-            ) : (
               <>
-                <label className="text-sm">URL de la bannière
-                  <input type="url" className="mt-1 w-full rounded border border-slate-600 bg-white p-2 text-slate-950" placeholder="https://.../banniere.jpg" value={affiliateBlock.imageUrl} onChange={(event) => setAffiliateBlock({ ...affiliateBlock, imageUrl: event.target.value })} />
+                <label className="text-sm">Lien d’affiliation
+                  <input type="url" className="mt-1 w-full rounded border border-slate-600 bg-white p-2 text-slate-950" placeholder="https://..." value={affiliateBlock.url} onChange={(event) => setAffiliateBlock({ ...affiliateBlock, url: event.target.value })} />
                 </label>
-                <label className="text-sm">Texte alternatif de la bannière
-                  <input className="mt-1 w-full rounded border border-slate-600 bg-white p-2 text-slate-950" value={affiliateBlock.imageAlt} onChange={(event) => setAffiliateBlock({ ...affiliateBlock, imageAlt: event.target.value })} />
+                <label className="text-sm md:col-span-2">Texte du bouton
+                  <input className="mt-1 w-full rounded border border-slate-600 bg-white p-2 text-slate-950" placeholder="Voir l’offre" value={affiliateBlock.label} onChange={(event) => setAffiliateBlock({ ...affiliateBlock, label: event.target.value })} />
                 </label>
               </>
+            ) : (
+              <label className="text-sm md:col-span-2">Code HTML complet de la bannière
+                <textarea className="mt-1 min-h-36 w-full rounded border border-slate-600 bg-white p-2 font-mono text-xs text-slate-950" placeholder={'<a rel="sponsored" href="https://…"><img src="https://…"></a>'} value={affiliateBlock.bannerHtml} onChange={(event) => setAffiliateBlock({ ...affiliateBlock, bannerHtml: event.target.value })} />
+                <span className="mt-1 block text-xs text-slate-400">Collez directement le code fourni par Awin ou votre régie. Les paramètres de suivi des URL sont conservés.</span>
+              </label>
             )}
           </div>
           {affiliateError ? <p className="mt-3 text-sm text-red-300">{affiliateError}</p> : null}

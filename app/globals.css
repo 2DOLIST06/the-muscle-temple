@@ -153,6 +153,14 @@ a {
 .rich-content .affiliate-block--banner img {
   @apply m-0 max-h-none max-w-full rounded-lg shadow-none;
 }
+
+/* A banner supplied by an affiliate network must remain visually unwrapped. */
+.affiliate-block.affiliate-block--banner {
+  border: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
 @keyframes internal-link-highlight-pulse {
   0%, 100% { outline-color: rgb(251 191 36); }
   50% { outline-color: rgb(245 158 11); }
