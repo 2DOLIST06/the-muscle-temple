@@ -25,6 +25,22 @@ type ActiveFormats = {
   link: boolean;
 };
 
+type AffiliateBlockDraft = {
+  kind: 'link' | 'banner';
+  url: string;
+  label: string;
+  imageUrl: string;
+  imageAlt: string;
+};
+
+const emptyAffiliateBlock: AffiliateBlockDraft = {
+  kind: 'link',
+  url: '',
+  label: '',
+  imageUrl: '',
+  imageAlt: ''
+};
+
 const emptyFormats: ActiveFormats = {
   block: 'p',
   bold: false,
@@ -96,6 +112,8 @@ export function RichContentEditor({
   const [internalLinkPickerOpen, setInternalLinkPickerOpen] = useState(false);
   const [internalLinkError, setInternalLinkError] = useState('');
   const [linkGroups, setLinkGroups] = useState<LinkGroup[]>([]);
+  const [affiliateBlock, setAffiliateBlock] = useState<AffiliateBlockDraft | null>(null);
+  const [affiliateError, setAffiliateError] = useState('');
 
   const refreshLinkGroups = useCallback(() => {
     if (refreshFrameRef.current !== null) window.cancelAnimationFrame(refreshFrameRef.current);
@@ -312,6 +330,56 @@ export function RichContentEditor({
     exec('insertHTML', '<p>[[macro-calculator]]</p><p><br></p>');
   };
 
+  const openAffiliateBlock = () => {
+    saveSelection();
+    setAffiliateError('');
+    setAffiliateBlock({
+      ...emptyAffiliateBlock,
+      label: document.getSelection()?.toString().trim() || ''
+    });
+  };
+
+  const insertAffiliateBlock = () => {
+    if (!affiliateBlock) return;
+
+    const isHttpUrl = (candidate: string) => {
+      try {
+        const parsed = new URL(candidate);
+        return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+      } catch {
+        return false;
+      }
+    };
+
+    const destination = affiliateBlock.url.trim();
+    const imageUrl = affiliateBlock.imageUrl.trim();
+    if (!isHttpUrl(destination)) {
+      setAffiliateError('Saisissez une URL d’affiliation complète commençant par http:// ou https://.');
+      return;
+    }
+    if (affiliateBlock.kind === 'banner' && !isHttpUrl(imageUrl)) {
+      setAffiliateError('Saisissez une URL d’image complète commençant par http:// ou https://.');
+      return;
+    }
+
+    const safeDestination = escapeHtmlAttribute(destination);
+    const safeLabel = escapeHtmlAttribute(affiliateBlock.label.trim() || 'Voir l’offre');
+    const content = affiliateBlock.kind === 'banner'
+      ? `<img src="${escapeHtmlAttribute(imageUrl)}" alt="${escapeHtmlAttribute(affiliateBlock.imageAlt.trim())}" />`
+      : `<span>${safeLabel}</span>`;
+
+    restoreSelection();
+    document.execCommand(
+      'insertHTML',
+      false,
+      `<aside class="affiliate-block affiliate-block--${affiliateBlock.kind}" data-affiliate-block="${affiliateBlock.kind}" contenteditable="false"><span class="affiliate-block__disclosure">Lien affilié</span><a href="${safeDestination}" target="_blank" rel="sponsored nofollow noopener noreferrer" referrerpolicy="no-referrer-when-downgrade" aria-label="${safeLabel}">${content}</a></aside><p><br></p>`
+    );
+    emit();
+    saveSelection();
+    setAffiliateBlock(null);
+    setAffiliateError('');
+  };
+
   const uploadImageFile = async (file?: File) => {
     setUploadError('');
 
@@ -377,6 +445,7 @@ export function RichContentEditor({
 
         <button type="button" className={buttonClass()} onClick={() => exec('insertHorizontalRule')}>Ligne</button>
         <button type="button" className={buttonClass()} onClick={insertMacroCalculator}>Calculatrice macros</button>
+        <button type="button" className={buttonClass()} onClick={openAffiliateBlock}>Bloc affiliation</button>
         <button type="button" className={buttonClass(activeFormats.link)} onClick={addOrEditLink}>{activeFormats.link ? 'Modifier lien' : 'Lien'}</button>
         <button type="button" disabled={!hasTextSelection} className={`${buttonClass()} disabled:cursor-not-allowed disabled:opacity-40`} onMouseDown={(event) => event.preventDefault()} onClick={openInternalLinkPicker}>Lien interne</button>
         <button type="button" className={buttonClass()} onClick={() => exec('unlink')}>Retirer lien</button>
@@ -400,11 +469,50 @@ export function RichContentEditor({
         <button type="button" className={buttonClass()} onClick={() => exec('redo')}>Redo</button>
       </div>
 
+      {affiliateBlock ? (
+        <div className="border-b border-slate-700 bg-slate-900 p-4 text-slate-100">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h3 className="font-semibold">Insérer un bloc d’affiliation</h3>
+              <p className="mt-1 text-xs text-slate-400">Compatible avec GetYourGuide, Awin et toute URL d’affiliation. Le lien sera automatiquement marqué comme sponsorisé.</p>
+            </div>
+            <button type="button" className={buttonClass()} onClick={() => { setAffiliateBlock(null); setAffiliateError(''); }}>Fermer</button>
+          </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            <label className="text-sm">Format
+              <select className="mt-1 w-full rounded border border-slate-600 bg-white p-2 text-slate-950" value={affiliateBlock.kind} onChange={(event) => setAffiliateBlock({ ...affiliateBlock, kind: event.target.value as AffiliateBlockDraft['kind'] })}>
+                <option value="link">Lien / bouton</option>
+                <option value="banner">Bannière image</option>
+              </select>
+            </label>
+            <label className="text-sm">Lien d’affiliation
+              <input type="url" className="mt-1 w-full rounded border border-slate-600 bg-white p-2 text-slate-950" placeholder="https://..." value={affiliateBlock.url} onChange={(event) => setAffiliateBlock({ ...affiliateBlock, url: event.target.value })} />
+            </label>
+            {affiliateBlock.kind === 'link' ? (
+              <label className="text-sm md:col-span-2">Texte du bouton
+                <input className="mt-1 w-full rounded border border-slate-600 bg-white p-2 text-slate-950" placeholder="Voir l’offre" value={affiliateBlock.label} onChange={(event) => setAffiliateBlock({ ...affiliateBlock, label: event.target.value })} />
+              </label>
+            ) : (
+              <>
+                <label className="text-sm">URL de la bannière
+                  <input type="url" className="mt-1 w-full rounded border border-slate-600 bg-white p-2 text-slate-950" placeholder="https://.../banniere.jpg" value={affiliateBlock.imageUrl} onChange={(event) => setAffiliateBlock({ ...affiliateBlock, imageUrl: event.target.value })} />
+                </label>
+                <label className="text-sm">Texte alternatif de la bannière
+                  <input className="mt-1 w-full rounded border border-slate-600 bg-white p-2 text-slate-950" value={affiliateBlock.imageAlt} onChange={(event) => setAffiliateBlock({ ...affiliateBlock, imageAlt: event.target.value })} />
+                </label>
+              </>
+            )}
+          </div>
+          {affiliateError ? <p className="mt-3 text-sm text-red-300">{affiliateError}</p> : null}
+          <button type="button" className="mt-4 rounded bg-brand-700 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-500" onClick={insertAffiliateBlock}>Insérer à la position du curseur</button>
+        </div>
+      ) : null}
+
       <div
         ref={ref}
         contentEditable
         suppressContentEditableWarning
-        className="min-h-[520px] w-full bg-white p-8 text-base leading-8 text-slate-900 outline-none [&_a]:rounded [&_a]:bg-brand-100 [&_a]:px-0.5 [&_a]:font-medium [&_a]:text-brand-800 [&_a]:underline [&_a]:decoration-brand-500 [&_a]:decoration-2 [&_a]:underline-offset-4 [&_blockquote]:border-l-4 [&_blockquote]:border-slate-300 [&_blockquote]:pl-4 [&_figcaption]:mt-2 [&_figcaption]:text-center [&_figcaption]:text-sm [&_figcaption]:text-slate-500 [&_figure]:my-6 [&_h1]:text-3xl [&_h1]:font-bold [&_h2]:text-2xl [&_h2]:font-bold [&_h3]:text-xl [&_h3]:font-semibold [&_h4]:text-lg [&_h4]:font-semibold [&_img]:max-w-full [&_img]:rounded-xl [&_ol]:list-decimal [&_ol]:pl-6 [&_pre]:rounded-lg [&_pre]:bg-slate-100 [&_pre]:p-4 [&_ul]:list-disc [&_ul]:pl-6"
+        className="min-h-[520px] w-full bg-white p-8 text-base leading-8 text-slate-900 outline-none [&_.affiliate-block]:my-6 [&_.affiliate-block]:rounded-xl [&_.affiliate-block]:border [&_.affiliate-block]:border-amber-300 [&_.affiliate-block]:bg-amber-50 [&_.affiliate-block]:p-4 [&_.affiliate-block__disclosure]:mb-2 [&_.affiliate-block__disclosure]:block [&_.affiliate-block__disclosure]:text-xs [&_.affiliate-block__disclosure]:uppercase [&_a]:rounded [&_a]:bg-brand-100 [&_a]:px-0.5 [&_a]:font-medium [&_a]:text-brand-800 [&_a]:underline [&_a]:decoration-brand-500 [&_a]:decoration-2 [&_a]:underline-offset-4 [&_blockquote]:border-l-4 [&_blockquote]:border-slate-300 [&_blockquote]:pl-4 [&_figcaption]:mt-2 [&_figcaption]:text-center [&_figcaption]:text-sm [&_figcaption]:text-slate-500 [&_figure]:my-6 [&_h1]:text-3xl [&_h1]:font-bold [&_h2]:text-2xl [&_h2]:font-bold [&_h3]:text-xl [&_h3]:font-semibold [&_h4]:text-lg [&_h4]:font-semibold [&_img]:max-w-full [&_img]:rounded-xl [&_ol]:list-decimal [&_ol]:pl-6 [&_pre]:rounded-lg [&_pre]:bg-slate-100 [&_pre]:p-4 [&_ul]:list-disc [&_ul]:pl-6"
         onBlur={saveSelection}
         onInput={() => {
           emit();
