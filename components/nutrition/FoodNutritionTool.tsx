@@ -2,7 +2,12 @@
 
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { useUserSession } from '@/components/user/UserSessionProvider';
+import { nutritionApi, UserApiError } from '@/lib/user/api-client';
+import type { MealType } from '@/lib/user/types';
 import { getFoodByBarcode, searchFoods } from '@/lib/nutrition/api';
 import { classifyUniversalSearch } from '@/lib/nutrition/barcode';
 import { scaleNutrients } from '@/lib/nutrition/calculations';
@@ -39,8 +44,12 @@ function NutrientGrid({ values, locale }: { values: NutrientValues; locale: 'en'
   ))}</dl>;
 }
 
-export function FoodNutritionTool({ locale = 'fr' }: { locale?: 'en' | 'fr' }) {
+const today = () => { const date = new Date(); return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`; };
+
+export function FoodNutritionTool({ locale = 'fr', diaryContext, initialMode = 'search', onAdded, onCreateCustom }: { locale?: 'en' | 'fr'; diaryContext?: { date: string; mealType: MealType }; initialMode?: 'search' | 'scan'; onAdded?: () => void | Promise<void>; onCreateCustom?: () => void }) {
   const english = locale === 'en';
+  const pathname = usePathname();
+  const { status } = useUserSession();
   const [query, setQuery] = useState('');
   const [scannerOpen, setScannerOpen] = useState(false);
   const [loading, setLoading] = useState<'product' | 'search' | null>(null);
@@ -49,10 +58,14 @@ export function FoodNutritionTool({ locale = 'fr' }: { locale?: 'en' | 'fr' }) {
   const [results, setResults] = useState<FoodSummary[] | null>(null);
   const [product, setProduct] = useState<FoodProduct | null>(null);
   const [quantity, setQuantity] = useState(100);
+  const [diaryDate, setDiaryDate] = useState(diaryContext?.date ?? today());
+  const [mealType, setMealType] = useState<MealType>(diaryContext?.mealType ?? 'LUNCH');
+  const [addStatus, setAddStatus] = useState<'idle' | 'adding' | 'added' | 'incomplete' | 'error'>('idle');
   const controllerRef = useRef<AbortController | null>(null);
   const scanButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => () => controllerRef.current?.abort(), []);
+  useEffect(() => { if (initialMode === 'scan') setScannerOpen(true); }, [initialMode]);
 
   const loadProduct = async (rawBarcode: string) => {
     const cleanBarcode = rawBarcode.replace(/\s+/g, '');
@@ -107,6 +120,18 @@ export function FoodNutritionTool({ locale = 'fr' }: { locale?: 'en' | 'fr' }) {
   const unit = product?.nutritionBasis?.unit ?? 'g';
   const basisAmount = product?.nutritionBasis?.amount ?? 100;
   const portion = useMemo(() => product?.nutrition ? scaleNutrients(product.nutrition, Number.isFinite(quantity) ? quantity : 0, basisAmount) : null, [basisAmount, product, quantity]);
+  const mealLabels: Record<MealType, string> = english ? { BREAKFAST: 'Breakfast', LUNCH: 'Lunch', SNACK: 'Snack', DINNER: 'Dinner' } : { BREAKFAST: 'Petit-déjeuner', LUNCH: 'Déjeuner', SNACK: 'Collation', DINNER: 'Dîner' };
+  const addToDiary = async () => {
+    if (!product || !Number.isFinite(quantity) || quantity <= 0) return;
+    setAddStatus('adding');
+    try {
+      await nutritionApi.createEntry({ date: diaryDate, mealType, sourceType: 'OPEN_FOOD_FACTS', barcode: product.barcode, consumedAmount: quantity });
+      setAddStatus('added'); await onAdded?.();
+    } catch (cause) {
+      if (cause instanceof UserApiError && cause.status === 422 && (cause.code === 'INCOMPLETE_NUTRITION_DATA' || cause.message.includes('INCOMPLETE_NUTRITION_DATA'))) setAddStatus('incomplete');
+      else setAddStatus('error');
+    }
+  };
 
   return (
     <section className="my-8 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 lg:p-8" aria-labelledby="food-tool-title">
@@ -155,8 +180,15 @@ export function FoodNutritionTool({ locale = 'fr' }: { locale?: 'en' | 'fr' }) {
         </div>
         {!product.nutritionAvailable || !product.nutrition || !product.nutritionBasis ? <p className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 font-medium text-amber-950">{english ? 'Nutrition information is unavailable for this product.' : 'Les informations nutritionnelles de ce produit ne sont pas disponibles.'}</p> : <>
           <div className="mt-7"><h4 className="mb-4 text-lg font-bold text-slate-950">{english ? 'Per' : 'Pour'} {basisAmount} {unit}</h4><NutrientGrid values={product.nutrition} locale={locale} /></div>
-          <div className="mt-7 max-w-sm"><label htmlFor="food-quantity" className="text-sm font-semibold text-slate-800">{english ? 'Amount consumed' : 'Quantité consommée'}</label><div className="relative"><input id="food-quantity" type="number" min="0" max="10000" step="1" value={quantity} onChange={(event) => setQuantity(event.target.valueAsNumber)} className={`${fieldClass} pr-14 text-lg font-semibold`} /><span className="pointer-events-none absolute bottom-2.5 right-4 font-semibold text-slate-500">{unit}</span></div></div>
+          <div className="mt-7 max-w-sm"><label htmlFor="food-quantity" className="text-sm font-semibold text-slate-800">{english ? 'Amount consumed' : 'Quantité consommée'}</label><div className="relative"><input id="food-quantity" type="number" min="0.01" max="10000" step="any" value={quantity} onChange={(event) => setQuantity(event.target.valueAsNumber)} className={`${fieldClass} pr-14 text-lg font-semibold`} /><span className="pointer-events-none absolute bottom-2.5 right-4 font-semibold text-slate-500">{unit}</span></div></div>
           {portion ? <div className="mt-7 rounded-2xl border border-brand-200 bg-brand-50 p-4 sm:p-5"><h4 className="mb-4 text-lg font-bold text-slate-950">{english ? 'For your serving of' : 'Pour votre portion de'} {Number.isFinite(quantity) ? quantity : 0} {unit}</h4><NutrientGrid values={portion} locale={locale} /></div> : null}
+          <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-4">
+            {status === 'authenticated' ? <>
+              <div className="grid gap-4 sm:grid-cols-2"><label className="text-sm font-semibold">{english ? 'Date' : 'Date'}<input type="date" value={diaryDate} onChange={(event) => setDiaryDate(event.target.value)} className={fieldClass} /></label><label className="text-sm font-semibold">{english ? 'Meal' : 'Repas'}<select value={mealType} onChange={(event) => setMealType(event.target.value as MealType)} className={fieldClass}>{Object.entries(mealLabels).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></label></div>
+              <button type="button" disabled={addStatus === 'adding' || !Number.isFinite(quantity) || quantity <= 0} onClick={() => void addToDiary()} className={`${primaryButton} mt-4`}>{addStatus === 'adding' ? '…' : english ? 'Add to my diary' : 'Ajouter à mon journal'}</button>
+            </> : <div><p className="font-semibold text-slate-800">{english ? 'Log in to add this food to your tracker.' : 'Connectez-vous pour ajouter cet aliment à votre suivi.'}</p><Link href={`${english ? '/login' : '/fr/connexion'}?returnTo=${encodeURIComponent(pathname)}`} className={`${primaryButton} mt-3`}>{english ? 'Log in' : 'Se connecter'}</Link></div>}
+            <div aria-live="polite" className="mt-3 text-sm">{addStatus === 'added' ? <p className="font-semibold text-emerald-700">{english ? 'Food added to your diary.' : 'Aliment ajouté à votre journal.'}</p> : addStatus === 'incomplete' ? <div role="alert" className="rounded-xl bg-amber-50 p-3 text-amber-950"><p>{english ? "This product has incomplete nutrition information and can't be added automatically to your diary." : 'Les informations nutritionnelles de ce produit sont incomplètes et il ne peut pas être ajouté automatiquement au journal.'}</p>{onCreateCustom ? <button type="button" onClick={onCreateCustom} className="mt-2 font-bold underline">{english ? 'Create custom food' : 'Créer un aliment manuellement'}</button> : <Link className="mt-2 inline-block font-bold underline" href={english ? '/nutrition-tracker' : '/fr/suivi-nutrition'}>{english ? 'Create custom food' : 'Créer un aliment manuellement'}</Link>}</div> : addStatus === 'error' ? <p role="alert" className="font-semibold text-red-700">{english ? 'Unable to add this food. Please try again.' : 'Impossible d’ajouter cet aliment. Réessayez.'}</p> : null}</div>
+          </div>
         </>}
       </section> : null}
 

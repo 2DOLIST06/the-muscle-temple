@@ -1,6 +1,10 @@
 'use client';
 
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useId, useMemo, useState } from 'react';
+import { useUserSession } from '@/components/user/UserSessionProvider';
+import { nutritionApi } from '@/lib/user/api-client';
 
 type Locale = 'fr' | 'en' | 'en-CA';
 type Sex = 'male' | 'female';
@@ -30,6 +34,7 @@ type Translation = {
   readingTitle: string;
   readingBullets: string[];
   sources: string;
+  save: string; saved: string; tracker: string; login: string; saveError: string;
 };
 
 const translations: Record<Locale, Translation> = {
@@ -65,7 +70,8 @@ const translations: Record<Locale, Translation> = {
       'Les glucides sont ajustés selon les calories restantes, l’objectif et l’activité.',
       'Les résultats doivent être ajustés après 2 à 4 semaines selon l’évolution.'
     ],
-    sources: 'Sources : formule Mifflin-St Jeor pour estimer le métabolisme de base ; repères protéines en musculation basés sur les positions de l’International Society of Sports Nutrition ; calories par macro : protéines 4 kcal/g, glucides 4 kcal/g, lipides 9 kcal/g.'
+    sources: 'Sources : formule Mifflin-St Jeor pour estimer le métabolisme de base ; repères protéines en musculation basés sur les positions de l’International Society of Sports Nutrition ; calories par macro : protéines 4 kcal/g, glucides 4 kcal/g, lipides 9 kcal/g.',
+    save: 'Utiliser ces objectifs dans mon suivi', saved: 'Objectifs enregistrés dans votre suivi nutritionnel.', tracker: 'Voir mon suivi', login: 'Connectez-vous pour enregistrer ces objectifs', saveError: 'Impossible d’enregistrer ces objectifs. Réessayez.'
   },
   en: {
     title: 'Muscle-Building Macro Calculator',
@@ -99,7 +105,8 @@ const translations: Record<Locale, Translation> = {
       'Carbs are adjusted based on remaining calories, the goal, and activity.',
       'Results should be adjusted after 2 to 4 weeks based on progress.'
     ],
-    sources: 'Sources: Mifflin-St Jeor formula for estimating basal metabolic rate; muscle-building protein targets based on International Society of Sports Nutrition positions; calories per macro: protein 4 kcal/g, carbs 4 kcal/g, fats 9 kcal/g.'
+    sources: 'Sources: Mifflin-St Jeor formula for estimating basal metabolic rate; muscle-building protein targets based on International Society of Sports Nutrition positions; calories per macro: protein 4 kcal/g, carbs 4 kcal/g, fats 9 kcal/g.',
+    save: 'Use these targets in my tracker', saved: 'Targets saved to your nutrition tracker.', tracker: 'View my tracker', login: 'Log in to save these targets', saveError: 'Unable to save these targets. Please try again.'
   },
   'en-CA': {} as Translation
 };
@@ -143,6 +150,9 @@ export function MacroCalculator({ locale = 'fr', hideTitle = false, headingLevel
   const [weight, setWeight] = useState(75);
   const [activity, setActivity] = useState<ActivityKey>('moderate');
   const [goal, setGoal] = useState<GoalKey>('leanGain');
+  const { status } = useUserSession();
+  const pathname = usePathname();
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
   const result = useMemo(() => {
     // Mifflin-St Jeor formula estimates basal metabolic rate from weight, height, age, and sex.
@@ -161,6 +171,15 @@ export function MacroCalculator({ locale = 'fr', hideTitle = false, headingLevel
   const TitleTag = headingLevel;
   const fieldClass = 'mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200';
   const labelClass = 'text-sm font-semibold text-slate-800';
+  const english = safeLocale !== 'fr';
+  const localToday = () => { const date = new Date(); return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`; };
+  const saveTargets = async () => {
+    setSaveStatus('saving');
+    try {
+      await nutritionApi.updateGoals({ effectiveFrom: localToday(), caloriesKcal: Math.round(result.targetCalories), proteinG: Math.round(result.proteinGrams), carbohydratesG: Math.round(result.carbGrams), fatG: Math.round(result.fatGrams) });
+      setSaveStatus('saved');
+    } catch { setSaveStatus('error'); }
+  };
 
   return (
     <section className="my-8 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 lg:p-8" aria-label={hideTitle ? t.title : undefined} aria-labelledby={hideTitle ? undefined : titleId}>
@@ -186,6 +205,10 @@ export function MacroCalculator({ locale = 'fr', hideTitle = false, headingLevel
         </dl>
         <div className="mt-5 rounded-xl bg-white p-4"><h4 className="font-semibold text-slate-900">{t.calorieSplit}</h4><ul className="mt-3 grid gap-2 text-sm text-slate-700 sm:grid-cols-3"><li>{t.macroCalories.protein} : {format.format(Math.round(result.proteinCalories))} {t.units.kcal}</li><li>{t.macroCalories.carbs} : {format.format(Math.round(result.carbCalories))} {t.units.kcal}</li><li>{t.macroCalories.fats} : {format.format(Math.round(result.fatCalories))} {t.units.kcal}</li></ul></div>
         <p className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">{t.guidance}</p>
+        {result.remainingCalories >= 0 ? <div className="mt-5 border-t border-slate-200 pt-5">
+          {status === 'authenticated' ? <button type="button" disabled={saveStatus === 'saving'} onClick={() => void saveTargets()} className="inline-flex min-h-11 items-center rounded-xl bg-brand-700 px-5 py-3 font-bold text-white disabled:opacity-60">{saveStatus === 'saving' ? '…' : t.save}</button> : <Link href={`${english ? '/login' : '/fr/connexion'}?returnTo=${encodeURIComponent(pathname)}`} className="inline-flex min-h-11 items-center rounded-xl bg-brand-700 px-5 py-3 font-bold text-white">{t.login}</Link>}
+          <div className="mt-3 text-sm" aria-live="polite">{saveStatus === 'saved' ? <p className="font-semibold text-emerald-700">{t.saved} <Link className="ml-2 underline" href={english ? '/nutrition-tracker' : '/fr/suivi-nutrition'}>{t.tracker}</Link></p> : saveStatus === 'error' ? <p role="alert" className="font-semibold text-red-700">{t.saveError}</p> : null}</div>
+        </div> : null}
       </div>
 
       <div className="mt-6 rounded-2xl border border-slate-200 p-5"><h3 className="text-lg font-bold text-slate-950">{t.readingTitle}</h3><ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-slate-700">{t.readingBullets.map((item) => <li key={item}>{item}</li>)}</ul></div>

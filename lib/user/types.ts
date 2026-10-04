@@ -40,6 +40,31 @@ export interface PersonalFood extends NutritionValues {
   id: string;
   name: string;
   brand?: string | null;
-  servingSize?: number | null;
-  servingUnit?: string | null;
+  servingSize: number;
+  servingUnit: 'g' | 'ml';
 }
+
+export interface NutritionGoalInput {
+  effectiveFrom: string;
+  caloriesKcal: number;
+  proteinG: number;
+  carbohydratesG: number;
+  fatG: number;
+}
+
+export interface PersonalFoodInput {
+  name: string;
+  brand?: string;
+  servingSize: number;
+  servingUnit: 'g' | 'ml';
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
+export type DiaryEntryInput = {
+  date: string;
+  mealType: MealType;
+  consumedAmount: number;
+} & ({ sourceType: 'OPEN_FOOD_FACTS'; barcode: string } | { sourceType: 'PERSONAL'; personalFoodId: string });
