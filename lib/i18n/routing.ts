@@ -41,6 +41,9 @@ export const getAuthorPath = (locale: Locale, slug: string) => `${getAuthorsPath
 export const getMacroCalculatorPath = (locale: Locale) => (locale === 'fr' ? '/fr/calculateur-macros' : '/macro-calculator');
 export const getFoodNutritionCalculatorPath = (locale: Locale) =>
   locale === 'fr' ? '/fr/calculateur-calories-macros-aliments' : '/food-calorie-macro-calculator';
+export const getLoginPath = (locale: Locale) => locale === 'fr' ? '/fr/connexion' : '/login';
+export const getRegisterPath = (locale: Locale) => locale === 'fr' ? '/fr/inscription' : '/register';
+export const getNutritionTrackerPath = (locale: Locale) => locale === 'fr' ? '/fr/suivi-nutrition' : '/nutrition-tracker';
 export const getNewsletterPreferencesPath = (locale: Locale, token: string) =>
   `${locale === 'fr' ? '/fr' : ''}/newsletter/preferences?token=${encodeURIComponent(token)}`;
 export const getGymPath = (locale: Locale, slug: string) => `${locale === 'fr' ? '/fr/salles' : '/gyms'}/${cleanSlug(slug)}`;

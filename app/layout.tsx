@@ -5,6 +5,7 @@ import { AppLayoutBoundary } from './AppLayoutBoundary';
 import { siteConfig } from '@/lib/constants';
 import { buildMetadata } from '@/lib/seo/metadata';
 import type { Locale } from '@/lib/i18n/routing';
+import { UserSessionProvider } from '@/components/user/UserSessionProvider';
 
 export const metadata: Metadata = buildMetadata({
   title: `${siteConfig.name} | Strength training guides`,
@@ -26,7 +27,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html lang={locale}>
       <body>
-        <AppLayoutBoundary>{children}</AppLayoutBoundary>
+        <UserSessionProvider><AppLayoutBoundary>{children}</AppLayoutBoundary></UserSessionProvider>
       </body>
     </html>
   );
