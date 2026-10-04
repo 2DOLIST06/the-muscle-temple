@@ -7,12 +7,14 @@ import { FormEvent, useEffect, useLayoutEffect, useRef, useState, type CSSProper
 import { getArticlesPath, getNavigation, getPathLocale } from '@/lib/i18n/routing';
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
 import { Container } from '@/components/ui/Container';
+import { useUserSession } from '@/components/user/UserSessionProvider';
 
 export function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const locale = getPathLocale(pathname ?? '/');
   const navigation = getNavigation(locale);
+  const { user, status, logout } = useUserSession();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [desktopHeaderState, setDesktopHeaderState] = useState<'full' | 'navigation' | 'hidden'>('full');
@@ -117,6 +119,16 @@ export function Header() {
     </form>
   );
 
+  const accountLinks = (mobile = false) => {
+    const tracker = locale === 'fr' ? '/fr/suivi-nutrition' : '/nutrition-tracker';
+    const login = locale === 'fr' ? '/fr/connexion' : '/login';
+    const register = locale === 'fr' ? '/fr/inscription' : '/register';
+    const linkClass = mobile ? 'rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50' : 'text-sm font-bold text-slate-700 hover:text-brand-700';
+    if (status === 'authenticated' && user) return <><span className={mobile ? 'px-4 pt-2 text-xs font-bold uppercase tracking-wide text-slate-400' : 'max-w-24 truncate text-xs font-bold text-slate-500'} title={user.email}>{user.displayName}</span><Link href={tracker} className={linkClass}>{locale === 'fr' ? 'Mon suivi' : 'My tracker'}</Link><button className={linkClass} onClick={() => { void logout(); router.push(locale === 'fr' ? '/fr' : '/'); }}>{locale === 'fr' ? 'Déconnexion' : 'Log out'}</button></>;
+    if (status === 'loading') return null;
+    return <><Link href={login} className={linkClass}>{locale === 'fr' ? 'Connexion' : 'Log in'}</Link><Link href={register} className={mobile ? 'rounded-xl bg-brand-700 px-4 py-3 text-center text-sm font-bold text-white' : 'rounded-full bg-brand-700 px-4 py-2.5 text-sm font-bold text-white'}>{locale === 'fr' ? 'Créer un compte' : 'Create account'}</Link></>;
+  };
+
   return (
     <header
       data-site-header
@@ -143,9 +155,7 @@ export function Header() {
 
           <div className="hidden items-center justify-end gap-3 lg:flex">
             <LanguageSwitcher />
-            <Link href={getArticlesPath(locale)} className="rounded-full bg-brand-700 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-brand-500 hover:shadow-md">
-              {locale === 'fr' ? 'Nos articles' : 'Our articles'}
-            </Link>
+            {accountLinks()}
           </div>
 
           <button type="button" className="inline-flex h-11 w-11 items-center justify-center rounded-full border-2 border-slate-300 bg-slate-50 text-slate-800 transition hover:border-brand-700 hover:bg-white lg:hidden" aria-expanded={isMenuOpen} aria-controls="mobile-navigation" aria-label={isMenuOpen ? (locale === 'fr' ? 'Fermer le menu' : 'Close menu') : (locale === 'fr' ? 'Ouvrir le menu' : 'Open menu')} onClick={() => setIsMenuOpen((open) => !open)}>
@@ -175,6 +185,7 @@ export function Header() {
                 <Link key={item.href} href={item.href} aria-current={isActive(item.href) ? 'page' : undefined} className={`rounded-xl px-4 py-3 text-sm font-semibold transition ${isActive(item.href) ? 'bg-brand-50 text-brand-700' : 'text-slate-700 hover:bg-slate-50'}`}>{item.label}</Link>
               ))}
               <Link href={getArticlesPath(locale)} className="mt-2 rounded-xl bg-brand-700 px-4 py-3 text-center text-sm font-bold text-white">{locale === 'fr' ? 'Voir tous les articles' : 'View all articles'}</Link>
+              <div className="mt-2 grid gap-1 border-t border-slate-200 pt-2">{accountLinks(true)}</div>
             </nav>
             <div className="mt-3 flex justify-end"><LanguageSwitcher /></div>
           </div>
