@@ -12,7 +12,7 @@ interface CmsCategory { id: string; slug: string; title?: string | null; name?: 
 interface CmsAuthor { id: string; slug: string; name?: string | null; bio?: string | null; avatar?: CmsMedia | null }
 interface CmsPost {
   id: string; slug: string; title?: string | null; excerpt?: string | null; content?: string | null; publishedAt?: string | null;
-  updatedAt?: string | null; status?: string | null; image?: CmsMedia | null; category?: CmsCategory | string | null; author?: CmsAuthor | string | null;
+  createdAt?: string | null; updatedAt?: string | null; status?: string | null; image?: CmsMedia | null; category?: CmsCategory | string | null; author?: CmsAuthor | string | null;
 }
 
 export interface PostsQuery { page?: number; limit?: number; category?: string; search?: string }
@@ -70,6 +70,7 @@ const mapPost = (p: CmsPost): Post => {
     excerpt: p.excerpt?.trim() || '',
     description: p.excerpt?.trim() || '',
     coverImage: toCmsAssetUrl(p.image?.url) || DEFAULT_IMAGE,
+    createdAt: p.createdAt || undefined,
     publishedAt: p.publishedAt || p.updatedAt || new Date().toISOString(),
     updatedAt: p.updatedAt || undefined,
     readingMinutes: 5,
@@ -107,7 +108,7 @@ export async function getCategories(): Promise<Category[]> {
 export async function getRelatedPosts(postId: string, categorySlug?: string): Promise<RelatedPostSummary[]> {
   const where = encodeURIComponent(JSON.stringify({ and: [{ status: { equals: 'published' } }, { id: { not_equals: postId } }, ...(categorySlug ? [{ 'category.slug': { equals: categorySlug } }] : [])] }));
   const data = await cmsFetch<CmsListResponse<CmsPost>>(`/api/posts?where=${where}&limit=3&sort=-publishedAt`);
-  return (data?.docs ?? []).map((p) => ({ slug: p.slug, title: p.title?.trim() || 'Sans titre', excerpt: p.excerpt?.trim() || '', coverImage: toCmsAssetUrl(p.image?.url) || DEFAULT_IMAGE, publishedAt: p.publishedAt || p.updatedAt || new Date().toISOString() }));
+  return (data?.docs ?? []).map((p) => ({ slug: p.slug, title: p.title?.trim() || 'Sans titre', excerpt: p.excerpt?.trim() || '', coverImage: toCmsAssetUrl(p.image?.url) || DEFAULT_IMAGE, createdAt: p.createdAt || undefined, publishedAt: p.publishedAt || p.updatedAt || new Date().toISOString() }));
 }
 
 export async function getPostAuthorBySlug(slug: string): Promise<Author | undefined> {

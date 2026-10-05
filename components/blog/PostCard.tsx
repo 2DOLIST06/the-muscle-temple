@@ -37,7 +37,7 @@ export function PostCard({ post, category, author, href }: PostCardProps) {
         </h3>
         <p className="mt-2 text-sm text-slate-600">{excerpt}</p>
         <div className="mt-4 text-xs text-slate-500">
-          <span>{author?.name ?? byline}</span> · <span>{formatDate(post.publishedAt, post.locale)}</span> ·{' '}
+          <span>{author?.name ?? byline}</span> · <span>{formatDate(post.createdAt ?? post.publishedAt, post.locale)}</span> ·{' '}
           <span>{post.readingMinutes} {readingLabel}</span>
         </div>
       </div>

@@ -110,7 +110,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
         <p className="mt-4 max-w-3xl text-lg text-slate-600">{post.description}</p>
 
         <div className="mt-5 text-sm text-slate-500">
-          <span>{author?.name}</span> · <span>{formatDate(post.publishedAt, 'fr')}</span> · <span>{post.readingMinutes} min de lecture</span>
+          <span>{author?.name}</span> · <span>{formatDate(post.createdAt ?? post.publishedAt, 'fr')}</span> · <span>{post.readingMinutes} min de lecture</span>
         </div>
 
         <div className="relative mt-8 h-72 overflow-hidden rounded-2xl md:h-[420px]">
