@@ -29,6 +29,7 @@ interface ApiPost {
   isActive?: boolean | null;
   isIndexable?: boolean | null;
   metaDescription?: string | null;
+  createdAt?: string | null;
   publishedAt?: string | null;
   updatedAt?: string | null;
   readingTimeMinutes?: number | null;
@@ -201,6 +202,7 @@ const toPost = (apiPost: ApiPost): Post => {
       apiPost.heroImageUrl?.trim() ||
       'https://images.unsplash.com/photo-1517836357463-d25dfeac3438'
   ),
+  createdAt: apiPost.createdAt || undefined,
   publishedAt: apiPost.publishedAt || apiPost.updatedAt || new Date().toISOString(),
   updatedAt: apiPost.updatedAt || undefined,
   readingMinutes: apiPost.readingTimeMinutes ?? 6,
@@ -431,6 +433,7 @@ export const contentRepository = {
         title: post.title,
         excerpt: post.excerpt,
         coverImage: post.coverImage,
+        createdAt: post.createdAt,
         publishedAt: post.publishedAt
       }));
   }

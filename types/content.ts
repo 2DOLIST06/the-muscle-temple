@@ -50,6 +50,7 @@ export interface Post {
   excerpt: string;
   description: string;
   coverImage: string;
+  createdAt?: string;
   publishedAt: string;
   updatedAt?: string;
   readingMinutes: number;
@@ -74,6 +75,7 @@ export interface RelatedPostSummary {
   title: string;
   excerpt: string;
   coverImage: string;
+  createdAt?: string;
   publishedAt: string;
 }
 
