@@ -740,7 +740,35 @@ export function PostEditorForm({ initialPost, enableCreationImport = false }: { 
           </p>
         </div>
         <input className={fieldClass} placeholder="translationGroupId" value={post.translationGroupId} onChange={(e) => setPost({ ...post, translationGroupId: e.target.value })} />
-        {publicUrl ? <p className="rounded border border-slate-700 p-2 text-xs text-slate-300">URL publique : {publicUrl}</p> : null}
+        <div className="space-y-2 rounded border border-slate-700 p-3">
+          {publicUrl ? (
+            <a
+              href={publicUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              hrefLang={post.locale}
+              className={`${secondaryButtonClass} inline-flex items-center gap-2`}
+            >
+              Voir l’article sur le site · {post.locale === 'fr' ? 'Français (FR)' : 'English (EN)'}
+              <span aria-hidden="true">↗</span>
+              <span className="sr-only"> (nouvel onglet)</span>
+            </a>
+          ) : (
+            <button type="button" className={secondaryButtonClass} disabled>
+              Voir l’article sur le site · {post.locale.toUpperCase()}
+            </button>
+          )}
+          {publicUrl ? (
+            <p className="break-all text-xs text-slate-300">URL publique : {publicUrl}</p>
+          ) : (
+            <p className="text-xs text-slate-400">Renseignez le slug pour obtenir l’URL de l’article.</p>
+          )}
+          {!post.id || post.status !== 'PUBLISHED' || !post.isActive ? (
+            <p className="text-xs text-slate-400">L’article doit être enregistré, publié et actif pour être visible sur le site.</p>
+          ) : hasUnsavedChanges ? (
+            <p className="text-xs text-slate-400">Enregistrez vos modifications pour les retrouver sur le site.</p>
+          ) : null}
+        </div>
         {post.translations.length > 0 ? (
           <div className="rounded border border-slate-700 p-3 text-xs text-slate-300">
             <p className="font-semibold text-slate-100">Traductions existantes</p>
