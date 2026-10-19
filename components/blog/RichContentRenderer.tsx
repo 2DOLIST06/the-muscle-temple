@@ -1,3 +1,5 @@
+import { AffiliateHtml } from './AffiliateHtml';
+import { inertBanners } from '@/lib/content/affiliate';
 import { Fragment } from 'react';
 import { MacroCalculator } from '@/components/calculators/MacroCalculator';
 import { addMissingHeadingIds } from '@/lib/content/headings';
@@ -6,11 +8,11 @@ const macroCalculatorShortcodePattern = /(?:<p>\s*)?\[\[macro-calculator\]\](?:\
 
 export function RichContentRenderer({ contentHtml, locale = 'fr' }: { contentHtml?: string | null; locale?: string }) {
   const cleaned = addMissingHeadingIds(
-    (contentHtml ?? '').replace(/<p>(\s|&nbsp;|<br\s*\/?>)*<\/p>/gi, '')
+    inertBanners(contentHtml ?? '').replace(/<p>(\s|&nbsp;|<br\s*\/?>)*<\/p>/gi, '')
   );
 
   if (!macroCalculatorShortcodePattern.test(cleaned)) {
-    return <div className="rich-content" dangerouslySetInnerHTML={{ __html: cleaned }} />;
+    return <AffiliateHtml key={cleaned} className="rich-content" html={cleaned} />;
   }
 
   const parts = cleaned.split(macroCalculatorShortcodePattern);
@@ -19,7 +21,7 @@ export function RichContentRenderer({ contentHtml, locale = 'fr' }: { contentHtm
     <div className="rich-content">
       {parts.map((part, index) => (
         <Fragment key={`${index}-${part.length}`}>
-          {part ? <div className="contents" dangerouslySetInnerHTML={{ __html: part }} /> : null}
+          {part ? <AffiliateHtml key={part} className="contents" html={part} /> : null}
           {index < parts.length - 1 ? <MacroCalculator locale={locale} /> : null}
         </Fragment>
       ))}

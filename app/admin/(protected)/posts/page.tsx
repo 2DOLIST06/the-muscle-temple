@@ -1,5 +1,6 @@
 'use client';
 
+import { BulkAffiliateBanner } from '@/components/admin/BulkAffiliateBanner';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -56,6 +57,15 @@ const formatBoolean = (value?: boolean | null) => (typeof value === 'boolean' ? 
 export default function AdminPostsListPage() {
   const router = useRouter();
   const [rows, setRows] = useState<PostRow[]>([]);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [query, setQuery] = useState('');
+  const [localeFilter, setLocaleFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [page, setPage] = useState(0);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const filtered = rows.filter(row => (!localeFilter || (row.locale ?? 'en') === localeFilter) && (!statusFilter || row.status === statusFilter) && `${row.title ?? ''} ${row.slug ?? ''} ${row.categorySlug ?? ''}`.toLowerCase().includes(query.toLowerCase()));
+  const pageRows = filtered.slice(page * 25, page * 25 + 25);
+  const toggle = (ids: string[], checked: boolean) => setSelected(current => { const next = new Set(current); ids.forEach(id => checked ? next.add(id) : next.delete(id)); return next; });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -96,6 +106,18 @@ export default function AdminPostsListPage() {
         </Link>
       </div>
 
+      <div className="mt-5 flex flex-wrap gap-3">
+        <input aria-label="Rechercher un article" placeholder="Titre, slug, catégorie…" className="rounded border p-2" value={query} onChange={e => { setQuery(e.target.value); setPage(0); setSelected(new Set()); }} />
+        <select aria-label="Filtrer par langue" className="rounded border p-2" value={localeFilter} onChange={e => { setLocaleFilter(e.target.value); setPage(0); setSelected(new Set()); }}><option value="">Toutes les langues</option><option value="fr">Français</option><option value="en">Anglais</option></select>
+        <select aria-label="Filtrer par statut" className="rounded border p-2" value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(0); setSelected(new Set()); }}><option value="">Tous les statuts</option><option value="DRAFT">Brouillon</option><option value="PUBLISHED">Publié</option><option value="ARCHIVED">Archivé</option></select>
+      </div>
+      {!loading && !error ? <div className="mt-4 flex flex-wrap items-center gap-3 rounded border p-3 text-sm">
+        <span>{selected.size} articles sélectionnés · {filtered.length} résultats</span>
+        <button type="button" className="underline" onClick={() => toggle(filtered.map(row => row.id), true)}>Sélectionner les {filtered.length} résultats sur toutes les pages</button>
+        <button type="button" className="underline" onClick={() => setSelected(new Set())}>Tout désélectionner</button>
+        <button type="button" disabled={!selected.size} className="rounded bg-slate-900 px-3 py-2 text-white disabled:opacity-40" onClick={() => setBulkOpen(true)}>Ajouter / remplacer une bannière</button>
+      </div> : null}
+      {bulkOpen ? <BulkAffiliateBanner ids={[...selected]} onClose={() => setBulkOpen(false)} /> : null}
       {loading ? <p className="mt-6 text-sm text-slate-500">Chargement des articles…</p> : null}
 
       {error ? (
@@ -115,7 +137,7 @@ export default function AdminPostsListPage() {
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-slate-200">
-                <th className="px-3 py-2">title</th>
+                <th className="px-3 py-2"><input aria-label="Sélectionner tous les articles de cette page" type="checkbox" checked={pageRows.length > 0 && pageRows.every(row => selected.has(row.id))} onChange={e => toggle(pageRows.map(row => row.id), e.target.checked)} /></th><th className="px-3 py-2">title</th>
                 <th className="px-3 py-2">langue</th>
                 <th className="px-3 py-2">slug</th>
                 <th className="px-3 py-2">translationGroupId</th>
@@ -130,9 +152,9 @@ export default function AdminPostsListPage() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((post) => (
+              {pageRows.map((post) => (
                 <tr key={post.id} className="border-b border-slate-100">
-                  <td className="px-3 py-2">{post.title || '—'}</td>
+                  <td className="px-3 py-2"><input type="checkbox" aria-label={`Sélectionner ${post.title || post.id}`} checked={selected.has(post.id)} onChange={e => toggle([post.id], e.target.checked)} /></td><td className="px-3 py-2">{post.title || '—'}</td>
                   <td className="px-3 py-2">{post.locale ?? 'en'}</td>
                   <td className="px-3 py-2">{post.slug || '—'}</td>
                   <td className="px-3 py-2">{post.translationGroupId || '—'}</td>
@@ -154,6 +176,7 @@ export default function AdminPostsListPage() {
           </table>
         </div>
       ) : null}
+      {filtered.length > 0 ? <nav aria-label="Pagination des articles" className="mt-4 flex items-center gap-4 text-sm"><button type="button" disabled={page === 0} onClick={() => setPage(page - 1)}>Précédent</button><span>Page {page + 1} / {Math.ceil(filtered.length / 25)}</span><button type="button" disabled={(page + 1) * 25 >= filtered.length} onClick={() => setPage(page + 1)}>Suivant</button></nav> : null}
     </section>
   );
 }

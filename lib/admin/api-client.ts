@@ -26,6 +26,7 @@ const mapStatusMessage = (status: number, fallback: string) => {
   if (status === 400) return 'Requête invalide. Vérifiez les champs saisis.';
   if (status === 401) return 'Session admin expirée. Reconnectez-vous.';
   if (status === 403) return 'Action refusée pour ce compte admin.';
+  if (status === 409) return fallback;
   if (status === 413) return 'Image trop lourde. Réduisez la taille du fichier puis réessayez.';
   if (status === 415) return 'Type de fichier refusé. Utilisez une image valide.';
   if (status === 503) return 'Backend admin indisponible. Vérifiez NEXT_PUBLIC_API_URL/API_BASE_URL.';

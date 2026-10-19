@@ -172,3 +172,17 @@ a {
   background-color: rgb(254 240 138) !important;
   animation: internal-link-highlight-pulse 700ms ease-in-out infinite;
 }
+
+.rich-content .affiliate-block--banner {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.rich-content .affiliate-block--banner iframe {
+  max-width: 100%;
+}
+/* Keep the editor's managed block identifiable, even with the public banner reset. */
+[contenteditable] .affiliate-block.affiliate-block--banner {
+  border: 1px solid #fbbf24 !important;
+  background: #fffbeb !important;
+  padding: 1rem !important;
+}
