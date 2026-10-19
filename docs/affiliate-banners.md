@@ -59,3 +59,5 @@ Aucune migration SQL, publication ni déploiement n’est nécessaire pour prép
 Ces vérifications utilisent des fournisseurs de test et une persistance de test ; elles ne modifient aucune donnée de production et ne valident pas la comptabilisation de commissions par une régie réelle.
 
 Le compte rendu détaillé des onze scénarios et les limites exactes des tests se trouvent dans `affiliate-audit.md`.
+
+La suite `npm run test:postgres` de l’API vérifie désormais la persistance et la concurrence sur PostgreSQL réel, via une connexion de test locale explicite. Les résultats locaux et CI sont consignés dans `affiliate-audit.md` ; ils complètent les premiers tests avec stockage simulé.

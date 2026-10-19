@@ -83,3 +83,19 @@ Les lignes de démonstration et le trigger sont supprimés après les tests. La 
 Reproduction sur une base locale déjà migrée : définir AFFILIATE_TEST_DATABASE_URL et ALLOW_AFFILIATE_POSTGRES_TESTS=1, puis exécuter `npm run test:postgres` dans l’API. La CI API ajoutée reproduit ces tests sur un service PostgreSQL 16 éphémère GitHub Actions. Le verrou npm de l’API est désormais suivi pour permettre npm ci reproductible.
 
 Les workflows ajoutés ne contiennent que installation, génération Prisma, migrations sur la base de service, tests et compilation. Ils n’invoquent aucun déploiement. Le fichier vercel.json désactive les déploiements Git uniquement pour la branche codex/affiliate-banners-verified, conformément à la consigne de ne pas déployer ; les autres branches gardent leur comportement habituel.
+
+## PR, revue et CI
+
+Les changements n’avaient pas encore de PR au début de ce contrôle. Deux PR ont été créées à la demande de l’utilisateur :
+
+- Front : https://github.com/2DOLIST06/the-muscle-temple/pull/155
+- API : https://github.com/2DOLIST06/the-muscle-temple-api/pull/57
+
+Contrôles GitHub Actions vérifiés :
+
+- Front, commit d’implémentation `9dd91b4cffe76c745604c77806c885619ab7bfd3` : workflow Affiliate validation terminé avec succès. npm ci, 8 tests d’origine, TypeScript et build passent sous Node 22. Exécution : https://github.com/2DOLIST06/the-muscle-temple/actions/runs/39299789084
+- API, commit `583db5b003591858ffb87da92a42cb54796fa01e` : workflow Affiliate validation terminé avec succès. npm ci, génération Prisma, 42 tests API, déploiement des dix migrations uniquement sur le service PostgreSQL de test, suite PostgreSQL réelle, TypeScript et build passent sous Node 22. Exécution : https://github.com/2DOLIST06/the-muscle-temple-api/actions/runs/39299879941
+
+Les timelines, soumissions de revue et fils de commentaires ont été consultés pour les deux PR : aucun commentaire de revue ni demande de modification n’était présent au relevé. Cela ne constitue pas une approbation humaine. Les anciennes PR front #150/#151 étaient déjà fusionnées et ne correspondent pas aux changements actuels ; elles n’ont pas été utilisées comme preuve de CI pour ces nouvelles PR.
+
+Les dernières vérifications locales ont confirmé zéro article de test, zéro auteur de test et zéro trigger d’erreur restant dans la base isolée après nettoyage. Le conteneur PostgreSQL éphémère est ensuite arrêté et supprimé. Aucun merge ni déploiement applicatif n’a été effectué. La mise à jour du présent compte rendu ajoute uniquement de la documentation et entraîne une nouvelle vérification CI du front ; le statut du dernier commit est également contrôlé dans la PR.
