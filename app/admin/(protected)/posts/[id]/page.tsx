@@ -11,6 +11,7 @@ type FaqItem = { question: string; answer: string };
 
 type ApiPost = Record<string, unknown> & {
   id?: string;
+  updatedAt?: string;
   slug?: string;
   title?: string;
   excerpt?: string | null;
@@ -52,6 +53,7 @@ type ApiPost = Record<string, unknown> & {
 
 type EditorInitialPost = {
   id?: string;
+  updatedAt?: string;
   slug?: string;
   title?: string;
   excerpt?: string;
@@ -160,6 +162,7 @@ const apiPostToEditorInitialPost = (post: ApiPost): EditorInitialPost => {
 
   return {
     id: post.id,
+    updatedAt: post.updatedAt,
     slug: post.slug ?? '',
     title: post.title ?? '',
     excerpt: post.excerpt ?? '',

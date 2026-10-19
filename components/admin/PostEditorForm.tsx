@@ -15,6 +15,7 @@ type TranslationSummary = { id?: string; locale: Locale; slug: string; path: str
 
 type PostModel = {
   id?: string;
+  updatedAt?: string;
   slug: string;
   title: string;
   excerpt: string;
@@ -146,6 +147,7 @@ const exportablePostFields = [
 
 type SavePostResponse = {
   data?: {
+    updatedAt?: string;
     id?: string;
     locale?: Locale | null;
     translationGroupId?: string | null;
@@ -531,6 +533,7 @@ export function PostEditorForm({ initialPost, enableCreationImport = false }: { 
       if (post.jsonLd.trim()) parsedJsonLd = JSON.parse(post.jsonLd);
       const publishing = post.status === 'PUBLISHED';
       const payload = {
+        expectedUpdatedAt: post.updatedAt,
         slug: normalizedSlug || undefined,
         title: normalizedTitle,
         excerpt: normalizedExcerpt,
@@ -561,7 +564,7 @@ export function PostEditorForm({ initialPost, enableCreationImport = false }: { 
       };
 
       if (post.id) {
-        await adminApi.put(`/admin-api/posts/${post.id}`, payload);
+        const response = await adminApi.put<SavePostResponse>(`/admin-api/posts/${post.id}`, payload);
         const savedPost: PostModel = {
           ...post,
           slug: normalizedSlug,
@@ -575,10 +578,14 @@ export function PostEditorForm({ initialPost, enableCreationImport = false }: { 
           isIndexable: publishing ? true : post.isIndexable,
           categoryId: normalizedCategoryId,
           categorySlug: normalizedCategorySlug,
-          id: post.id
+          id: response.data?.id ?? post.id,
+          locale: response.data?.locale === 'fr' ? 'fr' : response.data?.locale === 'en' ? 'en' : post.locale,
+          translationGroupId: response.data?.translationGroupId ?? post.translationGroupId,
+          updatedAt: response.data?.updatedAt
         };
         setPost(savedPost);
         setSavedSnapshot(serializePost(savedPost));
+        if (savedPost.id !== post.id) router.replace(`/admin/posts/${encodeURIComponent(savedPost.id!)}`);
         router.refresh();
       } else {
         const response = await adminApi.post<SavePostResponse>('/admin-api/posts', payload);
@@ -588,6 +595,7 @@ export function PostEditorForm({ initialPost, enableCreationImport = false }: { 
         const savedPost = {
           ...post,
           id: createdId,
+          updatedAt: response.data?.updatedAt,
           locale: createdLocale,
           translationGroupId: response.data?.translationGroupId || post.translationGroupId,
           translations: response.data?.translations ? normalizeInitialPost({ translations: response.data.translations }).translations : post.translations

@@ -1,6 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AffiliateBannerFields } from './AffiliateBannerFields';
+import { decodeAffiliate, inertBanners, makeBanner, type BannerMode } from '@/lib/content/affiliate';
 import { InternalLinkPicker } from '@/components/admin/InternalLinkPicker';
 import { InternalLinksSummary } from '@/components/admin/InternalLinksSummary';
 import { extractLinkOccurrences, getLinkGroupKey, groupLinkOccurrences, type InternalLinkTarget, type LinkGroup } from '@/lib/admin/internal-links';
@@ -30,6 +32,8 @@ type AffiliateBlockDraft = {
   url: string;
   label: string;
   bannerHtml: string;
+  name?: string;
+  mode?: BannerMode;
 };
 
 const emptyAffiliateBlock: AffiliateBlockDraft = {
@@ -99,6 +103,8 @@ export function RichContentEditor({
   locale?: Locale;
 }) {
   const ref = useRef<HTMLDivElement | null>(null);
+  const editingBanner = useRef<HTMLElement | null>(null);
+  const draggedBanner = useRef<HTMLElement | null>(null);
   const savedSelection = useRef<Range | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const refreshFrameRef = useRef<number | null>(null);
@@ -121,10 +127,42 @@ export function RichContentEditor({
     });
   }, []);
 
+  const decorateBanners = useCallback(() => {
+    ref.current?.querySelectorAll<HTMLElement>('[data-affiliate-block="banner"]').forEach(block => {
+      block.contentEditable = 'false';
+      block.replaceChildren();
+      const label = document.createElement('strong');
+      label.textContent = `Bannière d’affiliation${block.dataset.affiliateName ? ' : ' + decodeAffiliate(block.dataset.affiliateName) : ''}`;
+      block.append(label);
+      const toolbar = document.createElement('div');
+      toolbar.className = 'flex flex-wrap gap-2 mt-2';
+      for (const [action, title] of [['drag', '⠿ Déplacer'], ['up', 'Monter'], ['down', 'Descendre'], ['edit', 'Modifier / remplacer'], ['delete', 'Supprimer']]) {
+        const button = document.createElement('button');
+        button.type = 'button'; button.textContent = title;
+        button.className = 'rounded border border-amber-400 px-2 py-1 text-sm';
+        button.dataset.affiliateAction = action;
+        if (action === 'drag') { button.draggable = true; button.style.cursor = 'grab'; }
+        toolbar.append(button);
+      }
+      block.append(toolbar);
+    });
+  }, []);
+
+  const serializeEditor = useCallback(() => {
+    const clone = ref.current?.cloneNode(true) as HTMLDivElement | undefined;
+    clone?.querySelectorAll<HTMLElement>('[data-affiliate-block="banner"]').forEach(block => {
+      block.outerHTML = makeBanner({ source: decodeAffiliate(block.dataset.affiliateSource ?? ''), name: decodeAffiliate(block.dataset.affiliateName ?? ''), mode: block.dataset.affiliateMode === 'isolated' ? 'isolated' : 'native' });
+    });
+    return clone?.innerHTML ?? '';
+  }, []);
+
   useEffect(() => {
-    if (ref.current && ref.current.innerHTML !== value.html) ref.current.innerHTML = value.html;
+    if (ref.current && serializeEditor() !== inertBanners(value.html)) {
+      ref.current.innerHTML = inertBanners(value.html);
+      decorateBanners();
+    }
     refreshLinkGroups();
-  }, [refreshLinkGroups, value.html]);
+  }, [decorateBanners, refreshLinkGroups, serializeEditor, value.html]);
 
   useEffect(() => () => {
     if (refreshFrameRef.current !== null) window.cancelAnimationFrame(refreshFrameRef.current);
@@ -132,9 +170,9 @@ export function RichContentEditor({
   }, []);
 
   const emit = useCallback(() => {
-    onChange({ type: 'doc', html: ref.current?.innerHTML ?? '' });
+    onChange({ type: 'doc', html: serializeEditor() });
     refreshLinkGroups();
-  }, [onChange, refreshLinkGroups]);
+  }, [onChange, refreshLinkGroups, serializeEditor]);
 
   const saveSelection = useCallback(() => {
     const selection = document.getSelection();
@@ -330,6 +368,8 @@ export function RichContentEditor({
 
   const openAffiliateBlock = () => {
     saveSelection();
+    const banners = ref.current?.querySelectorAll<HTMLElement>('[data-affiliate-block="banner"]');
+    editingBanner.current = banners?.length === 1 ? banners[0] : null;
     setAffiliateError('');
     setAffiliateBlock({
       ...emptyAffiliateBlock,
@@ -351,23 +391,12 @@ export function RichContentEditor({
 
     let blockHtml: string;
     if (affiliateBlock.kind === 'banner') {
-      const parsed = new DOMParser().parseFromString(affiliateBlock.bannerHtml, 'text/html');
-      const suppliedLink = parsed.body.querySelector('a[href]');
-      const suppliedImage = suppliedLink?.querySelector('img[src]');
-      const destination = suppliedLink?.getAttribute('href')?.trim() ?? '';
-      const imageUrl = suppliedImage?.getAttribute('src')?.trim() ?? '';
-      if (!suppliedLink || !suppliedImage || !isHttpUrl(destination) || !isHttpUrl(imageUrl)) {
-        setAffiliateError('Collez le code HTML complet de la bannière : il doit contenir un lien et une image avec des URL http(s).');
-        return;
-      }
-
-      const optionalImageAttributes = ['alt', 'title', 'width', 'height']
-        .flatMap((name) => {
-          const attribute = suppliedImage.getAttribute(name);
-          return attribute === null ? [] : [` ${name}="${escapeHtmlAttribute(attribute)}"`];
-        })
-        .join('');
-      blockHtml = `<aside class="affiliate-block affiliate-block--banner" data-affiliate-block="banner" contenteditable="false"><a href="${escapeHtmlAttribute(destination)}" target="_blank" rel="sponsored nofollow noopener noreferrer"><img src="${escapeHtmlAttribute(imageUrl)}"${optionalImageAttributes} /></a></aside><p><br></p>`;
+      if (affiliateBlock.bannerHtml.length > 100000) { setAffiliateError('Le code dépasse la limite de 100 000 caractères. Il n’a pas été tronqué.'); return; }
+      if (!affiliateBlock.bannerHtml.trim()) { setAffiliateError('Collez le code complet de la bannière.'); return; }
+      const banners = ref.current?.querySelectorAll<HTMLElement>('[data-affiliate-block="banner"]');
+      if (!editingBanner.current?.isConnected && banners?.length === 1) editingBanner.current = banners[0];
+      if ((banners?.length ?? 0) > 1 && !editingBanner.current) { setAffiliateError('Plusieurs anciennes bannières : utilisez « Modifier / remplacer » sur le bloc voulu.'); return; }
+      blockHtml = makeBanner({ source: affiliateBlock.bannerHtml, name: affiliateBlock.name, mode: affiliateBlock.mode });
     } else {
       const destination = affiliateBlock.url.trim();
       if (!isHttpUrl(destination)) {
@@ -378,8 +407,14 @@ export function RichContentEditor({
       blockHtml = `<aside class="affiliate-block affiliate-block--link" data-affiliate-block="link" contenteditable="false"><span class="affiliate-block__disclosure">Lien affilié</span><a href="${escapeHtmlAttribute(destination)}" target="_blank" rel="sponsored nofollow noopener noreferrer" aria-label="${safeLabel}"><span>${safeLabel}</span></a></aside><p><br></p>`;
     }
 
-    restoreSelection();
-    document.execCommand('insertHTML', false, blockHtml);
+    if (affiliateBlock.kind === 'banner' && editingBanner.current?.isConnected) {
+      editingBanner.current.outerHTML = blockHtml;
+    } else {
+      restoreSelection();
+      document.execCommand('insertHTML', false, blockHtml);
+    }
+    editingBanner.current = null;
+    decorateBanners();
     emit();
     saveSelection();
     setAffiliateBlock(null);
@@ -480,7 +515,7 @@ export function RichContentEditor({
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h3 className="font-semibold">Insérer un bloc d’affiliation</h3>
-              <p className="mt-1 text-xs text-slate-400">Compatible avec GetYourGuide, Awin et toute URL d’affiliation. Le lien sera automatiquement marqué comme sponsorisé.</p>
+              <p className="mt-1 text-xs text-slate-400">Code complet conservé. L’aperçu des scripts reste isolé de l’administration.</p>
             </div>
             <button type="button" className={buttonClass()} onClick={() => { setAffiliateBlock(null); setAffiliateError(''); }}>Fermer</button>
           </div>
@@ -488,7 +523,7 @@ export function RichContentEditor({
             <label className="text-sm">Format
               <select className="mt-1 w-full rounded border border-slate-600 bg-white p-2 text-slate-950" value={affiliateBlock.kind} onChange={(event) => setAffiliateBlock({ ...affiliateBlock, kind: event.target.value as AffiliateBlockDraft['kind'] })}>
                 <option value="link">Lien / bouton</option>
-                <option value="banner">Bannière image</option>
+                <option value="banner">Bannière HTML / scripts</option>
               </select>
             </label>
             {affiliateBlock.kind === 'link' ? (
@@ -501,14 +536,11 @@ export function RichContentEditor({
                 </label>
               </>
             ) : (
-              <label className="text-sm md:col-span-2">Code HTML complet de la bannière
-                <textarea className="mt-1 min-h-36 w-full rounded border border-slate-600 bg-white p-2 font-mono text-xs text-slate-950" placeholder={'<a rel="sponsored" href="https://…"><img src="https://…"></a>'} value={affiliateBlock.bannerHtml} onChange={(event) => setAffiliateBlock({ ...affiliateBlock, bannerHtml: event.target.value })} />
-                <span className="mt-1 block text-xs text-slate-400">Collez directement le code fourni par Awin ou votre régie. Les paramètres de suivi des URL sont conservés.</span>
-              </label>
+              <div className="md:col-span-2"><AffiliateBannerFields value={{ source: affiliateBlock.bannerHtml, name: affiliateBlock.name, mode: affiliateBlock.mode }} onChange={v => setAffiliateBlock({ ...affiliateBlock, bannerHtml: v.source, name: v.name, mode: v.mode })} /></div>
             )}
           </div>
           {affiliateError ? <p className="mt-3 text-sm text-red-300">{affiliateError}</p> : null}
-          <button type="button" className="mt-4 rounded bg-brand-700 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-500" onClick={insertAffiliateBlock}>Insérer à la position du curseur</button>
+          <button type="button" className="mt-4 rounded bg-brand-700 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-500" onClick={insertAffiliateBlock}>{affiliateBlock.kind === 'banner' && editingBanner.current ? 'Remplacer la bannière à sa position' : 'Insérer à la position du curseur'}</button>
         </div>
       ) : null}
 
@@ -517,6 +549,50 @@ export function RichContentEditor({
         contentEditable
         suppressContentEditableWarning
         className="min-h-[520px] w-full bg-white p-8 text-base leading-8 text-slate-900 outline-none [&_.affiliate-block]:my-6 [&_.affiliate-block]:rounded-xl [&_.affiliate-block]:border [&_.affiliate-block]:border-amber-300 [&_.affiliate-block]:bg-amber-50 [&_.affiliate-block]:p-4 [&_.affiliate-block__disclosure]:mb-2 [&_.affiliate-block__disclosure]:block [&_.affiliate-block__disclosure]:text-xs [&_.affiliate-block__disclosure]:uppercase [&_a]:rounded [&_a]:bg-brand-100 [&_a]:px-0.5 [&_a]:font-medium [&_a]:text-brand-800 [&_a]:underline [&_a]:decoration-brand-500 [&_a]:decoration-2 [&_a]:underline-offset-4 [&_blockquote]:border-l-4 [&_blockquote]:border-slate-300 [&_blockquote]:pl-4 [&_figcaption]:mt-2 [&_figcaption]:text-center [&_figcaption]:text-sm [&_figcaption]:text-slate-500 [&_figure]:my-6 [&_h1]:text-3xl [&_h1]:font-bold [&_h2]:text-2xl [&_h2]:font-bold [&_h3]:text-xl [&_h3]:font-semibold [&_h4]:text-lg [&_h4]:font-semibold [&_img]:max-w-full [&_img]:rounded-xl [&_ol]:list-decimal [&_ol]:pl-6 [&_pre]:rounded-lg [&_pre]:bg-slate-100 [&_pre]:p-4 [&_ul]:list-disc [&_ul]:pl-6"
+        onClick={event => {
+          const button = (event.target as HTMLElement).closest<HTMLElement>('[data-affiliate-action]');
+          const block = button?.closest<HTMLElement>('[data-affiliate-block="banner"]');
+          if (!button || !block) return;
+          event.preventDefault();
+          const action = button.dataset.affiliateAction;
+          if (action === 'edit') {
+            editingBanner.current = block;
+            setAffiliateError('');
+            setAffiliateBlock({ ...emptyAffiliateBlock, kind: 'banner', bannerHtml: decodeAffiliate(block.dataset.affiliateSource ?? ''), name: decodeAffiliate(block.dataset.affiliateName ?? ''), mode: block.dataset.affiliateMode === 'isolated' ? 'isolated' : 'native' });
+            return;
+          }
+          if (action === 'delete') block.remove();
+          if (action === 'up') {
+            if (block.previousElementSibling) block.previousElementSibling.before(block);
+            else if (block.parentElement && block.parentElement !== ref.current) block.parentElement.before(block);
+          }
+          if (action === 'down') {
+            if (block.nextElementSibling) block.nextElementSibling.after(block);
+            else if (block.parentElement && block.parentElement !== ref.current) block.parentElement.after(block);
+          }
+          emit();
+        }}
+        onDragStart={event => {
+          const handle = (event.target as HTMLElement).closest('[data-affiliate-action="drag"]');
+          if (!handle) return;
+          draggedBanner.current = handle.closest<HTMLElement>('[data-affiliate-block="banner"]');
+          event.dataTransfer.effectAllowed = 'move';
+          event.dataTransfer.setData('text/plain', 'Bannière d’affiliation');
+        }}
+        onDragOver={event => { if (draggedBanner.current) { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; } }}
+        onDragEnd={() => { draggedBanner.current = null; }}
+        onDrop={event => {
+          const block = draggedBanner.current;
+          if (!block || !ref.current?.contains(block)) return;
+          event.preventDefault();
+          const target = (event.target as HTMLElement).closest('p,h1,h2,h3,h4,section,aside,div,ul,ol,figure,blockquote');
+          if (target && target !== ref.current && !block.contains(target) && !target.contains(block)) {
+            const bounds = target.getBoundingClientRect();
+            if (event.clientY < bounds.top + bounds.height / 2) target.before(block); else target.after(block);
+          } else if (target === ref.current) ref.current.append(block);
+          draggedBanner.current = null;
+          emit();
+        }}
         onBlur={saveSelection}
         onInput={() => {
           emit();
