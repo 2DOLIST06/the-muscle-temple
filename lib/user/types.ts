@@ -1,4 +1,14 @@
-export interface User {
+export interface ContactDetails {
+  firstName: string | null;
+  lastName: string | null;
+  phone: string | null;
+  address: string | null;
+  postalCode: string | null;
+  city: string | null;
+  country: string | null;
+}
+
+export interface User extends ContactDetails {
   id: string;
   email: string;
   displayName: string;
