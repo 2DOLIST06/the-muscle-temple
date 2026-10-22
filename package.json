@@ -11,7 +11,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prebuild": "node scripts/check-consent-integrations.mjs",
+    "test:consent": "node --experimental-strip-types --test test/cookie-consent.test.mjs test/consent-integrations.test.mjs test/cookie-inventory.test.mjs"
   },
   "dependencies": {
     "@zxing/browser": "^0.1.5",

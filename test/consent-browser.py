@@ -1,0 +1,58 @@
+# Requires Python Playwright, Chromium, and a local Next server on port 3199.
+# Run against the local mock API as documented in docs/cookie-consent.md.
+from playwright.sync_api import sync_playwright, expect
+import json
+with sync_playwright() as p:
+    browser=p.chromium.launch(executable_path='/usr/bin/chromium',headless=True,args=['--no-sandbox'])
+    context=browser.new_context()
+    context.add_cookies([{'name': name,'value':'test-session-preserved','url':'http://127.0.0.1:3199','httpOnly':True} for name in ['user_jwt','admin_jwt']])
+    page=context.new_page()
+    errors=[]
+    page.on('pageerror',lambda error:errors.append(str(error)))
+    page.goto('http://127.0.0.1:3199/contact')
+    banner=page.get_by_role('region',name='Cookie choices')
+    expect(banner).to_be_visible(timeout=60000)
+    expect(page.locator('dialog')).not_to_be_visible()
+    page.get_by_placeholder('Name',exact=True).fill('Browsing without choosing')
+    page.locator('footer').get_by_role('link',name='Privacy Policy',exact=True).click()
+    expect(page).to_have_url('http://127.0.0.1:3199/privacy')
+    expect(banner).to_be_visible()
+    page.get_by_role('button',name='Customize',exact=True).click()
+    expect(page.get_by_role('dialog')).to_be_visible()
+    expect(page.get_by_text('No optional cookie is currently managed on this website.',exact=True)).to_be_visible()
+    page.keyboard.press('Escape')
+    expect(page.get_by_role('dialog')).not_to_be_visible()
+    page.get_by_role('button',name='Reject all',exact=True).click()
+    expect(banner).not_to_be_visible()
+    choice=page.evaluate("localStorage.getItem('btg_consent')")
+    assert json.loads(choice)['categories']==[]
+    page.reload()
+    expect(page.get_by_role('button',name='Manage my cookies',exact=True)).to_be_visible()
+    expect(banner).not_to_be_visible()
+    assert page.evaluate("localStorage.getItem('btg_consent')")==choice
+    assert all(c['value']=='test-session-preserved' for c in context.cookies() if c['name'] in ['user_jwt','admin_jwt'])
+    page.get_by_role('button',name='Manage my cookies',exact=True).click()
+    page.get_by_role('button',name='Accept all',exact=True).click()
+    expect(page.get_by_role('dialog')).not_to_be_visible()
+    # Expired choice must redisplay the nonmodal banner after reload.
+    page.evaluate("const c=JSON.parse(localStorage.getItem('btg_consent')); c.chosenAt='2020-01-01T00:00:00.000Z';localStorage.setItem('btg_consent',JSON.stringify(c))")
+    page.reload(); expect(banner).to_be_visible()
+    page.evaluate("localStorage.setItem('btg_consent','invalid')")
+    page.reload(); expect(banner).to_be_visible()
+    page.goto('http://127.0.0.1:3199/fr/contact')
+    expect(page.get_by_role('button',name='Tout refuser',exact=True)).to_be_visible(timeout=60000)
+    page.get_by_role('button',name='Personnaliser',exact=True).click()
+    expect(page.get_by_text('Aucun cookie facultatif n’est actuellement géré sur le site.',exact=True)).to_be_visible()
+    page.keyboard.press('Escape')
+    page.set_viewport_size({'width':375,'height':667})
+    assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
+    page.get_by_placeholder('Nom',exact=True).fill('Navigation mobile')
+    denied=browser.new_context()
+    denied.add_init_script("Object.defineProperty(window,'localStorage',{get(){throw new DOMException('Blocked','SecurityError')}})")
+    blocked=denied.new_page(); blocked.goto('http://127.0.0.1:3199/contact')
+    expect(blocked.get_by_role('button',name='Reject all',exact=True)).to_be_visible()
+    blocked.get_by_role('button',name='Reject all',exact=True).click()
+    expect(blocked.get_by_role('status')).to_contain_text('Optional services remain blocked')
+    assert not errors,errors
+    print('PASS: nonblocking navigation, EN/FR, mobile, customization, Escape, persisted refusal/reload, acceptance, expired/invalid choice, blocked storage, preserved HttpOnly session cookies, no page errors')
+    browser.close()
