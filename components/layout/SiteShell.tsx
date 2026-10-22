@@ -12,7 +12,7 @@ export function SiteShell({ children }: Readonly<{ children: React.ReactNode }>)
   const [headerHeight, setHeaderHeight] = useState(0);
 
   useEffect(() => {
-    setIsHeaderHidden(window.localStorage.getItem('admin-header-hidden') === 'true');
+    try { setIsHeaderHidden(window.localStorage.getItem('admin-header-hidden') === 'true'); } catch { /* Keep the default if storage is blocked. */ }
   }, []);
 
   useLayoutEffect(() => {
@@ -35,7 +35,7 @@ export function SiteShell({ children }: Readonly<{ children: React.ReactNode }>)
   const toggleHeader = () => {
     setIsHeaderHidden((hidden) => {
       const nextValue = !hidden;
-      window.localStorage.setItem('admin-header-hidden', String(nextValue));
+      try { window.localStorage.setItem('admin-header-hidden', String(nextValue)); } catch { /* The control still works for this visit. */ }
       return nextValue;
     });
   };

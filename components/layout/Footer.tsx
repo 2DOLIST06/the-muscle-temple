@@ -5,9 +5,11 @@ import { usePathname } from 'next/navigation';
 import { Container } from '@/components/ui/Container';
 import { NewsletterSignup } from '@/components/blog/NewsletterCta';
 import { siteConfig } from '@/lib/constants';
+import { useCookieSettings } from '@/components/consent/ConsentProvider';
 import { getLegalPath, getNavigation, getPathLocale, type LegalPageKey } from '@/lib/i18n/routing';
 
 export function Footer() {
+  const openCookieSettings = useCookieSettings();
   const pathname = usePathname();
   const locale = getPathLocale(pathname ?? '/');
   const navigation = getNavigation(locale);
@@ -42,6 +44,7 @@ export function Footer() {
             <h3 className="font-semibold text-slate-900">{locale === 'fr' ? 'Informations légales' : 'Legal'}</h3>
             <ul className="mt-2 space-y-2 text-sm text-slate-600">
               {legalLinks.map((item) => <li key={item.key}><Link href={getLegalPath(item.key, locale)}>{item.label}</Link></li>)}
+              <li><button type="button" onClick={openCookieSettings} className="underline underline-offset-2 focus-visible:outline focus-visible:outline-2">{locale === 'fr' ? 'Gérer mes cookies' : 'Manage my cookies'}</button></li>
             </ul>
           </div>
           <div>
