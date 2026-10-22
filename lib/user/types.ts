@@ -36,13 +36,14 @@ export interface DiaryEntry extends NutritionValues {
   brand?: string | null;
   quantity: number;
   unit: string;
+  recurrenceId?: string | null;
 }
 
 export interface NutritionDiary {
   date: string;
   goal: NutritionGoal | null;
   totals: NutritionValues;
-  remaining: NutritionValues;
+  remaining: NutritionValues | null;
   entries: DiaryEntry[];
 }
 
@@ -77,4 +78,16 @@ export type DiaryEntryInput = {
   date: string;
   mealType: MealType;
   consumedAmount: number;
+  recurrence?: FoodSchedule;
 } & ({ sourceType: 'OPEN_FOOD_FACTS'; barcode: string } | { sourceType: 'PERSONAL'; personalFoodId: string });
+
+export interface FoodSchedule {
+  startDate: string;
+  endDate?: string | null;
+  weekdays: number[];
+}
+export interface FoodRecurrence extends FoodSchedule {
+  id: string;
+  name: string;
+  mealType: MealType;
+}

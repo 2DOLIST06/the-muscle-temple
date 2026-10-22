@@ -5,6 +5,7 @@ import { useUserSession } from './UserSessionProvider';
 import { userApi, UserApiError } from '@/lib/user/api-client';
 import type { ContactDetails, User } from '@/lib/user/types';
 import { NewsletterPreferencesForm } from '@/components/newsletter/NewsletterPreferencesForm';
+import { NutritionTracker } from '@/components/nutrition/NutritionTracker';
 import { subscribeToNewsletter } from '@/lib/newsletter';
 
 type Locale = 'fr' | 'en';
@@ -91,15 +92,16 @@ function AccountNewsletter({ user, locale }: { user: User; locale: Locale }) {
 
 export function AccountPage({ locale }: { locale: Locale }) {
   const fr = locale === 'fr'; const { user, status } = useUserSession();
-  const [tab, setTab] = useState<'contact' | 'password' | 'newsletter'>('contact');
+  const [tab, setTab] = useState<'contact' | 'password' | 'newsletter' | 'tracker'>('contact');
   if (status === 'loading') return <main className="p-8">{fr ? 'Chargement…' : 'Loading…'}</main>;
   if (!user) return <main className="p-8"><Link href={fr ? '/fr/connexion?returnTo=/fr/mon-compte' : '/login?returnTo=/account'}>{fr ? 'Se connecter' : 'Log in'}</Link></main>;
   const tabs = [
     { id: 'contact', label: fr ? 'Mes coordonnées' : 'My contact details' },
     { id: 'password', label: fr ? 'Mon mot de passe' : 'My password' },
-    { id: 'newsletter', label: fr ? 'Mes préférences newsletter' : 'My newsletter preferences' }
+    { id: 'newsletter', label: fr ? 'Mes préférences newsletter' : 'My newsletter preferences' },
+    { id: 'tracker', label: fr ? 'Mon suivi alimentaire' : 'My food tracker' }
   ] as const;
-  return <main className="mx-auto max-w-3xl space-y-8 px-6 py-16">
+  return <main className={`mx-auto ${tab === 'tracker' ? 'max-w-7xl' : 'max-w-3xl'} space-y-8 px-6 py-16`}>
     <h1 className="text-3xl font-bold">{fr ? 'Mon compte' : 'My account'}</h1>
     <div role="tablist" aria-label={fr ? 'Paramètres du compte' : 'Account settings'} className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">{tabs.map((item, index) => <button key={item.id} role="tab" id={`tab-${item.id}`} aria-controls={`panel-${item.id}`} aria-selected={tab === item.id} tabIndex={tab === item.id ? 0 : -1} onClick={() => setTab(item.id)} onKeyDown={event => {
       const next = event.key === 'ArrowRight' ? (index + 1) % tabs.length : event.key === 'ArrowLeft' ? (index + tabs.length - 1) % tabs.length : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : null;
@@ -107,7 +109,7 @@ export function AccountPage({ locale }: { locale: Locale }) {
     }} className={`rounded-xl px-4 py-3 text-sm font-semibold ${tab === item.id ? 'bg-brand-700 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>{item.label}</button>)}</div>
     {tabs.map(item => <section key={item.id} role="tabpanel" id={`panel-${item.id}`} aria-labelledby={`tab-${item.id}`} hidden={tab !== item.id} tabIndex={0} className="space-y-6">
       <h2 className="text-xl font-bold">{item.label}</h2>
-      {item.id === 'contact' ? <ContactForm key={user.id} user={user} locale={locale} /> : item.id === 'password' ? <PasswordForm locale={locale} /> : tab === 'newsletter' && <AccountNewsletter user={user} locale={locale} />}
+      {item.id === 'contact' ? <ContactForm key={user.id} user={user} locale={locale} /> : item.id === 'password' ? <PasswordForm locale={locale} /> : item.id === 'newsletter' ? tab === 'newsletter' && <AccountNewsletter user={user} locale={locale} /> : tab === 'tracker' && <NutritionTracker locale={locale} embedded />}
     </section>)}
   </main>;
 }
