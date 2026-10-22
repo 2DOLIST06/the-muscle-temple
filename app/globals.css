@@ -102,6 +102,19 @@ a {
   @apply list-decimal space-y-2 pl-6;
 }
 
+.rich-content table {
+  @apply block max-w-full overflow-x-auto border-collapse text-sm leading-6;
+}
+
+.rich-content th,
+.rich-content td {
+  @apply border border-slate-300 px-4 py-3 text-left align-top;
+}
+
+.rich-content th {
+  @apply bg-slate-100 font-semibold text-slate-900;
+}
+
 .rich-content blockquote {
   @apply border-l-4 border-brand-700 bg-slate-50 py-3 pl-5 pr-4 italic text-slate-700;
 }
