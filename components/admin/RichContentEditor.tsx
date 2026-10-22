@@ -103,8 +103,8 @@ export function RichContentEditor({
   locale?: Locale;
 }) {
   const ref = useRef<HTMLDivElement | null>(null);
-  const editingBanner = useRef<HTMLElement | null>(null);
-  const draggedBanner = useRef<HTMLElement | null>(null);
+  const editingAffiliateBlock = useRef<HTMLElement | null>(null);
+  const draggedAffiliateBlock = useRef<HTMLElement | null>(null);
   const savedSelection = useRef<Range | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const refreshFrameRef = useRef<number | null>(null);
@@ -127,19 +127,25 @@ export function RichContentEditor({
     });
   }, []);
 
-  const decorateBanners = useCallback(() => {
-    ref.current?.querySelectorAll<HTMLElement>('[data-affiliate-block="banner"]').forEach(block => {
+  const decorateAffiliateBlocks = useCallback(() => {
+    ref.current?.querySelectorAll<HTMLElement>('[data-affiliate-block="banner"], [data-affiliate-block="link"]').forEach(block => {
       block.contentEditable = 'false';
-      block.replaceChildren();
-      const label = document.createElement('strong');
-      label.textContent = `Bannière d’affiliation${block.dataset.affiliateName ? ' : ' + decodeAffiliate(block.dataset.affiliateName) : ''}`;
-      block.append(label);
+      block.querySelectorAll('[data-affiliate-controls]').forEach(control => control.remove());
+      if (block.dataset.affiliateBlock === 'banner') {
+        block.replaceChildren();
+        const label = document.createElement('strong');
+        label.textContent = `Bannière d’affiliation${block.dataset.affiliateName ? ' : ' + decodeAffiliate(block.dataset.affiliateName) : ''}`;
+        block.append(label);
+      }
+      const disclosure = block.querySelector('.affiliate-block__disclosure');
+      if (disclosure) block.append(disclosure);
       const toolbar = document.createElement('div');
-      toolbar.className = 'flex flex-wrap gap-2 mt-2';
+      toolbar.className = 'flex flex-wrap justify-center gap-2 mt-2';
+      toolbar.dataset.affiliateControls = 'true';
       for (const [action, title] of [['drag', '⠿ Déplacer'], ['up', 'Monter'], ['down', 'Descendre'], ['edit', 'Modifier / remplacer'], ['delete', 'Supprimer']]) {
         const button = document.createElement('button');
         button.type = 'button'; button.textContent = title;
-        button.className = 'rounded border border-amber-400 px-2 py-1 text-sm';
+        button.className = 'rounded border border-slate-300 bg-white px-2 py-1 text-sm text-slate-700';
         button.dataset.affiliateAction = action;
         if (action === 'drag') { button.draggable = true; button.style.cursor = 'grab'; }
         toolbar.append(button);
@@ -150,6 +156,7 @@ export function RichContentEditor({
 
   const serializeEditor = useCallback(() => {
     const clone = ref.current?.cloneNode(true) as HTMLDivElement | undefined;
+    clone?.querySelectorAll('[data-affiliate-controls]').forEach(control => control.remove());
     clone?.querySelectorAll<HTMLElement>('[data-affiliate-block="banner"]').forEach(block => {
       block.outerHTML = makeBanner({ source: decodeAffiliate(block.dataset.affiliateSource ?? ''), name: decodeAffiliate(block.dataset.affiliateName ?? ''), mode: block.dataset.affiliateMode === 'isolated' ? 'isolated' : 'native' });
     });
@@ -159,10 +166,10 @@ export function RichContentEditor({
   useEffect(() => {
     if (ref.current && serializeEditor() !== inertBanners(value.html)) {
       ref.current.innerHTML = inertBanners(value.html);
-      decorateBanners();
+      decorateAffiliateBlocks();
     }
     refreshLinkGroups();
-  }, [decorateBanners, refreshLinkGroups, serializeEditor, value.html]);
+  }, [decorateAffiliateBlocks, refreshLinkGroups, serializeEditor, value.html]);
 
   useEffect(() => () => {
     if (refreshFrameRef.current !== null) window.cancelAnimationFrame(refreshFrameRef.current);
@@ -366,19 +373,36 @@ export function RichContentEditor({
     exec('insertHTML', '<p>[[macro-calculator]]</p><p><br></p>');
   };
 
+  const editAffiliateBlock = (block: HTMLElement) => {
+    saveSelection();
+    editingAffiliateBlock.current = block;
+    setAffiliateError('');
+    if (block.dataset.affiliateBlock === 'link') {
+      const link = block.querySelector('a');
+      setAffiliateBlock({ ...emptyAffiliateBlock, url: link?.getAttribute('href') ?? '', label: link?.textContent ?? '' });
+    } else {
+      setAffiliateBlock({ ...emptyAffiliateBlock, kind: 'banner', bannerHtml: decodeAffiliate(block.dataset.affiliateSource ?? ''), name: decodeAffiliate(block.dataset.affiliateName ?? ''), mode: block.dataset.affiliateMode === 'isolated' ? 'isolated' : 'native' });
+    }
+  };
+
   const openAffiliateBlock = () => {
     saveSelection();
-    const banners = ref.current?.querySelectorAll<HTMLElement>('[data-affiliate-block="banner"]');
-    editingBanner.current = banners?.length === 1 ? banners[0] : null;
+    const selected = getSelectionElement()?.closest<HTMLElement>('[data-affiliate-block]');
+    if (selected && ref.current?.contains(selected)) {
+      editAffiliateBlock(selected);
+      return;
+    }
+    editingAffiliateBlock.current = null;
     setAffiliateError('');
-    setAffiliateBlock({
-      ...emptyAffiliateBlock,
-      label: document.getSelection()?.toString().trim() || ''
-    });
+    setAffiliateBlock({ ...emptyAffiliateBlock, label: document.getSelection()?.toString().trim() || '' });
   };
 
   const insertAffiliateBlock = () => {
     if (!affiliateBlock) return;
+    if (editingAffiliateBlock.current && !ref.current?.contains(editingAffiliateBlock.current)) {
+      setAffiliateError('Ce bloc n’est plus disponible. Fermez le formulaire et sélectionnez à nouveau le bloc à modifier.');
+      return;
+    }
 
     const isHttpUrl = (candidate: string) => {
       try {
@@ -394,8 +418,8 @@ export function RichContentEditor({
       if (affiliateBlock.bannerHtml.length > 100000) { setAffiliateError('Le code dépasse la limite de 100 000 caractères. Il n’a pas été tronqué.'); return; }
       if (!affiliateBlock.bannerHtml.trim()) { setAffiliateError('Collez le code complet de la bannière.'); return; }
       const banners = ref.current?.querySelectorAll<HTMLElement>('[data-affiliate-block="banner"]');
-      if (!editingBanner.current?.isConnected && banners?.length === 1) editingBanner.current = banners[0];
-      if ((banners?.length ?? 0) > 1 && !editingBanner.current) { setAffiliateError('Plusieurs anciennes bannières : utilisez « Modifier / remplacer » sur le bloc voulu.'); return; }
+      if (!editingAffiliateBlock.current?.isConnected && banners?.length === 1) editingAffiliateBlock.current = banners[0];
+      if ((banners?.length ?? 0) > 1 && !editingAffiliateBlock.current) { setAffiliateError('Plusieurs anciennes bannières : utilisez « Modifier / remplacer » sur le bloc voulu.'); return; }
       blockHtml = makeBanner({ source: affiliateBlock.bannerHtml, name: affiliateBlock.name, mode: affiliateBlock.mode });
     } else {
       const destination = affiliateBlock.url.trim();
@@ -404,17 +428,17 @@ export function RichContentEditor({
         return;
       }
       const safeLabel = escapeHtmlAttribute(affiliateBlock.label.trim() || 'Voir l’offre');
-      blockHtml = `<aside class="affiliate-block affiliate-block--link" data-affiliate-block="link" contenteditable="false"><span class="affiliate-block__disclosure">Lien affilié</span><a href="${escapeHtmlAttribute(destination)}" target="_blank" rel="sponsored nofollow noopener noreferrer" aria-label="${safeLabel}"><span>${safeLabel}</span></a></aside><p><br></p>`;
+      blockHtml = `<aside class="affiliate-block affiliate-block--link" data-affiliate-block="link" contenteditable="false"><a href="${escapeHtmlAttribute(destination)}" target="_blank" rel="sponsored nofollow noopener noreferrer" aria-label="${safeLabel}"><span>${safeLabel}</span></a><span class="affiliate-block__disclosure">${locale === 'en' ? 'Affiliate link' : 'Lien affilié'}</span></aside>`;
     }
 
-    if (affiliateBlock.kind === 'banner' && editingBanner.current?.isConnected) {
-      editingBanner.current.outerHTML = blockHtml;
+    if (editingAffiliateBlock.current?.isConnected && ref.current?.contains(editingAffiliateBlock.current)) {
+      editingAffiliateBlock.current.outerHTML = blockHtml;
     } else {
       restoreSelection();
-      document.execCommand('insertHTML', false, blockHtml);
+      document.execCommand('insertHTML', false, blockHtml + '<p><br></p>');
     }
-    editingBanner.current = null;
-    decorateBanners();
+    editingAffiliateBlock.current = null;
+    decorateAffiliateBlocks();
     emit();
     saveSelection();
     setAffiliateBlock(null);
@@ -514,10 +538,10 @@ export function RichContentEditor({
         <div className="border-b border-slate-700 bg-slate-900 p-4 text-slate-100">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h3 className="font-semibold">Insérer un bloc d’affiliation</h3>
+              <h3 className="font-semibold">{editingAffiliateBlock.current ? 'Modifier le bloc d’affiliation' : 'Insérer un bloc d’affiliation'}</h3>
               <p className="mt-1 text-xs text-slate-400">Code complet conservé. L’aperçu des scripts reste isolé de l’administration.</p>
             </div>
-            <button type="button" className={buttonClass()} onClick={() => { setAffiliateBlock(null); setAffiliateError(''); }}>Fermer</button>
+            <button type="button" className={buttonClass()} onClick={() => { editingAffiliateBlock.current = null; setAffiliateBlock(null); setAffiliateError(''); }}>Fermer</button>
           </div>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             <label className="text-sm">Format
@@ -540,7 +564,7 @@ export function RichContentEditor({
             )}
           </div>
           {affiliateError ? <p className="mt-3 text-sm text-red-300">{affiliateError}</p> : null}
-          <button type="button" className="mt-4 rounded bg-brand-700 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-500" onClick={insertAffiliateBlock}>{affiliateBlock.kind === 'banner' && editingBanner.current ? 'Remplacer la bannière à sa position' : 'Insérer à la position du curseur'}</button>
+          <button type="button" className="mt-4 rounded bg-brand-700 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-500" onClick={insertAffiliateBlock}>{editingAffiliateBlock.current ? 'Enregistrer les modifications' : 'Insérer à la position du curseur'}</button>
         </div>
       ) : null}
 
@@ -548,17 +572,18 @@ export function RichContentEditor({
         ref={ref}
         contentEditable
         suppressContentEditableWarning
-        className="rich-content min-h-[520px] w-full bg-white p-8 text-base leading-8 text-slate-900 outline-none [&_.affiliate-block]:my-6 [&_.affiliate-block]:rounded-xl [&_.affiliate-block]:border [&_.affiliate-block]:border-amber-300 [&_.affiliate-block]:bg-amber-50 [&_.affiliate-block]:p-4 [&_.affiliate-block__disclosure]:mb-2 [&_.affiliate-block__disclosure]:block [&_.affiliate-block__disclosure]:text-xs [&_.affiliate-block__disclosure]:uppercase [&_a]:rounded [&_a]:bg-brand-100 [&_a]:px-0.5 [&_a]:font-medium [&_a]:text-brand-800 [&_a]:underline [&_a]:decoration-brand-500 [&_a]:decoration-2 [&_a]:underline-offset-4 [&_blockquote]:border-l-4 [&_blockquote]:border-slate-300 [&_blockquote]:pl-4 [&_figcaption]:mt-2 [&_figcaption]:text-center [&_figcaption]:text-sm [&_figcaption]:text-slate-500 [&_figure]:my-6 [&_h1]:text-3xl [&_h1]:font-bold [&_h2]:text-2xl [&_h2]:font-bold [&_h3]:text-xl [&_h3]:font-semibold [&_h4]:text-lg [&_h4]:font-semibold [&_img]:max-w-full [&_img]:rounded-xl [&_ol]:list-decimal [&_ol]:pl-6 [&_pre]:rounded-lg [&_pre]:bg-slate-100 [&_pre]:p-4 [&_ul]:list-disc [&_ul]:pl-6"
+        className="rich-content min-h-[520px] w-full bg-white p-8 text-base leading-8 text-slate-900 outline-none [&_.affiliate-block]:my-6 [&_.affiliate-block__disclosure]:block [&_.affiliate-block__disclosure]:text-xs [&_.affiliate-block__disclosure]:uppercase [&_a]:rounded [&_a]:bg-brand-100 [&_a]:px-0.5 [&_a]:font-medium [&_a]:text-brand-800 [&_a]:underline [&_a]:decoration-brand-500 [&_a]:decoration-2 [&_a]:underline-offset-4 [&_blockquote]:border-l-4 [&_blockquote]:border-slate-300 [&_blockquote]:pl-4 [&_figcaption]:mt-2 [&_figcaption]:text-center [&_figcaption]:text-sm [&_figcaption]:text-slate-500 [&_figure]:my-6 [&_h1]:text-3xl [&_h1]:font-bold [&_h2]:text-2xl [&_h2]:font-bold [&_h3]:text-xl [&_h3]:font-semibold [&_h4]:text-lg [&_h4]:font-semibold [&_img]:max-w-full [&_img]:rounded-xl [&_ol]:list-decimal [&_ol]:pl-6 [&_pre]:rounded-lg [&_pre]:bg-slate-100 [&_pre]:p-4 [&_ul]:list-disc [&_ul]:pl-6"
         onClick={event => {
           const button = (event.target as HTMLElement).closest<HTMLElement>('[data-affiliate-action]');
-          const block = button?.closest<HTMLElement>('[data-affiliate-block="banner"]');
-          if (!button || !block) return;
+          const block = button?.closest<HTMLElement>('[data-affiliate-block]');
+          if (!button || !block) {
+            if ((event.target as HTMLElement).closest('[data-affiliate-block="link"] a')) event.preventDefault();
+            return;
+          }
           event.preventDefault();
           const action = button.dataset.affiliateAction;
           if (action === 'edit') {
-            editingBanner.current = block;
-            setAffiliateError('');
-            setAffiliateBlock({ ...emptyAffiliateBlock, kind: 'banner', bannerHtml: decodeAffiliate(block.dataset.affiliateSource ?? ''), name: decodeAffiliate(block.dataset.affiliateName ?? ''), mode: block.dataset.affiliateMode === 'isolated' ? 'isolated' : 'native' });
+            editAffiliateBlock(block);
             return;
           }
           if (action === 'delete') block.remove();
@@ -575,14 +600,14 @@ export function RichContentEditor({
         onDragStart={event => {
           const handle = (event.target as HTMLElement).closest('[data-affiliate-action="drag"]');
           if (!handle) return;
-          draggedBanner.current = handle.closest<HTMLElement>('[data-affiliate-block="banner"]');
+          draggedAffiliateBlock.current = handle.closest<HTMLElement>('[data-affiliate-block]');
           event.dataTransfer.effectAllowed = 'move';
           event.dataTransfer.setData('text/plain', 'Bannière d’affiliation');
         }}
-        onDragOver={event => { if (draggedBanner.current) { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; } }}
-        onDragEnd={() => { draggedBanner.current = null; }}
+        onDragOver={event => { if (draggedAffiliateBlock.current) { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; } }}
+        onDragEnd={() => { draggedAffiliateBlock.current = null; }}
         onDrop={event => {
-          const block = draggedBanner.current;
+          const block = draggedAffiliateBlock.current;
           if (!block || !ref.current?.contains(block)) return;
           event.preventDefault();
           const target = (event.target as HTMLElement).closest('p,h1,h2,h3,h4,section,aside,div,ul,ol,figure,blockquote');
@@ -590,7 +615,7 @@ export function RichContentEditor({
             const bounds = target.getBoundingClientRect();
             if (event.clientY < bounds.top + bounds.height / 2) target.before(block); else target.after(block);
           } else if (target === ref.current) ref.current.append(block);
-          draggedBanner.current = null;
+          draggedAffiliateBlock.current = null;
           emit();
         }}
         onBlur={saveSelection}

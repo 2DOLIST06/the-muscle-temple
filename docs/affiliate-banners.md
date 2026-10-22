@@ -21,7 +21,7 @@ L’encodage URI est réversible : il protège les scripts, pixels, iframes, esp
 
 Les anciens blocs `data-affiliate-block="banner"` sont reconnus par un parseur HTML, y compris en présence d’éléments imbriqués. Leur contenu est conservé dans le nouveau format lors d’une modification dans l’éditeur. Les blocs `link`, liens de texte, images et intégrations ordinaires ne sont pas traités comme des bannières.
 
-Chaque bloc possède Modifier / remplacer, Supprimer, une poignée de déplacement et Monter / Descendre. Le déplacement utilise le nœud existant ; le glisser-déposer permet de le positionner avant ou après les paragraphes/sections. Avec plusieurs anciennes bannières, utiliser les commandes du bloc voulu : le remplacement en lot refuse cet article et ne supprime aucun bloc arbitrairement.
+Chaque bloc, bouton ou bannière, possède Modifier / remplacer, Supprimer, une poignée de déplacement et Monter / Descendre. Pour un bouton, « Modifier / remplacer » rouvre le formulaire prérempli avec son URL et son texte ; « Enregistrer les modifications » remplace uniquement ce bloc à sa position. Ces commandes restent disponibles après sauvegarde et rechargement et ne sont pas enregistrées dans le contenu public. Les boutons n’ont ni fond ni contour autour du bloc ; la mention « Lien affilié » apparaît sous le bouton, y compris pour les anciens blocs. Les URL et les relations sponsorisées sont conservées. Le déplacement utilise le nœud existant ; le glisser-déposer permet de le positionner avant ou après les paragraphes/sections. Avec plusieurs anciennes bannières, utiliser les commandes du bloc voulu : le remplacement en lot refuse cet article et ne supprime aucun bloc arbitrairement.
 
 ## Traitement en lot
 

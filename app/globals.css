@@ -148,12 +148,23 @@ a {
 }
 
 .rich-content .affiliate-block {
-  @apply my-8 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-center shadow-sm;
+  @apply my-8 border-0 bg-transparent p-0 text-center shadow-none;
 }
 
 .rich-content .affiliate-block__disclosure {
-  @apply mb-3 block text-xs font-semibold uppercase tracking-wider text-amber-800;
+  @apply mt-2 block text-xs font-semibold uppercase tracking-wider text-slate-500;
 }
+
+/* Order also applies to previously saved buttons with the disclosure first. */
+.rich-content .affiliate-block--link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.rich-content .affiliate-block--link > a { order: 0; }
+.rich-content .affiliate-block--link > .affiliate-block__disclosure { order: 1; }
+.rich-content .affiliate-block--link > [data-affiliate-controls] { order: 2; }
 
 .rich-content .affiliate-block a {
   @apply inline-flex max-w-full items-center justify-center rounded-xl bg-brand-700 px-5 py-3 font-semibold text-white no-underline transition hover:bg-brand-500;
@@ -195,7 +206,7 @@ a {
 }
 /* Keep the editor's managed block identifiable, even with the public banner reset. */
 [contenteditable] .affiliate-block.affiliate-block--banner {
-  border: 1px solid #fbbf24 !important;
-  background: #fffbeb !important;
+  border: 1px solid #cbd5e1 !important;
+  background: transparent !important;
   padding: 1rem !important;
 }
