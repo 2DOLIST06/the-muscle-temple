@@ -1,4 +1,4 @@
-import type { DiaryEntry, DiaryEntryInput, MealType, NutritionDiary, NutritionGoal, NutritionGoalInput, PersonalFood, PersonalFoodInput, User } from './types';
+import type { DiaryEntry, DiaryEntryInput, MealType, NutritionDiary, NutritionGoal, NutritionGoalInput, PersonalFood, PersonalFoodInput, ContactDetails, User } from './types';
 
 export class UserApiError extends Error {
   constructor(message: string, public status: number, public code?: string) { super(message); }
@@ -26,6 +26,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const userApi = {
+  updateProfile: (body: ContactDetails) => request<User>('/auth/profile', { method: 'POST', body: JSON.stringify(body) }),
+  newsletter: () => request<{ token: string | null; status: string | null }>('/auth/newsletter'),
   requestLoginLink: (email: string, locale: 'fr' | 'en') => request<{ ok: boolean }>('/auth/login-link', { method: 'POST', body: JSON.stringify({ email, locale }) }),
   consumeLoginLink: (token: string) => request<{ ok: boolean }>('/auth/login-link/consume', { method: 'POST', body: JSON.stringify({ token }) }),
   changePassword: (password: string) => request<{ ok: boolean }>('/auth/password', { method: 'POST', body: JSON.stringify({ password }) }),
