@@ -31,6 +31,6 @@ export const services: readonly Service[] = [];
 export const policyVersion = '2026-10-22.1';
 export const categoryText: Record<ConsentCategory, LocalizedText> = {
   statistics: { fr: 'Statistiques : mesurer l’utilisation du site.', en: 'Statistics: measure website usage.' },
-  advertising: { fr: 'Publicité hors affiliation : personnaliser ou mesurer les annonces.', en: 'Advertising outside affiliation: personalize or measure ads.' },
+  advertising: { fr: 'Publicité : personnaliser ou mesurer les annonces.', en: 'Advertising: personalize or measure ads.' },
   preferences: { fr: 'Préférences facultatives : mémoriser des réglages de confort.', en: 'Optional preferences: remember convenience settings.' }
 };

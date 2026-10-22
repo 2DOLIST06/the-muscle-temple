@@ -15,7 +15,8 @@ test('cookie policy inventory reflects current empty registry in both languages'
   for (const locale of ['fr', 'en']) {
     const html = renderToStaticMarkup(React.createElement(CookieServiceInventory, { locale }));
     assert.match(html, locale === 'fr' ? /Aucun service facultatif/ : /No optional statistics/);
-    assert.match(html, /affiliat/);
+    assert.doesNotMatch(html, /affiliat/);
+    assert.match(html, locale === 'fr' ? /Cette liste est mise à jour/ : /This list is updated/);
   }
 });
 

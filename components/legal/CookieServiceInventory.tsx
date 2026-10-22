@@ -6,8 +6,8 @@ export function CookieServiceInventory({ locale, registry = services }: { locale
   const fr = locale === 'fr';
   return <>
     {registry.length === 0 ? <p>{fr
-      ? 'Aucun service facultatif de statistiques, publicité ou préférences hors affiliation n’est actuellement déclaré dans le registre.'
-      : 'No optional statistics, advertising or preference service outside affiliation is currently declared in the registry.'}</p>
+      ? 'Aucun service facultatif de statistiques, publicité ou préférences n’est actuellement déclaré dans ce registre.'
+      : 'No optional statistics, advertising or preference service is currently declared in this registry.'}</p>
       : registry.map(service => <section key={service.id} className="mt-4 rounded border border-slate-200 p-4">
         <h4 className="font-semibold">{service.name}</h4>
         <dl className="mt-2 space-y-2 break-words">
@@ -22,6 +22,6 @@ export function CookieServiceInventory({ locale, registry = services }: { locale
         </dl>
         <p className="mt-3">{fr ? 'Ce service nécessite votre accord préalable. Vous pouvez le refuser ou retirer votre accord via « Gérer mes cookies » dans le pied de page.' : 'This service requires your prior consent. Reject or withdraw consent through “Manage my cookies” in the footer.'}</p>
       </section>)}
-    <p>{fr ? 'Cet inventaire suit le registre des services déployés ; il ne détecte pas automatiquement les cookies du navigateur. Les liens, images liées, bannières et widgets d’affiliation sont exclus du gestionnaire et de cet inventaire facultatif.' : 'This inventory follows the deployed service registry; it does not automatically scan browser cookies. Affiliate links, linked images, banners and widgets are excluded from this manager and optional inventory.'}</p>
+    <p>{fr ? 'Cette liste est mise à jour lorsque de nouveaux services sont ajoutés au gestionnaire.' : 'This list is updated when new services are added to the cookie manager.'}</p>
   </>;
 }
