@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { absoluteUrl, getLocaleFromPathname, getAccountPath, getArticlesPath, getFoodNutritionCalculatorPath, getLegalPageKeyFromPath, getLegalPath, getMacroCalculatorPath, localizePath, stripLocalePrefix, type Locale } from '@/lib/i18n/routing';
+import { absoluteUrl, getLocaleFromPathname, getAccountPath, getNutritionTrackerPath, getArticlesPath, getFoodNutritionCalculatorPath, getLegalPageKeyFromPath, getLegalPath, getMacroCalculatorPath, localizePath, stripLocalePrefix, type Locale } from '@/lib/i18n/routing';
 
 const getPathFromHref = (href: string) => {
   try {
@@ -15,12 +15,14 @@ const getPathFromHref = (href: string) => {
 
 const isArticleDetailPath = (basePath: string) => /^\/articles\/[^/]+\/?$/.test(basePath);
 const isAccountPath = (basePath: string) => ['/account', '/mon-compte'].includes(basePath.replace(/\/$/, ''));
+const isTrackerPath = (basePath: string) => ['/nutrition-tracker', '/suivi-nutrition'].includes(basePath.replace(/\/$/, ''));
 const isMacroCalculatorPath = (basePath: string) => basePath === '/calculateur-macros' || basePath === '/macro-calculator';
 
 const buildGenericTarget = (pathname: string, targetLocale: Locale) => {
   const legalPageKey = getLegalPageKeyFromPath(pathname);
   if (legalPageKey) return getLegalPath(legalPageKey, targetLocale);
   const basePath = stripLocalePrefix(pathname);
+  if (isTrackerPath(basePath)) return getNutritionTrackerPath(targetLocale);
   if (isAccountPath(basePath)) return getAccountPath(targetLocale);
   if (isMacroCalculatorPath(basePath)) return getMacroCalculatorPath(targetLocale);
   if (pathname === getFoodNutritionCalculatorPath('fr') || pathname === getFoodNutritionCalculatorPath('en')) {
@@ -44,8 +46,8 @@ export function LanguageSwitcher() {
     setAlternateHref(alternate?.href ? getPathFromHref(alternate.href) : null);
   }, [pathname, targetLocale]);
 
-  // Account pages inherit layout alternates; always use their explicit translated route.
-  const targetHref = isAccountPath(stripLocalePrefix(pathname)) ? genericHref : alternateHref ?? genericHref;
+  // Member pages inherit layout alternates; use their explicit translated routes.
+  const targetHref = (isAccountPath(stripLocalePrefix(pathname)) || isTrackerPath(stripLocalePrefix(pathname))) ? genericHref : alternateHref ?? genericHref;
   const href = `${targetHref}${queryString ? `?${queryString}` : ''}`;
 
   return (

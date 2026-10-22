@@ -13,6 +13,7 @@ async function proxy(request: Request, context: { params: Promise<{ path: string
     body: request.method === 'GET' || request.method === 'DELETE' ? undefined : await request.text(),
     cache: 'no-store'
   });
+  if (upstream.status === 204) return new NextResponse(null, { status: 204 });
   const payload = await upstream.json().catch(() => ({}));
   const response = NextResponse.json(payload, { status: upstream.status });
   if (upstream.status === 401) response.cookies.delete(USER_AUTH_COOKIE);
