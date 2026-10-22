@@ -26,6 +26,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const userApi = {
+  requestLoginLink: (email: string, locale: 'fr' | 'en') => request<{ ok: boolean }>('/auth/login-link', { method: 'POST', body: JSON.stringify({ email, locale }) }),
+  consumeLoginLink: (token: string) => request<{ ok: boolean }>('/auth/login-link/consume', { method: 'POST', body: JSON.stringify({ token }) }),
+  changePassword: (password: string) => request<{ ok: boolean }>('/auth/password', { method: 'POST', body: JSON.stringify({ password }) }),
   me: () => request<User>('/auth/me'),
   login: (body: { email: string; password: string }) => request<User>('/auth/login', { method: 'POST', body: JSON.stringify(body) }),
   register: (body: { displayName: string; email: string; password: string }) => request<User>('/auth/register', { method: 'POST', body: JSON.stringify(body) }),

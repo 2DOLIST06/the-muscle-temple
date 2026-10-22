@@ -9,6 +9,7 @@ import { useUserSession } from './UserSessionProvider';
 export function AuthForm({ locale, mode }: { locale: 'fr' | 'en'; mode: 'login' | 'register' }) {
   const french = locale === 'fr';
   const router = useRouter(); const params = useSearchParams(); const { refresh } = useUserSession();
+  const [emailLink, setEmailLink] = useState(false); const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false); const [error, setError] = useState('');
   const [displayName, setDisplayName] = useState(''); const [email, setEmail] = useState('');
   const [password, setPassword] = useState(''); const [confirmation, setConfirmation] = useState('');
@@ -18,6 +19,7 @@ export function AuthForm({ locale, mode }: { locale: 'fr' | 'en'; mode: 'login' 
     if (mode === 'register' && password !== confirmation) { setError(french ? 'Les mots de passe ne correspondent pas.' : 'Passwords do not match.'); return; }
     setBusy(true);
     try {
+      if (emailLink) { await userApi.requestLoginLink(email.trim().toLowerCase(), locale); setSent(true); return; }
       if (mode === 'login') await userApi.login({ email: email.trim().toLowerCase(), password });
       else await userApi.register({ displayName: displayName.trim(), email: email.trim().toLowerCase(), password });
       await refresh();
@@ -32,10 +34,12 @@ export function AuthForm({ locale, mode }: { locale: 'fr' | 'en'; mode: 'login' 
   return <form onSubmit={submit} className="mt-8 space-y-5">
     {mode === 'register' ? <label className="block text-sm font-semibold text-slate-800">{french ? 'Nom affiché' : 'Display name'}<input className={field} required minLength={2} maxLength={80} autoComplete="name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} /></label> : null}
     <label className="block text-sm font-semibold text-slate-800">{french ? 'Adresse e-mail' : 'Email address'}<input className={field} required type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} /></label>
-    <label className="block text-sm font-semibold text-slate-800">{french ? 'Mot de passe' : 'Password'}<input className={field} required minLength={8} type="password" autoComplete={mode === 'login' ? 'current-password' : 'new-password'} value={password} onChange={(e) => setPassword(e.target.value)} /></label>
+    {!emailLink && <label className="block text-sm font-semibold text-slate-800">{french ? 'Mot de passe' : 'Password'}<input className={field} required minLength={8} type="password" autoComplete={mode === 'login' ? 'current-password' : 'new-password'} value={password} onChange={(e) => setPassword(e.target.value)} /></label>}
     {mode === 'register' ? <label className="block text-sm font-semibold text-slate-800">{french ? 'Confirmer le mot de passe' : 'Confirm password'}<input className={field} required minLength={8} type="password" autoComplete="new-password" value={confirmation} onChange={(e) => setConfirmation(e.target.value)} /></label> : null}
+    {sent ? <p role="status" className="text-sm text-green-800">{french ? 'Si un compte correspond à cette adresse, un lien de connexion vous sera envoyé. Vérifiez aussi vos courriers indésirables.' : 'If an account matches this address, a sign-in link will be sent. Please also check your spam folder.'}</p> : null}
+    {mode === 'login' ? <button type="button" disabled={busy} className="text-sm font-semibold text-brand-700 underline" onClick={() => { setEmailLink(!emailLink); setError(''); setSent(false); }}>{emailLink ? (french ? 'Utiliser mon mot de passe' : 'Use my password') : (french ? 'Mot de passe oublié ? Recevoir un lien de connexion' : 'Forgot password? Email me a sign-in link')}</button> : null}
     {error ? <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-800">{error}</p> : null}
-    <button disabled={busy} className="w-full rounded-xl bg-brand-700 px-5 py-3 font-bold text-white transition hover:bg-brand-500 disabled:cursor-wait disabled:opacity-60">{busy ? (french ? 'Veuillez patienter…' : 'Please wait…') : mode === 'login' ? (french ? 'Se connecter' : 'Log in') : (french ? 'Créer mon compte' : 'Create my account')}</button>
+    <button disabled={busy} className="w-full rounded-xl bg-brand-700 px-5 py-3 font-bold text-white transition hover:bg-brand-500 disabled:cursor-wait disabled:opacity-60">{busy ? (french ? 'Veuillez patienter…' : 'Please wait…') : emailLink ? (french ? 'Recevoir mon lien' : 'Send sign-in link') : mode === 'login' ? (french ? 'Se connecter' : 'Log in') : (french ? 'Créer mon compte' : 'Create my account')}</button>
     <p className="text-center text-sm text-slate-600">{mode === 'login' ? (french ? 'Pas encore de compte ?' : 'New here?') : (french ? 'Vous avez déjà un compte ?' : 'Already have an account?')} <Link className="font-bold text-brand-700 underline" href={mode === 'login' ? registerPath : loginPath}>{mode === 'login' ? (french ? 'Créer un compte' : 'Create account') : (french ? 'Se connecter' : 'Log in')}</Link></p>
   </form>;
 }
