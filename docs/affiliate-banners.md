@@ -2,7 +2,11 @@
 
 La liste `/admin/posts` propose une recherche (titre, slug, catégorie), les filtres langue/statut, une pagination de 25 lignes et une sélection conservée entre les pages. « Sélectionner les résultats sur toutes les pages » sélectionne les identifiants de tous les résultats chargés par l’endpoint existant, qui retourne actuellement la liste complète. Un changement de filtre efface la sélection. Le formulaire fige les identifiants sélectionnés à son ouverture.
 
-Le formulaire commun permet de coller le code complet, de nommer le bloc et de choisir son mode public. Les codes dépassant 100 000 caractères sont refusés avec une explication, jamais tronqués. L’aperçu s’actualise sur demande dans une iframe opaque (`sandbox="allow-scripts allow-popups"`, sans `allow-same-origin`, sans accès au document parent). Aucun code de bannière n’est inséré directement dans le DOM de l’administration.
+Le formulaire commun propose trois formats : code de plateforme (HTML / scripts), image cliquable et bouton. Pour une image, importer un fichier avec l’endpoint média existant (10 Mo maximum) ou saisir son URL, puis le lien de destination et le texte alternatif. Pour un bouton, saisir son libellé et son lien. Les réglages visuels comprennent l’alignement, la pleine largeur, les coins arrondis et l’ouverture dans un nouvel onglet ; les boutons proposent aussi les couleurs du fond et du texte. Les URL doivent utiliser HTTP ou HTTPS. L’application est indisponible tant que les champs nécessaires sont invalides ou pendant l’import.
+
+Les images et boutons sont générés en HTML natif dans le même bloc de bannière : ils bénéficient du remplacement en lot, de la position conservée et des commandes de modification, suppression et déplacement. Leurs paramètres sont encodés dans `data-affiliate-design`, ce qui permet de rouvrir le formulaire visuel après sauvegarde. Un code modifié manuellement reste éditable au format code. Le contrat API et le stockage des bannières restent identiques. Les liens conservent les relations sponsorisées.
+
+Le format code permet de coller le code complet, de nommer le bloc et de choisir son mode public. Les codes dépassant 100 000 caractères sont refusés avec une explication, jamais tronqués. L’aperçu s’actualise sur demande dans une iframe opaque (`sandbox="allow-scripts allow-popups"`, sans `allow-same-origin`, sans accès au document parent). Aucun code de bannière n’est inséré directement dans le DOM de l’administration.
 
 ## Stockage et édition
 
@@ -61,3 +65,5 @@ Ces vérifications utilisent des fournisseurs de test et une persistance de test
 Le compte rendu détaillé des onze scénarios et les limites exactes des tests se trouvent dans `affiliate-audit.md`.
 
 La suite `npm run test:postgres` de l’API vérifie désormais la persistance et la concurrence sur PostgreSQL réel, via une connexion de test locale explicite. Les résultats locaux et CI sont consignés dans `affiliate-audit.md` ; ils complètent les premiers tests avec stockage simulé.
+
+Vérification des formats visuels : `node --experimental-strip-types --test test/affiliate-design.test.mjs`. Contrôle Chromium local : image par URL/import, bouton et styles publics, aperçu isolé, réouverture des paramètres, URL invalide et application en lot (réponses média et API simulées).
