@@ -9,6 +9,7 @@ export type AffiliateDesign = {
   newTab: boolean;
   align: 'left' | 'center' | 'right';
   fullWidth: boolean;
+  widthPercent?: number;
   background: string;
   color: string;
   radius: number;
@@ -27,15 +28,17 @@ export function affiliateDesignError(value: AffiliateDesign): string | null {
   if (value.kind === 'button' && !value.label.trim()) return 'Saisissez le texte du bouton.';
   if (!/^#[0-9a-f]{6}$/i.test(value.background) || !/^#[0-9a-f]{6}$/i.test(value.color)) return 'Choisissez des couleurs valides.';
   if (!['left', 'center', 'right'].includes(value.align) || !Number.isFinite(value.radius) || value.radius < 0 || value.radius > 50) return 'Vérifiez l’alignement et les coins arrondis.';
+  if (value.widthPercent !== undefined && (!Number.isFinite(value.widthPercent) || value.widthPercent < 10 || value.widthPercent > 100)) return 'La largeur doit être comprise entre 10 et 100 %.';
   return null;
 }
 export function makeAffiliateDesign(value: AffiliateDesign) {
   if (affiliateDesignError(value)) return '';
   const metadata = encodeURIComponent(JSON.stringify(value)).replace(/'/g, '%27');
   const target = value.newTab ? ' target="_blank"' : '';
-  const width = value.fullWidth ? 'width:100%;box-sizing:border-box;' : '';
+  const width = value.fullWidth ? 'width:100%;box-sizing:border-box;' : value.widthPercent !== undefined ? `width:${value.widthPercent}%;box-sizing:border-box;` : '';
+  const imageWidth = value.fullWidth || value.widthPercent !== undefined ? 'width:100%;box-sizing:border-box;' : '';
   const content = value.kind === 'image'
-    ? `<img src="${escape(value.image.trim())}" alt="${escape(value.alt)}" style="display:block;max-width:100%;height:auto;margin:0;${width}border-radius:${value.radius}px" loading="lazy">`
+    ? `<img src="${escape(value.image.trim())}" alt="${escape(value.alt)}" style="display:block;max-width:100%;height:auto;margin:0;${imageWidth}border-radius:${value.radius}px" loading="lazy">`
     : escape(value.label.trim());
   const style = value.kind === 'image' ? `display:inline-block;max-width:100%;padding:0;background:transparent;${width}`
     : `display:inline-flex;align-items:center;justify-content:center;max-width:100%;padding:12px 24px;background:${value.background};color:${value.color};border-radius:${value.radius}px;font-weight:600;text-decoration:none;overflow-wrap:anywhere;${width}`;
