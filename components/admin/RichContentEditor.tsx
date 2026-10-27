@@ -334,7 +334,7 @@ export function RichContentEditor({
     const safeAlt = escapeHtmlAttribute(alt.trim());
     exec(
       'insertHTML',
-      `<figure><img src="${safeUrl}" alt="${safeAlt}" /><figcaption>${safeAlt}</figcaption></figure><p><br></p>`
+      `<figure><img src="${safeUrl}" alt="${safeAlt}" /></figure><p><br></p>`
     );
   };
 
@@ -353,7 +353,8 @@ export function RichContentEditor({
     image.setAttribute('alt', nextAlt.trim());
     const figure = image.closest('figure');
     const figcaption = figure?.querySelector('figcaption');
-    if (figcaption) figcaption.textContent = nextAlt.trim();
+    // Remove captions duplicated from alt text by earlier editor versions.
+    if (figcaption && figcaption.textContent?.trim() === currentAlt.trim()) figcaption.remove();
     setUploadError('');
     emit();
     saveSelection();
@@ -363,7 +364,7 @@ export function RichContentEditor({
     saveSelection();
     const url = window.prompt('URL de l’image (https://...)');
     if (!url) return;
-    const alt = window.prompt('Texte alternatif / légende (optionnel)') ?? '';
+    const alt = window.prompt('Texte alternatif de l’image (optionnel)') ?? '';
     restoreSelection();
     setUploadError('');
     insertImage(url, alt);
