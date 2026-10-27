@@ -42,7 +42,7 @@ export function AffiliateBannerFields({ value, onChange }: { value: BannerInput;
       generation.current++; setUploading(false); setUploadError(''); setPreview(null);
       if (format === 'code') setCode(value.source);
       setFormat(next);
-      if (next === 'code') onChange({ ...value, source: code });
+      if (next === 'code') { setCode(value.source || code); onChange({ ...value, source: value.source || code }); }
       else updateDesign({ ...design, kind: next });
     }}>
       <option value="code">Code de plateforme (HTML / scripts)</option>
@@ -69,6 +69,7 @@ export function AffiliateBannerFields({ value, onChange }: { value: BannerInput;
         <option value="left">Gauche</option><option value="center">Centre</option><option value="right">Droite</option>
       </select></label>
       <label><input type="checkbox" checked={design.fullWidth} onChange={e => updateDesign({ ...design, fullWidth: e.target.checked })} /> Toute la largeur disponible</label>
+      {!design.fullWidth ? <label>Largeur : {design.widthPercent ?? 100} %<input type="range" min="10" max="100" className="block w-full" value={design.widthPercent ?? 100} onChange={e => updateDesign({ ...design, widthPercent: Number(e.target.value) })} /></label> : null}
       {format === 'button' ? <div className="flex flex-wrap gap-4">
         <label>Couleur du bouton<input type="color" className="block" value={design.background} onChange={e => updateDesign({ ...design, background: e.target.value })} /></label>
         <label>Couleur du texte<input type="color" className="block" value={design.color} onChange={e => updateDesign({ ...design, color: e.target.value })} /></label>

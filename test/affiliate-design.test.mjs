@@ -33,3 +33,21 @@ test('unsafe URLs, missing fields and injected CSS are rejected; custom code sta
   assert.equal(readAffiliateDesign(makeAffiliateDesign(base) + '<p>custom</p>'), null);
   assert.equal(readAffiliateDesign(makeAffiliateDesign(base).replace('loading="lazy"', 'loading="eager"')), null);
 });
+
+// Old metadata remains byte-for-byte compatible; new sizes apply to the link
+// once, with the image filling it rather than multiplying percentages.
+test('banner width survives storage and rejects invalid sizes', () => {
+  for (const widthPercent of [10, 45, 100]) {
+    const design = { ...base, widthPercent };
+    const source = makeAffiliateDesign(design);
+    const stored = getBanners(applyBanner('<p>Article</p>', { source }))[0];
+    assert.deepEqual(readAffiliateDesign(stored.source), design);
+    const link = parseFragment(source).childNodes[0].childNodes[0];
+    assert.ok(link.attrs.find(a => a.name === 'style').value.includes(`width:${widthPercent}%;`));
+    assert.ok(link.childNodes[0].attrs.find(a => a.name === 'style').value.includes('width:100%;'));
+  }
+  for (const widthPercent of [0, 101, NaN, '50;display:none']) {
+    assert.equal(makeAffiliateDesign({ ...base, widthPercent }), '');
+  }
+  assert.deepEqual(readAffiliateDesign(makeAffiliateDesign(base)), base);
+});

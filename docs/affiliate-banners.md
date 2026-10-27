@@ -67,3 +67,9 @@ Le compte rendu détaillé des onze scénarios et les limites exactes des tests 
 La suite `npm run test:postgres` de l’API vérifie désormais la persistance et la concurrence sur PostgreSQL réel, via une connexion de test locale explicite. Les résultats locaux et CI sont consignés dans `affiliate-audit.md` ; ils complètent les premiers tests avec stockage simulé.
 
 Vérification des formats visuels : `node --experimental-strip-types --test test/affiliate-design.test.mjs`. Contrôle Chromium local : image par URL/import, bouton et styles publics, aperçu isolé, réouverture des paramètres, URL invalide et application en lot (réponses média et API simulées).
+
+## Édition individuelle depuis un article
+
+« Insérer une bannière » ouvre directement le formulaire commun image cliquable / bouton / code. Les bannières ajoutées en lot sont affichées dans le contenu avec un aperçu isolé sans exécution de scripts ; pour les fournisseurs scriptés, utiliser l’aperçu explicite du formulaire. Les commandes Modifier / remplacer, Monter / Descendre, poignée et Supprimer concernent uniquement le bloc choisi. Insérer une nouvelle bannière ne remplace plus implicitement une bannière déjà présente.
+
+Les formats visuels proposent une largeur de 10 à 100 %, conservée dans le code généré et à la réouverture. Le passage au format code expose le HTML actuel pour le modifier. Cliquer une image ordinaire, puis « Lien », permet aussi de lui attribuer un lien ou de modifier son lien existant (vider le champ pour le retirer).
