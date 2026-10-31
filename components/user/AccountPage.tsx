@@ -1,12 +1,13 @@
 'use client';
-import Link from 'next/link';
 import { FormEvent, useEffect, useState } from 'react';
 import { useUserSession } from './UserSessionProvider';
-import { userApi, UserApiError } from '@/lib/user/api-client';
+import { userApi } from '@/lib/user/api-client';
 import type { ContactDetails, User } from '@/lib/user/types';
 import { NewsletterPreferencesForm } from '@/components/newsletter/NewsletterPreferencesForm';
 import { NutritionTracker } from '@/components/nutrition/NutritionTracker';
-import { subscribeToNewsletter } from '@/lib/newsletter';
+import { NewsletterSignup } from '@/components/blog/NewsletterCta';
+import { AuthForm } from './AuthForm';
+import { useSearchParams } from 'next/navigation';
 
 type Locale = 'fr' | 'en';
 const field = 'mt-2 block w-full rounded-xl border border-slate-300 px-4 py-3';
@@ -56,45 +57,19 @@ function PasswordForm({ locale }: { locale: Locale }) {
 }
 
 function AccountNewsletter({ user, locale }: { user: User; locale: Locale }) {
-  const fr = locale === 'fr';
-  const [subscription, setSubscription] = useState<{ token: string | null; status: string | null } | null>(null);
-  const [verification, setVerification] = useState(false); const [consent, setConsent] = useState(false);
-  const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const [sent, setSent] = useState(false);
-  async function load() {
-    setError('');
-    try { setSubscription(await userApi.newsletter()); setVerification(false); }
-    catch (caught) {
-      if (caught instanceof UserApiError && caught.code === 'EMAIL_VERIFICATION_REQUIRED') setVerification(true);
-      else setError(fr ? 'Impossible de charger vos préférences.' : 'Unable to load your preferences.');
-    }
-  }
-  useEffect(() => { void load(); }, [user.id]); // eslint-disable-line react-hooks/exhaustive-deps
-  async function act() {
-    setBusy(true); setError('');
-    try {
-      if (verification) { await userApi.requestLoginLink(user.email, locale); setSent(true); }
-      else { await subscribeToNewsletter(user.email, locale, 'account', consent); await load(); }
-    } catch { setError(fr ? 'Action impossible. Réessayez dans quelques instants.' : 'Unable to complete this action. Please try again shortly.'); }
-    finally { setBusy(false); }
-  }
-  return <div className="space-y-5">
-    {error && <p role="alert" className="text-red-800">{error}<button className="ml-3 underline" onClick={() => void load()}>{fr ? 'Réessayer' : 'Try again'}</button></p>}
-    {verification ? <><p>{fr ? 'Pour accéder aux préférences associées à cette adresse, confirmez votre email avec un lien de connexion.' : 'To access the preferences for this address, confirm your email using a sign-in link.'}</p>{sent ? <p role="status">{fr ? 'Lien envoyé. Ouvrez-le pour revenir à votre compte.' : 'Link sent. Open it to return to your account.'}</p> : <button className={button} disabled={busy} onClick={() => void act()}>{fr ? 'Recevoir le lien de confirmation' : 'Send confirmation link'}</button>}</> : !subscription ? (!error && <p>{fr ? 'Chargement…' : 'Loading…'}</p>) : <>
-      {subscription.token && subscription.status !== 'unsubscribed' ? <NewsletterPreferencesForm token={subscription.token} locale={locale} /> : <>
-        <p>{fr ? 'Vous n’êtes pas abonné à la newsletter.' : 'You are not subscribed to the newsletter.'}</p>
-        <p className="text-slate-600">{user.email}</p>
-        <label className="flex items-start gap-3"><input type="checkbox" className="mt-1 h-5 w-5" checked={consent} onChange={e => setConsent(e.target.checked)} /><span>{fr ? 'J’accepte de recevoir la newsletter Body Training Guide par email.' : 'I agree to receive the Body Training Guide newsletter by email.'}</span></label>
-        <button className={button} disabled={busy || !consent} onClick={() => void act()}>{fr ? 'M’inscrire à la newsletter' : 'Subscribe to the newsletter'}</button>
-      </>}
-    </>}
-  </div>;
+  return <NewsletterPreferencesForm key={user.id} locale={locale} />;
 }
 
 export function AccountPage({ locale }: { locale: Locale }) {
-  const fr = locale === 'fr'; const { user, status } = useUserSession();
-  const [tab, setTab] = useState<'contact' | 'password' | 'newsletter' | 'tracker'>('contact');
+  const fr = locale === 'fr'; const { user, status,newsletterEntry,setNewsletterEntry,logout } = useUserSession();
+  const params=useSearchParams();
+  const [tab, setTab] = useState<'contact' | 'password' | 'newsletter' | 'tracker'>(params.get('tab')==='newsletter'?'newsletter':'contact');
+  useEffect(()=>{if(params.get('tab')==='newsletter' || (newsletterEntry && !newsletterEntry.existing))setTab('newsletter');},[params,newsletterEntry]);
   if (status === 'loading') return <main className="p-8">{fr ? 'Chargement…' : 'Loading…'}</main>;
-  if (!user) return <main className="p-8"><Link href={fr ? '/fr/connexion?returnTo=/fr/mon-compte' : '/login?returnTo=/account'}>{fr ? 'Se connecter' : 'Log in'}</Link></main>;
+  if (!user) return <main className="mx-auto max-w-3xl space-y-6 px-6 py-16"><h1 className="text-3xl font-bold">{fr?'Mon compte':'My account'}</h1>
+    {newsletterEntry?.existing ? <><p role="status" className="rounded-xl bg-blue-50 p-4 text-blue-900">{fr?'Cette adresse possède déjà un compte ou un abonnement. Connectez-vous pour retrouver vos préférences.':'This email already has an account or subscription. Sign in to manage your preferences.'}</p><AuthForm locale={locale} mode="login" initialEmail={newsletterEntry.email} /></> : <NewsletterSignup locale={locale} source="account" />}
+    {newsletterEntry && <button className="underline" onClick={()=>setNewsletterEntry(null)}>{fr?'Inscrire une autre adresse email':'Subscribe another email address'}</button>}
+  </main>;
   const tabs = [
     { id: 'contact', label: fr ? 'Mes coordonnées' : 'My contact details' },
     { id: 'password', label: fr ? 'Mon mot de passe' : 'My password' },
@@ -103,6 +78,8 @@ export function AccountPage({ locale }: { locale: Locale }) {
   ] as const;
   return <main className={`mx-auto ${tab === 'tracker' ? 'max-w-7xl' : 'max-w-3xl'} space-y-8 px-6 py-16`}>
     <h1 className="text-3xl font-bold">{fr ? 'Mon compte' : 'My account'}</h1>
+    <p className="text-slate-600">{user.email}</p>
+    {newsletterEntry && !newsletterEntry.existing && <p role="status" className="rounded-xl bg-emerald-50 p-4 text-emerald-900">{fr?'Votre inscription a bien été prise en compte. Vous pouvez modifier vos préférences.':'Your subscription has been saved. You can change your preferences.'}</p>}
     <div role="tablist" aria-label={fr ? 'Paramètres du compte' : 'Account settings'} className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">{tabs.map((item, index) => <button key={item.id} role="tab" id={`tab-${item.id}`} aria-controls={`panel-${item.id}`} aria-selected={tab === item.id} tabIndex={tab === item.id ? 0 : -1} onClick={() => setTab(item.id)} onKeyDown={event => {
       const next = event.key === 'ArrowRight' ? (index + 1) % tabs.length : event.key === 'ArrowLeft' ? (index + tabs.length - 1) % tabs.length : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : null;
       if (next === null) return; event.preventDefault(); setTab(tabs[next].id); document.getElementById(`tab-${tabs[next].id}`)?.focus();
@@ -111,5 +88,6 @@ export function AccountPage({ locale }: { locale: Locale }) {
       <h2 className="text-xl font-bold">{item.label}</h2>
       {item.id === 'contact' ? <ContactForm key={user.id} user={user} locale={locale} /> : item.id === 'password' ? <PasswordForm locale={locale} /> : item.id === 'newsletter' ? tab === 'newsletter' && <AccountNewsletter user={user} locale={locale} /> : tab === 'tracker' && <NutritionTracker locale={locale} embedded />}
     </section>)}
+    <p className="border-t border-slate-200 pt-5"><button className="text-sm underline" onClick={()=>void logout()}>{fr?'Se déconnecter pour utiliser une autre adresse email':'Sign out to use another email address'}</button></p>
   </main>;
 }

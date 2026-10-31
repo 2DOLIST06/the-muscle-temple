@@ -1,3 +1,4 @@
+import type { NewsletterPreferences } from '../newsletter';
 import type { ApiDiary, ApiEntry, ApiGoal, ApiPersonalFood } from './nutrition-adapter';
 import { readDiary, readEntry, readGoal, readPersonalFood, writePersonalFood } from './nutrition-adapter';
 import type { FoodRecurrence, DiaryEntryInput, MealType, NutritionGoalInput, PersonalFoodInput, ContactDetails, User } from './types';
@@ -29,6 +30,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const userApi = {
+  startNewsletter: (email: string, language: 'fr'|'en', source: string) => request<{status:'active'|'existing';authenticated:boolean;user?:User}>('/auth/newsletter/start',{method:'POST',body:JSON.stringify({email:email.trim().toLowerCase(),language,source,consent:true,consentTextVersion:'v2-newsletter-button'})}),
+  newsletterSettings: () => request<NewsletterPreferences>('/auth/newsletter/settings'),
+  saveNewsletter: (value: NewsletterPreferences, reactivate: boolean) => request<NewsletterPreferences>('/auth/newsletter/settings',{method:'POST',body:JSON.stringify({topics:value.topics,goals:value.goals,frequency:value.frequency,language:value.language,consent:true,reactivate})}),
+  unsubscribeNewsletter: () => request('/auth/newsletter/unsubscribe',{method:'POST',body:'{}'}),
+  newsletterAccountLink: (token: string,locale:'fr'|'en') => request('/auth/newsletter/account-link',{method:'POST',body:JSON.stringify({token,locale})}),
+  resendLoginLink: (token: string,locale:'fr'|'en') => request('/auth/login-link/resend',{method:'POST',body:JSON.stringify({token,locale})}),
   updateProfile: (body: ContactDetails) => request<User>('/auth/profile', { method: 'POST', body: JSON.stringify(body) }),
   newsletter: () => request<{ token: string | null; status: string | null }>('/auth/newsletter'),
   requestLoginLink: (email: string, locale: 'fr' | 'en') => request<{ ok: boolean }>('/auth/login-link', { method: 'POST', body: JSON.stringify({ email, locale }) }),

@@ -2,21 +2,24 @@
 
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { FormEvent, useState } from 'react';
+import { FormEvent, useRef, useState } from 'react';
 import { userApi, UserApiError } from '@/lib/user/api-client';
 import { useUserSession } from './UserSessionProvider';
 
-export function AuthForm({ locale, mode }: { locale: 'fr' | 'en'; mode: 'login' | 'register' }) {
+export function AuthForm({ locale, mode, initialEmail = '' }: { initialEmail?:string; locale: 'fr' | 'en'; mode: 'login' | 'register' }) {
   const french = locale === 'fr';
   const router = useRouter(); const params = useSearchParams(); const { refresh } = useUserSession();
-  const [emailLink, setEmailLink] = useState(false); const [sent, setSent] = useState(false);
+  const [emailLink, setEmailLink] = useState(mode==='login'); const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false); const [error, setError] = useState('');
-  const [displayName, setDisplayName] = useState(''); const [email, setEmail] = useState('');
+  const [displayName, setDisplayName] = useState(''); const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState(''); const [confirmation, setConfirmation] = useState('');
   const loginPath = french ? '/fr/connexion' : '/login'; const registerPath = french ? '/fr/inscription' : '/register';
+  const lastLinkEmail=useRef('');
   const submit = async (event: FormEvent) => {
     event.preventDefault(); setError(''); setSent(false);
     if (mode === 'register' && password !== confirmation) { setError(french ? 'Les mots de passe ne correspondent pas.' : 'Passwords do not match.'); return; }
+    const repeated=lastLinkEmail.current===email.trim().toLowerCase();
+    if(emailLink)lastLinkEmail.current=email.trim().toLowerCase();
     setBusy(true);
     try {
       if (emailLink) { await userApi.requestLoginLink(email.trim().toLowerCase(), locale); setSent(true); return; }
@@ -24,11 +27,12 @@ export function AuthForm({ locale, mode }: { locale: 'fr' | 'en'; mode: 'login' 
       else await userApi.register({ displayName: displayName.trim(), email: email.trim().toLowerCase(), password });
       await refresh();
       const returnTo = params.get('returnTo');
-      router.replace(returnTo?.startsWith('/') && !returnTo.startsWith('//') ? returnTo : (french ? '/fr/suivi-nutrition' : '/nutrition-tracker'));
+      router.replace(returnTo?.startsWith('/') && !returnTo.startsWith('//') && !returnTo.includes('\\') ? returnTo : (french ? '/fr/mon-compte?tab=newsletter' : '/account?tab=newsletter'));
     } catch (cause) {
       const status = cause instanceof UserApiError ? cause.status : 0;
       if (emailLink) {
         const code = cause instanceof UserApiError ? cause.code : undefined;
+        if(code==='LOGIN_LINK_COOLDOWN' && !repeated){setSent(true);return;}
         setError(code === 'ACCOUNT_NOT_FOUND' ? (french ? 'Aucun compte avec cette adresse e-mail. Vous pouvez créer un compte.' : 'No account with this email address. You can create an account.')
           : code === 'MEMBER_ACCOUNT_REQUIRED' ? (french ? 'Cette adresse ne correspond pas à un compte membre. Utilisez l’adresse de votre compte membre.' : 'This address is not a member account. Use your member account email.')
           : status === 429 ? (french ? 'Veuillez patienter une minute avant de réessayer.' : 'Please wait a minute before trying again.')

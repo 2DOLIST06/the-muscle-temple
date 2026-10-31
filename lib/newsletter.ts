@@ -26,6 +26,8 @@ export interface NewsletterPreferences {
   goals: NewsletterGoal[];
   frequency: NewsletterFrequency;
   unsubscribed: boolean;
+  subscribed?: boolean;
+  status?: string;
 }
 
 export interface NewsletterSubscriptionResponse {
