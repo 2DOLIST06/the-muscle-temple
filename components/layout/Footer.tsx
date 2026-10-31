@@ -65,7 +65,7 @@ export function Footer() {
               ))}
             </ul>
           </div>
-          <NewsletterSignup locale={locale} source="footer" compact />
+          {!pathname?.includes('/newsletter/preferences') && !['/account','/fr/mon-compte','/login','/fr/connexion','/register','/fr/inscription','/login/link','/fr/connexion/lien'].includes(pathname ?? '') && <NewsletterSignup locale={locale} source="footer" compact />}
         </div>
       </Container>
     </footer>
